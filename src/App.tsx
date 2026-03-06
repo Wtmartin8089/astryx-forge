@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import NavBar from "./components/NavBar";
+import LandingPage from "./components/LandingPage";
+import WorldsPage from "./components/WorldsPage";
 import StarMap from "./components/StarMap";
 import StarbasePage from "./components/Starbase";
 import Forum from "./components/Forum";
@@ -36,8 +38,11 @@ function App() {
     return <p style={{ color: "white", textAlign: "center" }}>Loading warp core...</p>;
   }
 
-  // Only allow unauthenticated users on /auth
-  if (!currentUser && location.pathname !== "/auth") {
+  // Public paths that don't require authentication
+  const publicPaths = ["/", "/worlds", "/auth"];
+
+  // Only allow unauthenticated users on public paths
+  if (!currentUser && !publicPaths.includes(location.pathname)) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -51,7 +56,8 @@ function App() {
       {currentUser && <NavBar />}
       {currentUser && <ComputerCore />}
       <Routes>
-        <Route path="/" element={<StarMap />} />
+        <Route path="/" element={currentUser ? <StarMap /> : <LandingPage />} />
+        <Route path="/worlds" element={<WorldsPage />} />
         <Route path="/starbase" element={<StarbasePage />} />
         <Route path="/forum" element={<Forum />} />
         <Route path="/stardate" element={<StardateCalculator />} />
