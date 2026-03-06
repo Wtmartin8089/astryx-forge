@@ -53,6 +53,78 @@ export async function generateCampaignIdea(prompt) {
   return data.response;
 }
 
+/**
+ * Build a mission prompt from campaign context and send to Ollama.
+ * Returns structured mission JSON.
+ *
+ * @param {{
+ *   campaignName: string,
+ *   worldType: string,
+ *   unitName: string,
+ *   unitType: string,
+ *   scanResult: string,
+ *   scanReport: string,
+ *   recentForumPosts: string[],
+ *   factions: string[]
+ * }} context
+ */
+export async function generateMissionEvent(context) {
+  const {
+    campaignName,
+    worldType,
+    unitName,
+    unitType,
+    scanResult,
+    scanReport,
+    recentForumPosts,
+    factions,
+  } = context;
+
+  const forumLine  = recentForumPosts.length
+    ? `Recent crew discussions: ${recentForumPosts.slice(0, 3).join("; ")}.`
+    : "";
+  const factionLine = factions.length
+    ? `Known factions in the region: ${factions.join(", ")}.`
+    : "";
+
+  const prompt = `You are the mission briefing computer for a tabletop RPG campaign.
+
+Campaign: "${campaignName}" (world type: ${worldType})
+Primary ${unitType}: ${unitName}
+Most recently scanned system: ${scanResult}
+Sensor report: ${scanReport}
+${forumLine}
+${factionLine}
+
+Generate a mission event relevant to the situation above.
+Return ONLY valid JSON with exactly these five fields — no markdown, no explanation, no extra text:
+
+{
+  "missionTitle": "A short punchy mission title (3-6 words)",
+  "briefing": "2-3 sentences of mission briefing, referencing the scanned system and campaign context",
+  "objective": "One clear sentence stating the primary mission objective",
+  "complication": "One sentence describing an unexpected complication the crew will face",
+  "possibleOutcome": "One sentence describing a possible dramatic outcome of the mission"
+}`;
+
+  const raw = await generateCampaignIdea(prompt);
+
+  // Strip markdown fences and extract JSON object
+  const clean = raw.replace(/^```json?\s*/im, "").replace(/```\s*$/im, "").trim();
+  const match = clean.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error("No JSON found in mission event response.");
+
+  const parsed = JSON.parse(match[0]);
+
+  return {
+    missionTitle:    String(parsed.missionTitle    ?? "").trim(),
+    briefing:        String(parsed.briefing        ?? "").trim(),
+    objective:       String(parsed.objective       ?? "").trim(),
+    complication:    String(parsed.complication    ?? "").trim(),
+    possibleOutcome: String(parsed.possibleOutcome ?? "").trim(),
+  };
+}
+
 /** Thrown when Ollama is unreachable so callers can show a specific message. */
 export class OllamaUnavailableError extends Error {
   constructor(message = "AI generator unavailable.") {
