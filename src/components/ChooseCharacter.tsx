@@ -79,7 +79,6 @@ const sectionHeaderStyle = (color: string): React.CSSProperties => ({
   color,
   fontSize: "0.85rem",
   letterSpacing: "2px",
-  marginBottom: "0.75rem",
   textTransform: "uppercase",
   margin: 0,
   marginBottom: "0.75rem",
@@ -664,7 +663,7 @@ const ChooseCharacter = () => {
       );
     }
 
-    const { id, member } = selectedCrewEntry;
+    const { member } = selectedCrewEntry;
     const shipLabel =
       selectedShipId === "starbase"
         ? "Starbase"
