@@ -7,6 +7,14 @@ export interface GeneratedCampaign {
   primaryThreat: string;
 }
 
+// Maps worldType slugs to theme values the API understands
+const WORLD_THEME_MAP: Record<string, string> = {
+  "fleet-command":      "exploration",
+  "dark-nights":        "horror",
+  "galactic-conflict":  "combat",
+  "fantasy-realms":     "exploration",
+};
+
 interface Props {
   worldType: string | null;
   onGenerate: (data: GeneratedCampaign) => void;
@@ -22,17 +30,19 @@ export default function AIGenerateCampaign({ worldType, onGenerate }: Props) {
     setError(null);
     setResult(null);
     try {
-      const res = await fetch("/api/generateCampaign", {
+      const theme = (worldType && WORLD_THEME_MAP[worldType]) ?? "exploration";
+      const res = await fetch("/api/ai/generateCampaign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ worldType: worldType ?? "fleet-command" }),
+        body: JSON.stringify({ theme, tone: "serious" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed.");
       setResult(data as GeneratedCampaign);
       onGenerate(data as GeneratedCampaign);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
