@@ -53,6 +53,19 @@ const NavBar = () => {
       <Link to="/settings" style={linkStyle("/settings")}>
         Settings
       </Link>
+      <Link
+        to="/create-campaign"
+        style={{
+          ...linkStyle("/create-campaign"),
+          background: "linear-gradient(135deg,#F5B942,#FF6A2B)",
+          color: "#0B1E3A",
+          borderRadius: "20px",
+          padding: "0.4rem 0.9rem",
+          fontWeight: "bold",
+        }}
+      >
+        + Campaign
+      </Link>
     </nav>
   );
 };
