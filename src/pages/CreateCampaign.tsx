@@ -4,6 +4,7 @@ import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../firebase/firebaseConfig";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
+import AIGenerateCampaign, { type GeneratedCampaign } from "../components/AIGenerateCampaign";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -186,6 +187,17 @@ export default function CreateCampaign() {
               <option value="invite-only">Invite Only</option>
               <option value="public">Public</option>
             </select>
+
+            <AIGenerateCampaign
+              worldType={worldType}
+              onGenerate={(data: GeneratedCampaign) => {
+                setCampaign((prev) => ({
+                  ...prev,
+                  name: data.campaignName,
+                  description: `${data.synopsis}\n\nStarting Mission: ${data.startingMission}\n\nPrimary Threat: ${data.primaryThreat}`,
+                }));
+              }}
+            />
           </div>
         )}
 
