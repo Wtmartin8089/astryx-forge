@@ -1,0 +1,34 @@
+/* -------- Tailwind v4 -------- */
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------- Fallback + LCARS helpers -------- */
+:root {
+  --bg: #000000;
+  --fg: #e5e7eb;
+  --card: #1a1a1a;
+  --muted: #a1a1aa;
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+
+/* Layout helpers if Tailwind is absent */
+.container { max-width: 920px; margin: 0 auto; padding: 24px; }
+.card { background: var(--card); border-radius: 24px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+.muted { color: var(--muted); }
+
+/* LCARS theme pieces */
+.lcars-shell{background:radial-gradient(1200px 600px at 60% -200px,#121212 20%,#0b0b0b 60%,#000 100%)}
+.lcars-rail{width:18px}
+.lcars-pill{border-radius:9999px}
+.lcars-chunk{height:26px;border-radius:20px}
+.lcars-corner{width:120px;height:60px;border-top-left-radius:40px;border-bottom-left-radius:40px}
+.lcars-a{background:#ff9966}.lcars-b{background:#cc99ff}.lcars-c{background:#66ccff}.lcars-d{background:#ffd166}.lcars-e{background:#ff6b6b}
+.lcars-card{background:#1a1a1a;border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.lcars-input{background:#2a2a2a;border:1px solid #3a3a3a;border-radius:14px;padding:10px 12px}
+.lcars-btn{border-radius:999px;padding:6px 12px;border:1px solid transparent}
+.lcars-btn:hover{border-color:#7775}
+.lcars-title{text-transform:uppercase;letter-spacing:.2em}

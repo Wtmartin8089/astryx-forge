@@ -1,0 +1,73 @@
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import NavBar from "./components/NavBar";
+import StarMap from "./components/StarMap";
+import StarbasePage from "./components/Starbase";
+import Forum from "./components/Forum";
+import PlanetPage from "./components/PlanetPage";
+import AuthPanel from "./components/AuthPanel";
+import StardateCalculator from "./components/StardateCalculator";
+import ComputerCore from "./components/ComputerCore";
+import AccountSettings from "./components/AccountSettings";
+import FleetRegistry from "./components/FleetRegistry";
+import ShipPage from "./components/ShipPage";
+import CrewRoster from "./components/CrewRoster";
+import CrewPage from "./components/CrewPage";
+import ChooseCharacter from "./components/ChooseCharacter";
+
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useEffect, useState } from "react";
+
+const auth = getAuth();
+
+function App() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  if (loading) {
+    return <p style={{ color: "white", textAlign: "center" }}>Loading warp core...</p>;
+  }
+
+  // Only allow unauthenticated users on /auth
+  if (!currentUser && location.pathname !== "/auth") {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // If authenticated and at /auth, redirect to home
+  if (currentUser && location.pathname === "/auth") {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <>
+      {currentUser && <NavBar />}
+      {currentUser && <ComputerCore />}
+      <Routes>
+        <Route path="/" element={<StarMap />} />
+        <Route path="/starbase" element={<StarbasePage />} />
+        <Route path="/forum" element={<Forum />} />
+        <Route path="/stardate" element={<StardateCalculator />} />
+        <Route path="/character" element={<Navigate to="/crew" replace />} />
+        <Route path="/settings" element={<AccountSettings />} />
+        <Route path="/planet/:planetName" element={<PlanetPage />} />
+        <Route path="/fleet" element={<FleetRegistry />} />
+        <Route path="/ship/:shipSlug" element={<ShipPage />} />
+        <Route path="/choose-character" element={<ChooseCharacter />} />
+        <Route path="/crew" element={<CrewRoster />} />
+        <Route path="/crew/:crewSlug" element={<CrewPage />} />
+        <Route path="/auth" element={<AuthPanel />} />
+      </Routes>
+    </>
+  );
+}
+
+export default App;
+

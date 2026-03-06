@@ -1,0 +1,166 @@
+/* LCARS styles for components only — no :root here to avoid global selector issues */
+
+/* Nav bar styling */
+.navbar {
+  display: flex;
+  background-color: var(--lcars-orange);
+  padding: 10px;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.navbar a {
+  color: var(--lcars-black);
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.navbar a:hover {
+  color: var(--lcars-purple);
+}
+
+/* General layout containers */
+.container {
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.title {
+  color: var(--lcars-orange);
+}
+
+/* Form styling */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input,
+.textarea {
+  background-color: var(--lcars-black);
+  color: var(--lcars-light);
+  border: 2px solid var(--lcars-purple);
+  border-radius: 5px;
+  padding: 10px;
+  width: 100%;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #aaa;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--lcars-blue);
+}
+
+/* Button styling */
+.button {
+  background-color: var(--lcars-orange);
+  color: var(--lcars-black);
+  border: none;
+  padding: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.button:hover {
+  background-color: var(--lcars-purple);
+  color: var(--lcars-light);
+}
+
+/* Character card styling */
+.card {
+  background-color: var(--lcars-black);
+  border: 2px solid var(--lcars-blue);
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 10px;
+}
+
+.card h3 {
+  color: var(--lcars-orange);
+  margin-top: 0;
+}
+
+.card p {
+  margin: 5px 0;
+}
+
+/* Editor styling for rich text (missions forum) */
+.editor {
+  border: 2px solid var(--lcars-orange);
+  padding: 10px;
+  min-height: 200px;
+  background: black;
+  color: var(--lcars-orange);
+}
+.starMapContainer {
+  background: black;
+  color: var(--lcars-orange);
+  padding: 20px;
+  text-align: center;
+}
+
+.systemMap {
+  position: relative;
+  height: 400px;
+}
+
+.planetButton, .starbaseButton {
+  position: absolute;
+  background: var(--lcars-purple);
+  color: black;
+  border: 2px solid var(--lcars-orange);
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.starbaseButton {
+  left: 50%;
+  top: 80%;
+  transform: translateX(-50%);
+}
+
+/* Computer Core Button */
+.computerCoreButton {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.computerCoreButton button {
+  background: linear-gradient(135deg, var(--lcars-blue), var(--lcars-purple));
+  color: white;
+  border: 3px solid var(--lcars-orange);
+  border-radius: 10px;
+  padding: 15px 25px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 153, 0, 0.5);
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.computerCoreButton button:hover {
+  background: linear-gradient(135deg, var(--lcars-purple), var(--lcars-blue));
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(153, 51, 204, 0.7);
+}
+
+.computerCoreButton button:active {
+  transform: scale(0.98);
+}
+

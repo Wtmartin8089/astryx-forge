@@ -1,0 +1,83 @@
+{
+  "joshua-tree": {
+    "name": "U.S.S. Joshua Tree",
+    "registry": "NCC-1981",
+    "class": "Ajodan / New Orleans class",
+    "type": "Frigate",
+    "status": "Active",
+    "structuralPoints": { "primary": 140, "secondary": 100 },
+    "crew": 550,
+    "passengers": 1600,
+    "evacuationCapacity": 4100,
+    "warp": {
+      "cruising": 5.25,
+      "standard": 4.0,
+      "maximum": 9.3,
+      "maximumDuration": "12 hours"
+    },
+    "impulse": { "standard": 0.75, "maximum": 0.95 },
+    "weapons": [
+      { "name": "Type IX Phaser Arrays", "damage": 19, "count": null },
+      { "name": "Type II Photon Torpedoes", "damage": 20, "count": 100 }
+    ],
+    "shields": { "standard": 55, "maximum": 75 },
+    "description": "A New Orleans class frigate serving as the primary vessel for deep-space exploration and tactical operations in the Hellmouth Sector. Commissioned stardate 3333.3349, the Joshua Tree carries a crew of specialists drawn from across the Federation. Under the command of Captain Calo B. Rodriguez, she has become a key asset in charting the dangers of this uncharted region of space.",
+    "crewIds": [
+      "calo-rodriguez", "john-santiago", "emily-bowen", "rick-rose",
+      "roger-yale", "sophia-costa", "four-of-nine", "aurora-mckoy",
+      "logan-robertson", "gabriella-rains", "spenser-stello",
+      "bosley-wall", "joab-jones"
+    ]
+  },
+  "king": {
+    "name": "U.S.S. King",
+    "registry": "NCC-81506",
+    "class": "Prometheus class",
+    "type": "Heavy Cruiser",
+    "status": "Active",
+    "structuralPoints": null,
+    "crew": null,
+    "passengers": null,
+    "evacuationCapacity": null,
+    "warp": null,
+    "impulse": null,
+    "weapons": [],
+    "shields": null,
+    "description": "A Prometheus-class multi-vector assault vessel assigned to the Fleet of Admiral Ryvikarri. Capable of separating into three independent warp-capable sections for tactical superiority. One of Starfleet's most advanced warships, the King serves as the fleet's primary combat deterrent in the Hellmouth Sector.",
+    "crewIds": []
+  },
+  "defiant-a": {
+    "name": "U.S.S. Defiant-A",
+    "registry": "NCC-83575",
+    "class": "Defiant class",
+    "type": "Escort",
+    "status": "Active",
+    "structuralPoints": null,
+    "crew": null,
+    "passengers": null,
+    "evacuationCapacity": null,
+    "warp": null,
+    "impulse": null,
+    "weapons": [],
+    "shields": null,
+    "description": "A Defiant-class escort vessel, compact and heavily armed. Originally designed for combat operations against the Dominion, the Defiant-A now serves as a rapid-response ship in the Hellmouth Sector. Her small size belies her devastating firepower and ablative armor plating.",
+    "crewIds": []
+  },
+  "lancelot": {
+    "name": "U.S.S. Lancelot",
+    "registry": "NCC-87491",
+    "class": "Sovereign class",
+    "type": "Explorer",
+    "status": "Active",
+    "structuralPoints": null,
+    "crew": null,
+    "passengers": null,
+    "evacuationCapacity": null,
+    "warp": null,
+    "impulse": null,
+    "weapons": [],
+    "shields": null,
+    "description": "A Sovereign-class explorer, among the most advanced starships in the fleet. Designed for long-range exploration and diplomatic missions, the Lancelot brings both scientific capability and formidable tactical systems to the Hellmouth Sector. She serves as the fleet's flagship for first contact situations.",
+    "crewIds": []
+  }
+}

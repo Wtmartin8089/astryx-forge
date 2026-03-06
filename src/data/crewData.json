@@ -1,0 +1,328 @@
+{
+  "calo-rodriguez": {
+    "name": "Calo B. Rodriguez",
+    "species": "Human",
+    "rank": "Captain",
+    "position": "Commanding Officer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": 4,
+      "Coordination": 3,
+      "Presence": 5,
+      "Intellect": null,
+      "PSI": 3
+    },
+    "advantages": [
+      "Departmental Head",
+      "Promotion",
+      "Courage"
+    ],
+    "disadvantages": [
+      "Code of Honor"
+    ],
+    "skills": [],
+    "notes": "",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "john-santiago": {
+    "name": "John Santiago",
+    "species": "Bajoran",
+    "rank": "Commander",
+    "position": "First Officer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": 4,
+      "Coordination": 3,
+      "Presence": 2,
+      "Intellect": null,
+      "PSI": null
+    },
+    "advantages": [
+      "Bold"
+    ],
+    "disadvantages": [
+      "Intolerant",
+      "Code of Honor"
+    ],
+    "skills": [],
+    "notes": "",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "emily-bowen": {
+    "name": "Emily Bowen",
+    "species": "Human",
+    "rank": "Ensign",
+    "position": "Helm",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": 3,
+      "Coordination": 3,
+      "Presence": 5,
+      "Intellect": null,
+      "PSI": 0
+    },
+    "advantages": [
+      "Exceptional Boldness",
+      "Exceptional Hearing",
+      "Exceptional Sight",
+      "Multitalented"
+    ],
+    "disadvantages": [
+      "Code of Honor"
+    ],
+    "skills": [],
+    "notes": "",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "rick-rose": {
+    "name": "Rick Rose",
+    "species": "Vulcan",
+    "rank": "Lt. Commander",
+    "position": "Tactical Officer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": null,
+      "Coordination": 4,
+      "Presence": 3,
+      "Intellect": 3,
+      "PSI": 4
+    },
+    "advantages": [
+      "Mathematical",
+      "Curious",
+      "Code of Res."
+    ],
+    "disadvantages": [
+      "Code of Honor",
+      "Hidden Emotion",
+      "Pacifism"
+    ],
+    "skills": [],
+    "notes": "",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "roger-yale": {
+    "name": "Roger Yale",
+    "species": "Vulcan/Human",
+    "rank": "Lt. Commander",
+    "position": "Science Officer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": 3,
+      "Coordination": 3,
+      "Presence": 3,
+      "Intellect": 4,
+      "PSI": 4
+    },
+    "advantages": [
+      "Multi-Ability",
+      "Curious",
+      "Mixed Heritage"
+    ],
+    "disadvantages": [
+      "Code of Honor",
+      "Racial Intolerance"
+    ],
+    "skills": [],
+    "notes": "",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "sophia-costa": {
+    "name": "Sophia Costa",
+    "species": "Ultonian",
+    "rank": "Lt. Commander",
+    "position": "Chief Engineer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": 4,
+      "Coordination": 4,
+      "Presence": 4,
+      "Intellect": 4,
+      "PSI": 0
+    },
+    "advantages": [
+      "Starfleet Road",
+      "Courageous",
+      "Engineering Aptitude"
+    ],
+    "disadvantages": [
+      "Adventuresome"
+    ],
+    "skills": [],
+    "notes": "",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "four-of-nine": {
+    "name": "Four of Nine",
+    "species": "1/2 Borg",
+    "rank": "Ensign",
+    "position": "Operations",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": 4,
+      "Coordination": 5,
+      "Presence": 4,
+      "Intellect": 4,
+      "PSI": 0
+    },
+    "advantages": [
+      "Exo Armor",
+      "Nanites",
+      "Borg-learned",
+      "Exotic Armor"
+    ],
+    "disadvantages": [
+      "Obligation",
+      "Unemotional",
+      "Code of Honor"
+    ],
+    "skills": [],
+    "notes": "Male. Former Borg drone, partially reclaimed.",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "aurora-mckoy": {
+    "name": "Aurora McKoy",
+    "species": "Catourian",
+    "rank": "Lt. Commander",
+    "position": "Medical Officer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": 3,
+      "Coordination": null,
+      "Presence": null,
+      "Intellect": null,
+      "PSI": null
+    },
+    "advantages": [
+      "Bold",
+      "Departmental Head",
+      "Reputation",
+      "Resourceful"
+    ],
+    "disadvantages": [],
+    "skills": [],
+    "notes": "",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "logan-robertson": {
+    "name": "Logan Robertson",
+    "species": "Unknown",
+    "rank": "Ensign",
+    "position": "Asst. Medical Officer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": null,
+      "Coordination": null,
+      "Presence": null,
+      "Intellect": null,
+      "PSI": null
+    },
+    "advantages": [],
+    "disadvantages": [],
+    "skills": [],
+    "notes": "Record incomplete — awaiting Starfleet personnel update.",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "gabriella-rains": {
+    "name": "Gabriella Rains",
+    "species": "Unknown",
+    "rank": "Full Lieutenant",
+    "position": "Science Officer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": null,
+      "Coordination": null,
+      "Presence": null,
+      "Intellect": null,
+      "PSI": null
+    },
+    "advantages": [],
+    "disadvantages": [],
+    "skills": [],
+    "notes": "Record incomplete — awaiting Starfleet personnel update.",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "spenser-stello": {
+    "name": "Spenser Stello",
+    "species": "Unknown",
+    "rank": "Ensign",
+    "position": "Security Officer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": null,
+      "Coordination": null,
+      "Presence": null,
+      "Intellect": null,
+      "PSI": null
+    },
+    "advantages": [],
+    "disadvantages": [],
+    "skills": [],
+    "notes": "Record incomplete — awaiting Starfleet personnel update.",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "bosley-wall": {
+    "name": "Bosley H. Wall",
+    "species": "Camilot",
+    "rank": "Lt. Commander",
+    "position": "Security Chief",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": null,
+      "Coordination": null,
+      "Presence": null,
+      "Intellect": null,
+      "PSI": null
+    },
+    "advantages": [],
+    "disadvantages": [],
+    "skills": [],
+    "notes": "Record incomplete — awaiting Starfleet personnel update.",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  },
+  "joab-jones": {
+    "name": "Joab Jones",
+    "species": "Unknown",
+    "rank": "Ensign",
+    "position": "Helm Officer",
+    "shipId": "joshua-tree",
+    "attributes": {
+      "Fitness": null,
+      "Coordination": null,
+      "Presence": null,
+      "Intellect": null,
+      "PSI": null
+    },
+    "advantages": [],
+    "disadvantages": [],
+    "skills": [],
+    "notes": "Record incomplete — awaiting Starfleet personnel update.",
+    "ownerId": null,
+    "ownerEmail": null,
+    "status": "active"
+  }
+}

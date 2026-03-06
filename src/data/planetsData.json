@@ -1,0 +1,84 @@
+{
+  "acathla": {
+    "name": "Acathla",
+    "description": "An ancient demon world shrouded in myth and shadow. Few who approach return sane.",
+    "resources": ["Obsidian Crystals", "Dark Energy Residue"],
+    "logs": [
+      "2025-07-06: Initial scans reveal massive underground caverns.",
+      "2025-07-07: Crew experienced hallucinations near the surface."
+    ]
+  },
+  "kralik": {
+    "name": "Kralik",
+    "description": "A dense jungle planet, home to dangerous wildlife and rumored warp anomalies.",
+    "resources": ["Medicinal Flora", "Unstable Plasma Vines"],
+    "logs": [
+      "2025-07-02: First away team lost contact for 2 hours.",
+      "2025-07-03: Sample extraction successful, no fatalities."
+    ]
+  },
+  "dhoffryn": {
+    "name": "D'Hoffryn",
+    "description": "A desert planet with deep magical energy, often attracting rogue mystics.",
+    "resources": ["Arcane Dust", "Solar Gemstones"],
+    "logs": [
+      "2025-06-29: Detected anomalous energy spikes from the equator.",
+      "2025-07-01: Starfleet security alerted to cultist presence."
+    ]
+  },
+  "larconis": {
+    "name": "Larconis",
+    "description": "An icy moon orbiting a dead gas giant. Prized for rare frozen gases.",
+    "resources": ["Cryo Gas", "Frozen Helium"],
+    "logs": [
+      "2025-06-27: Mining operations halted after unexpected quake.",
+      "2025-06-28: Geological scans continue under hazardous conditions."
+    ]
+  },
+  "machida": {
+    "name": "Machida",
+    "description": "A volcanic world rich in raw power, constantly reshaping its surface.",
+    "resources": ["Molten Metals", "Thermal Crystals"],
+    "logs": [
+      "2025-06-25: Surface conditions beyond tolerable limits.",
+      "2025-06-26: New lava tubes mapped from orbit."
+    ]
+  },
+  "starbase": {
+    "name": "Starbase",
+    "description": "Main Starfleet outpost and staging ground for exploration missions.",
+    "resources": ["Refined Dilithium", "Medical Supplies"],
+    "logs": [
+      "2025-06-23: Incoming supply ship delayed by ion storm.",
+      "2025-06-24: Crew restocking and preparing for deep space ventures."
+    ]
+  },
+  "taraka": {
+    "name": "Taraka",
+    "description": "A rogue planet drifting in deep space, radiating strange signals.",
+    "resources": ["Dark Matter Fragments", "Signal Artifacts"],
+    "logs": [
+      "2025-06-20: Long-range scans pick up cryptic encoded messages.",
+      "2025-06-21: Deep space probe lost signal near surface."
+    ]
+  },
+  "lagos": {
+    "name": "Lagos",
+    "description": "A lush ocean world teeming with bioluminescent marine life.",
+    "resources": ["Bioluminescent Coral", "Rare Water Minerals"],
+    "logs": [
+      "2025-06-18: Oceanic samples confirm unique regenerative properties.",
+      "2025-06-19: Submarine research vessel dispatched for deep dive."
+    ]
+  },
+  "kakistos": {
+    "name": "Kakistos",
+    "description": "A fortress planet once home to an ancient warrior caste. Now abandoned.",
+    "resources": ["Ancient Weapons", "Titanium Alloys"],
+    "logs": [
+      "2025-06-15: Exploration team discovered old battle arenas.",
+      "2025-06-16: Artifacts retrieved, under Starfleet security lockdown."
+    ]
+  }
+}
+

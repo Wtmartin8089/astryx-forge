@@ -1,0 +1,62 @@
+@import '@fontsource/orbitron';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --lcars-orange: #ff9900;
+  --lcars-purple: #9932cc;
+  --lcars-blue: #00bfff;
+  --lcars-black: #222;
+  --lcars-light: #ffffff;
+}
+
+body {
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  background-color: black;
+  color: var(--lcars-orange);
+}
+
+input, button, textarea {
+  display: block;
+  margin: 10px 0;
+  padding: 8px;
+  font-family: 'Orbitron', sans-serif;
+  background-color: var(--lcars-black);
+  color: var(--lcars-orange);
+  border: 2px solid var(--lcars-orange);
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--lcars-blue);
+}
+
+button {
+  background-color: var(--lcars-purple);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: var(--lcars-blue);
+}
+
+.lcars-panel {
+  border: 2px solid var(--lcars-purple);
+  padding: 10px;
+  margin-top: 15px;
+  background: rgba(255, 153, 0, 0.1);
+}
+
+a {
+  color: var(--lcars-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
