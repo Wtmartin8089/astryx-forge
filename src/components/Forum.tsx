@@ -120,7 +120,7 @@ const Forum: React.FC = () => {
     setLoading(false);
   };
 
-  /* ── Add reply ── */
+  /* ── Add reply (with Computer Core interception) ── */
   const handleAddReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim() || !user || !selectedThread) return;
@@ -132,7 +132,37 @@ const Forum: React.FC = () => {
         await uploadBytes(fileRef, replyFile);
         attachmentUrl = await getDownloadURL(fileRef);
       }
+
+      // Post the player's message first
       await addReply(selectedThread.id, replyText.trim(), attachmentUrl, user);
+
+      // Check for Computer Core command
+      if (replyText.trim().toLowerCase().startsWith("computer,")) {
+        try {
+          const res = await fetch("/api/computerCommand", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: replyText.trim(),
+              playerId: user.uid,
+              boardId: selectedBoard ?? "",
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            // Post computer response as a special STARFLEET COMPUTER reply
+            await addReply(
+              selectedThread.id,
+              data.response,
+              "",
+              { uid: "COMPUTER_CORE", email: "STARFLEET COMPUTER" },
+            );
+          }
+        } catch (computerErr) {
+          console.warn("[ComputerCore] Command failed:", computerErr);
+        }
+      }
+
       setReplyText("");
       setReplyFile(null);
     } catch (err) {
@@ -332,32 +362,45 @@ const Forum: React.FC = () => {
       {/* ── Thread View (replies) ── */}
       {selectedThread && (
         <div>
-          {replies.map((reply) => (
-            <div key={reply.id} style={styles.replyCard}>
-              <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "0.5rem",
-                fontSize: "0.8rem",
-              }}>
-                <span style={{ color: "#6699cc" }}>{reply.author}</span>
-                <span style={{ color: "#555" }}>{formatTime(reply.createdAt)}</span>
+          {replies.map((reply) => {
+            const isComputerReply = reply.author === "STARFLEET COMPUTER";
+            return isComputerReply ? (
+              <div key={reply.id} style={computerReplyStyle}>
+                <div style={computerHeaderStyle}>
+                  <span style={{ color: "#F5B942", fontFamily: "Orbitron, sans-serif", fontSize: "0.7rem", letterSpacing: "2px" }}>
+                    ◈ STARFLEET COMPUTER
+                  </span>
+                  <span style={{ color: "#3A5A80", fontSize: "0.75rem" }}>{formatTime(reply.createdAt)}</span>
+                </div>
+                <pre style={computerTextStyle}>{reply.content.replace("## STARFLEET COMPUTER\n\n", "")}</pre>
               </div>
-              <p style={{ margin: 0, color: "#ccc", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                {reply.content}
-              </p>
-              {reply.attachmentUrl && (
-                <a
-                  href={reply.attachmentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "#33cc99", fontSize: "0.8rem", marginTop: "0.5rem", display: "inline-block" }}
-                >
-                  View Attachment
-                </a>
-              )}
-            </div>
-          ))}
+            ) : (
+              <div key={reply.id} style={styles.replyCard}>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "0.5rem",
+                  fontSize: "0.8rem",
+                }}>
+                  <span style={{ color: "#6699cc" }}>{reply.author}</span>
+                  <span style={{ color: "#555" }}>{formatTime(reply.createdAt)}</span>
+                </div>
+                <p style={{ margin: 0, color: "#ccc", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                  {reply.content}
+                </p>
+                {reply.attachmentUrl && (
+                  <a
+                    href={reply.attachmentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#33cc99", fontSize: "0.8rem", marginTop: "0.5rem", display: "inline-block" }}
+                  >
+                    View Attachment
+                  </a>
+                )}
+              </div>
+            );
+          })}
 
           {/* Reply form */}
           <form onSubmit={handleAddReply} style={{ ...styles.formCard, marginTop: "1rem" }}>
@@ -390,6 +433,36 @@ const Forum: React.FC = () => {
 /* ================================================================
    STYLES
    ================================================================ */
+/* ── Computer Core reply styles ── */
+const computerReplyStyle: React.CSSProperties = {
+  backgroundColor: "#07152B",
+  border: "1px solid #F5B94240",
+  borderLeft: "3px solid #F5B942",
+  borderRadius: "4px",
+  padding: "0.85rem 1rem",
+  marginBottom: "0.75rem",
+  boxShadow: "0 0 12px #F5B94210",
+};
+
+const computerHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "0.65rem",
+  paddingBottom: "0.5rem",
+  borderBottom: "1px solid #1E3A5F",
+};
+
+const computerTextStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#C8D8F0",
+  fontFamily: "monospace",
+  fontSize: "0.85rem",
+  lineHeight: 1.7,
+  whiteSpace: "pre-wrap",
+  wordBreak: "break-word",
+};
+
 const styles: Record<string, React.CSSProperties> = {
   lcarsBar: {
     height: "6px",
