@@ -17,6 +17,7 @@ import CrewPage from "./components/CrewPage";
 import ChooseCharacter from "./components/ChooseCharacter";
 import CreateCampaign from "./pages/CreateCampaign";
 import CampaignMap from "./components/CampaignMap";
+import SectorMap from "./components/SectorMap";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
@@ -73,6 +74,7 @@ function App() {
         <Route path="/crew/:crewSlug" element={<CrewPage />} />
         <Route path="/create-campaign" element={<CreateCampaign />} />
         <Route path="/map/:campaignId" element={<CampaignMap />} />
+        <Route path="/sector/:sectorId" element={<SectorMap />} />
         <Route path="/auth" element={<AuthPanel />} />
       </Routes>
     </>
