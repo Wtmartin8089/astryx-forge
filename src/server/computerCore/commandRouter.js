@@ -13,6 +13,8 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { getServerDb } from "../firebase/serverDb.js";
+import { performSystemScan } from "./scanSystem.js";
+import { generateScanReport } from "./generateScanReport.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -160,7 +162,12 @@ export async function executeComputerCommand(intentData, playerContext) {
     case "nearby_systems":
       return getNearbySystems(playerContext);
 
-    case "scan_system":
+    case "scan_system": {
+      const scanResult = await performSystemScan(playerContext);
+      const { scanType, report } = generateScanReport(scanResult);
+      return { type: "scan_system", scanType, report, systemId: scanResult.systemId };
+    }
+
     case "system_information":
       return getSystemDetails(playerContext, target);
 

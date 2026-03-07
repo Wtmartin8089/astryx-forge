@@ -17,6 +17,9 @@ export function formatComputerResponse(result) {
     case "nearby_systems":
       return formatNearbySystems(result);
 
+    case "scan_system":
+      return formatScanSystem(result);
+
     case "system_information":
       return formatSystemInformation(result);
 
@@ -44,6 +47,18 @@ export function formatComputerResponse(result) {
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
+
+function formatScanSystem({ report, scanType }) {
+  // report already contains full Starfleet-voice text from generateScanReport
+  const clarity = {
+    clear:     "SENSOR CLARITY: FULL RESOLUTION",
+    partial:   "SENSOR CLARITY: PARTIAL",
+    distorted: "SENSOR CLARITY: DISTORTED",
+    none:      "SENSOR CLARITY: NO SIGNAL",
+  }[scanType] ?? "";
+
+  return HEADER + (clarity ? `${clarity}\n\n` : "") + report;
+}
 
 function formatNearbySystems({ discovered, frontier, total }) {
   if (total === 0) {
