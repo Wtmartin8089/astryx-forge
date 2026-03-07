@@ -6,6 +6,7 @@
 import { createRng } from "./seededRandom.js";
 import { generatePlanet } from "./generatePlanet.js";
 import { systemSeed } from "./seedGenerator.js";
+import { generateAnomaly, ANOMALY_SCALE_TABLE } from "../anomalies/generateAnomaly.js";
 
 const STAR_TYPES = [
   { value: "Yellow Dwarf (G)",  weight: 30 },
@@ -17,19 +18,6 @@ const STAR_TYPES = [
   { value: "Binary System",     weight: 5  },
   { value: "Pulsar",            weight: 1  },
   { value: "Red Supergiant",    weight: 1  },
-];
-
-const ANOMALY_TYPES = [
-  { value: "none",   weight: 70 },
-  { value: "minor",  weight: 20 },
-  { value: "major",  weight: 8  },
-  { value: "rare",   weight: 2  },
-];
-
-const ANOMALY_KINDS = [
-  "Spatial rift", "Temporal distortion", "Dark matter filament",
-  "Tachyon surge", "Subspace fold", "Gravitational lens",
-  "Ion storm", "Quantum singularity", "Pulsar radiation burst",
 ];
 
 /**
@@ -46,7 +34,7 @@ export function generateSystem(sectorId, seed, index, sectorOrigin = { x: 0, y: 
   const starType      = rng.weighted(STAR_TYPES);
   const planetCount   = rng.int(2, 8);
   const asteroidBelts = rng.int(0, 2);
-  const anomalyType   = rng.weighted(ANOMALY_TYPES);
+  const anomalyScale  = rng.weighted(ANOMALY_SCALE_TABLE);
 
   const coords = rng.coordInSector(sectorOrigin.x, sectorOrigin.y, sectorOrigin.z);
 
@@ -60,7 +48,7 @@ export function generateSystem(sectorId, seed, index, sectorOrigin = { x: 0, y: 
     starType,
     planetCount,
     asteroidBelts,
-    anomalyPresent:    anomalyType !== "none",
+    anomalyPresent:    anomalyScale !== "none",
     masked:            true,   // Hidden from players at generation
     explorationLevel:  0,      // 0 = hidden
     xCoord:            coords.x,
@@ -76,17 +64,12 @@ export function generateSystem(sectorId, seed, index, sectorOrigin = { x: 0, y: 
     generatePlanet(null, sysSeed, i)
   );
 
-  // Generate anomaly document if present
-  let anomaly = null;
-  if (anomalyType !== "none") {
-    anomaly = {
-      systemId: null, // set after system is saved
-      type: rng.pick(ANOMALY_KINDS),
-      scale: anomalyType,
-      investigationLevel: 0,
-      status: "undetected",
-    };
-  }
+  // Generate full anomaly document using dedicated generator
+  const anomaly = generateAnomaly({
+    systemId: null,     // filled in after system is saved to Firestore
+    scale:    anomalyScale,
+    seed:     sysSeed,  // deterministic: same system always gets the same anomaly
+  });
 
   return { system, planets, anomaly };
 }
