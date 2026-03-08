@@ -130,10 +130,10 @@ const ShipPage = () => {
     .map(([slug, member]) => ({ slug, member }));
 
   // TEMP DEBUG
-  console.log("[ShipPage] shipSlug:", shipSlug);
-  console.log("[ShipPage] allFirebaseCrew count:", Object.keys(allFirebaseCrew).length);
-  console.log("[ShipPage] all shipIds in Firestore:", [...new Set(Object.values(allFirebaseCrew).map(m => m.shipId))]);
-  console.log("[ShipPage] shipCrew count:", shipCrew.length);
+  console.error("[ShipPage] shipSlug:", shipSlug);
+  console.error("[ShipPage] allFirebaseCrew count:", Object.keys(allFirebaseCrew).length);
+  console.error("[ShipPage] all shipIds in Firestore:", [...new Set(Object.values(allFirebaseCrew).map(m => m.shipId))]);
+  console.error("[ShipPage] shipCrew count:", shipCrew.length);
 
   const flashSaved = () => {
     if (savedTimer[0]) clearTimeout(savedTimer[0]);
