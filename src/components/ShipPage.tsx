@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
-import { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, where } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { getShips, saveShips, getCrew, saveCrew } from "../utils/gameData";
-import { subscribeToAllCrew, updateCharacter } from "../utils/crewFirestore";
+import { updateCharacter } from "../utils/crewFirestore";
 import type { ShipData, ShipWeapon, CrewMember } from "../types/fleet";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
 import { LUG_SHIP_CLASSES } from "../data/lugShipClasses";
@@ -43,6 +43,7 @@ const ShipPage = () => {
 
   const [shipsData, setShipsData] = useState<Record<string, ShipData>>(() => getShips());
   const [crewData, setCrewData] = useState<Record<string, CrewMember>>(() => getCrew());
+  const [shipCrew, setShipCrew] = useState<{ slug: string; member: CrewMember }[]>([]);
   const [allFirebaseCrew, setAllFirebaseCrew] = useState<Record<string, CrewMember>>({});
   const [editMode, setEditMode] = useState<boolean>(() => searchParams.get("edit") === "true");
 
@@ -64,9 +65,28 @@ const ShipPage = () => {
     return () => clearTimeout(timer);
   }, [shipSlug]);
 
-  // All crew listener — same source as Crew Roster, filtered in memory per ship
+  // Direct Firestore listener for this ship's crew
   useEffect(() => {
-    const unsubscribe = subscribeToAllCrew(setAllFirebaseCrew);
+    if (!shipSlug) return;
+    const q = query(collection(db, "crew"), where("shipId", "==", shipSlug));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const crew = snapshot.docs.map((d) => ({
+        slug: d.id,
+        member: d.data() as CrewMember,
+      }));
+      setShipCrew(crew);
+    });
+    return () => unsubscribe();
+  }, [shipSlug]);
+
+  // All crew listener for the assign-crew dropdown in edit mode
+  useEffect(() => {
+    const q = query(collection(db, "crew"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const result: Record<string, CrewMember> = {};
+      snapshot.docs.forEach((d) => { result[d.id] = d.data() as CrewMember; });
+      setAllFirebaseCrew(result);
+    });
     return () => unsubscribe();
   }, []);
 
@@ -124,10 +144,6 @@ const ShipPage = () => {
 
   const colors = shipColors[shipSlug!] || { primary: "#333", accent: "#ff9900" };
 
-  // Same filter logic as Crew Roster — guaranteed to match
-  const shipCrew = Object.entries(allFirebaseCrew)
-    .filter(([, member]) => member.shipId === shipSlug)
-    .map(([slug, member]) => ({ slug, member }));
 
 
   const flashSaved = () => {
