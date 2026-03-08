@@ -1,44 +1,48 @@
 import { Link } from "react-router-dom";
 import Header from "./Header";
 
-type Status = "active" | "coming-soon" | "planned";
+type Status = "flagship" | "in-development" | "planned";
 
-const worlds: { title: string; desc: string; status: Status; slug: string }[] = [
+const worlds: { title: string; desc: string; status: Status; slug: string; btnText: string }[] = [
   {
-    title: "Fleet Command",
-    desc: "Starship exploration and tactical campaigns.",
-    status: "active",
-    slug: "fleet-command",
+    title: "Delta Frontier Command",
+    desc: "Starship exploration and tactical campaigns in the Delta Quadrant. Command a vessel, serve aboard a crew, and expand the frontier of the Federation.",
+    status: "flagship",
+    slug: "delta-frontier-command",
+    btnText: "Enter the Frontier",
   },
   {
-    title: "Dark Nights",
-    desc: "Urban gothic vampire politics and intrigue.",
-    status: "coming-soon",
-    slug: "dark-nights",
+    title: "Midnight Dominion",
+    desc: "Ancient vampire houses wage secret wars for control of the night while humanity sleeps.",
+    status: "in-development",
+    slug: "midnight-dominion",
+    btnText: "Enter the Dominion",
   },
   {
-    title: "Galactic Conflict",
-    desc: "Space opera warfare between factions.",
+    title: "Iron Constellations",
+    desc: "Rival star empires clash in massive space battles as fleets struggle for control of the galaxy.",
     status: "planned",
-    slug: "galactic-conflict",
+    slug: "iron-constellations",
+    btnText: "Enter the Warzone",
   },
   {
-    title: "Fantasy Realms",
-    desc: "Traditional fantasy adventure worlds.",
+    title: "The Shattered Kingdoms",
+    desc: "Ancient kingdoms lie broken after devastating wars. Heroes rise to reclaim lost lands and forgotten magic.",
     status: "planned",
-    slug: "fantasy-realms",
+    slug: "shattered-kingdoms",
+    btnText: "Begin Your Quest",
   },
 ];
 
 const statusLabel: Record<Status, string> = {
-  "active": "Active",
-  "coming-soon": "Coming Soon",
+  "flagship": "Flagship Universe",
+  "in-development": "In Development",
   "planned": "Planned",
 };
 
 const statusColor: Record<Status, string> = {
-  "active": "#F5B942",
-  "coming-soon": "#FF6A2B",
+  "flagship": "#F5B942",
+  "in-development": "#FF6A2B",
   "planned": "#4A6A90",
 };
 
@@ -48,13 +52,19 @@ export default function WorldsPage() {
       <Header />
 
       <section style={styles.hero}>
-        <h1 style={styles.title}>RPG Worlds</h1>
-        <p style={styles.subtitle}>Choose your universe and forge your legend.</p>
+        <h1 style={styles.title}>Explore the Universes of Astryx Forge</h1>
+        <p style={styles.subtitle}>Choose a world and begin your story.</p>
       </section>
 
       <section style={styles.grid}>
         {worlds.map((w) => (
-          <div key={w.slug} style={styles.card}>
+          <div
+            key={w.slug}
+            style={{
+              ...styles.card,
+              ...(w.status === "flagship" ? styles.cardFlagship : {}),
+            }}
+          >
             <div style={styles.cardTop}>
               <span
                 style={{
@@ -68,19 +78,19 @@ export default function WorldsPage() {
             </div>
             <h2 style={styles.cardTitle}>{w.title}</h2>
             <p style={styles.cardDesc}>{w.desc}</p>
-            {w.status === "active" ? (
-              <Link to={`/worlds/${w.slug}`} style={styles.cardLink}>
-                Enter World →
+            {w.status === "flagship" ? (
+              <Link to="/" style={styles.cardLink}>
+                {w.btnText} →
               </Link>
             ) : (
-              <span style={styles.cardLinkDisabled}>Enter World →</span>
+              <span style={styles.cardLinkDisabled}>{w.btnText} →</span>
             )}
           </div>
         ))}
       </section>
 
       <footer style={styles.footer}>
-        <span style={styles.footerText}>© 2025 Astryx Forge · All rights reserved</span>
+        <span style={styles.footerText}>© 2026 Astryx Forge · All rights reserved</span>
       </footer>
     </div>
   );
@@ -129,6 +139,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: "0.75rem",
+  },
+  cardFlagship: {
+    border: "1px solid #F5B942",
+    boxShadow: "0 0 20px #F5B94220",
   },
   cardTop: {
     display: "flex",
