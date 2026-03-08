@@ -17,9 +17,24 @@ const FleetRegistry = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setShips(getShips());
+    const loadShips = () => {
+      setShips(getShips());
+    };
+    const syncOnFocus = () => {
+      loadShips();
+    };
+
+    loadShips();
     const timer = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(timer);
+
+    window.addEventListener("storage", loadShips);
+    window.addEventListener("focus", syncOnFocus);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("storage", loadShips);
+      window.removeEventListener("focus", syncOnFocus);
+    };
   }, []);
 
   const handleAddShip = () => {
@@ -206,7 +221,7 @@ const FleetRegistry = () => {
                       fontSize: "0.75rem",
                       color: "#888",
                     }}>
-                      {ship.crew ? `Crew: ${ship.crew}` : "Crew: Classified"}
+                      Crew: {ship.crewIds?.length || 0}
                     </span>
                   </div>
                 </div>
