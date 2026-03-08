@@ -5,6 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { getShips, saveShips, getCrew, saveCrew } from "../utils/gameData";
+import { subscribeToShipCrew, subscribeToAllCrew, updateCharacter } from "../utils/crewFirestore";
 import type { ShipData, ShipWeapon, CrewMember } from "../types/fleet";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
 import { LUG_SHIP_CLASSES } from "../data/lugShipClasses";
@@ -42,6 +43,8 @@ const ShipPage = () => {
 
   const [shipsData, setShipsData] = useState<Record<string, ShipData>>(() => getShips());
   const [crewData, setCrewData] = useState<Record<string, CrewMember>>(() => getCrew());
+  const [firebaseCrew, setFirebaseCrew] = useState<Record<string, CrewMember>>({});
+  const [allFirebaseCrew, setAllFirebaseCrew] = useState<Record<string, CrewMember>>({});
   const [editMode, setEditMode] = useState<boolean>(() => searchParams.get("edit") === "true");
 
   const [visible, setVisible] = useState(false);
@@ -61,6 +64,19 @@ const ShipPage = () => {
     const timer = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(timer);
   }, [shipSlug]);
+
+  // Real-time crew listener — keeps crew manifest in sync with Crew Roster page
+  useEffect(() => {
+    if (!shipSlug) return;
+    const unsubscribe = subscribeToShipCrew(shipSlug, setFirebaseCrew);
+    return () => unsubscribe();
+  }, [shipSlug]);
+
+  // All crew listener — drives the "assign crew" dropdown in edit mode
+  useEffect(() => {
+    const unsubscribe = subscribeToAllCrew(setAllFirebaseCrew);
+    return () => unsubscribe();
+  }, []);
 
   // Real-time comms board listener
   useEffect(() => {
@@ -116,9 +132,8 @@ const ShipPage = () => {
 
   const colors = shipColors[shipSlug!] || { primary: "#333", accent: "#ff9900" };
 
-  const shipCrew = (shipData.crewIds || [])
-    .map((id) => ({ slug: id, member: crewData[id] }))
-    .filter((c) => c.member);
+  // Derived from real-time Firestore listener — always matches Crew Roster page
+  const shipCrew = Object.entries(firebaseCrew).map(([slug, member]) => ({ slug, member }));
 
   const flashSaved = () => {
     if (savedTimer[0]) clearTimeout(savedTimer[0]);
@@ -156,54 +171,32 @@ const ShipPage = () => {
     updateField("weapons", weapons);
   };
 
-  // Crew assignment helpers
-  const unassignCrew = (crewSlug: string) => {
-    const nextCrew = {
-      ...crewData,
-      [crewSlug]: { ...crewData[crewSlug], shipId: "" },
-    };
-    const nextShips = {
-      ...shipsData,
-      [shipSlug!]: {
-        ...shipData,
-        crewIds: (shipData.crewIds || []).filter((id) => id !== crewSlug),
-      },
-    };
-    setCrewData(nextCrew);
-    setShipsData(nextShips);
-    saveCrew(nextCrew);
-    saveShips(nextShips);
-    flashSaved();
+  // Crew assignment helpers — write to Firestore so all pages stay in sync
+  const unassignCrew = async (crewSlug: string) => {
+    try {
+      await updateCharacter(crewSlug, { shipId: "" });
+      flashSaved();
+    } catch (err) {
+      console.error("Failed to unassign crew member:", err);
+    }
   };
 
-  const assignCrew = (crewSlug: string) => {
+  const assignCrew = async (crewSlug: string) => {
     if (!crewSlug) return;
-    const nextCrew = {
-      ...crewData,
-      [crewSlug]: { ...crewData[crewSlug], shipId: shipSlug! },
-    };
-    const currentIds = shipData.crewIds || [];
-    const nextShips = {
-      ...shipsData,
-      [shipSlug!]: {
-        ...shipData,
-        crewIds: currentIds.includes(crewSlug) ? currentIds : [...currentIds, crewSlug],
-      },
-    };
-    setCrewData(nextCrew);
-    setShipsData(nextShips);
-    saveCrew(nextCrew);
-    saveShips(nextShips);
-    setAssignSelectValue("");
-    flashSaved();
+    try {
+      await updateCharacter(crewSlug, { shipId: shipSlug! });
+      setAssignSelectValue("");
+      flashSaved();
+    } catch (err) {
+      console.error("Failed to assign crew member:", err);
+    }
   };
 
-  // Unassigned crew: those whose shipId is "" or whose shipId doesn't match any ship key
+  // Unassigned crew derived from Firestore — crew whose shipId is blank or unrecognized
   const shipKeys = Object.keys(shipsData);
-  const unassignedCrew = Object.entries(crewData).filter(
-    ([slug, member]) =>
-      (member.shipId === "" || !shipKeys.includes(member.shipId)) &&
-      !(shipData.crewIds || []).includes(slug)
+  const unassignedCrew = Object.entries(allFirebaseCrew).filter(
+    ([, member]) =>
+      member.shipId === "" || (!shipKeys.includes(member.shipId) && member.shipId !== "starbase")
   );
 
   const handleClassChange = (val: string) => {
