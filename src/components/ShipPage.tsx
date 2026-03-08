@@ -888,6 +888,11 @@ const ShipPage = () => {
           Crew Manifest
         </h2>
 
+        {/* TEMP DEBUG — remove after diagnosis */}
+        <p style={{ color: "#ff0", fontSize: "0.7rem", marginBottom: "0.5rem" }}>
+          DEBUG: shipSlug="{shipSlug}" | allCrew={Object.keys(allFirebaseCrew).length} | shipIds=[{[...new Set(Object.values(allFirebaseCrew).map(m => m.shipId))].join(", ")}] | matched={shipCrew.length}
+        </p>
+
         {shipCrew.length > 0 ? (
           shipCrew.map(({ slug, member }, i) => (
             <div
