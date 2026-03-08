@@ -4,7 +4,7 @@ import { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, where 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
-import { getShips, saveShips, getCrew, saveCrew } from "../utils/gameData";
+import { getShips, saveShips } from "../utils/gameData";
 import { updateCharacter } from "../utils/crewFirestore";
 import type { ShipData, ShipWeapon, CrewMember } from "../types/fleet";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
@@ -42,7 +42,6 @@ const ShipPage = () => {
   const [searchParams] = useSearchParams();
 
   const [shipsData, setShipsData] = useState<Record<string, ShipData>>(() => getShips());
-  const [crewData, setCrewData] = useState<Record<string, CrewMember>>(() => getCrew());
   const [shipCrew, setShipCrew] = useState<{ slug: string; member: CrewMember }[]>([]);
   const [allFirebaseCrew, setAllFirebaseCrew] = useState<Record<string, CrewMember>>({});
   const [editMode, setEditMode] = useState<boolean>(() => searchParams.get("edit") === "true");
