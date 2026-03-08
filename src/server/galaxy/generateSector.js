@@ -7,6 +7,7 @@
 import { createRng } from "./seededRandom.js";
 import { generateSystem } from "./generateSystem.js";
 import { sectorSeed } from "./seedGenerator.js";
+import { generateSectorContent } from "./generateSectorContent.js";
 
 const SYSTEM_COUNT_TABLE = [
   { value: 2, weight: 20 },
@@ -54,6 +55,7 @@ export function generateSector(campaignId, designation) {
   const systemCount = rng.weighted(SYSTEM_COUNT_TABLE);
   const trait       = rng.pick(SECTOR_TRAITS);
   const origin      = designationToOrigin(designation);
+  const content     = generateSectorContent(seed);
 
   const sector = {
     campaignId,
@@ -66,6 +68,7 @@ export function generateSector(campaignId, designation) {
     generated:     true,
     generatedSeed: seed,
     generatedAt:   null, // set to serverTimestamp() on save
+    ...content,
   };
 
   const allSystems   = [];
