@@ -129,11 +129,6 @@ const ShipPage = () => {
     .filter(([, member]) => member.shipId === shipSlug)
     .map(([slug, member]) => ({ slug, member }));
 
-  // TEMP DEBUG
-  console.error("[ShipPage] shipSlug:", shipSlug);
-  console.error("[ShipPage] allFirebaseCrew count:", Object.keys(allFirebaseCrew).length);
-  console.error("[ShipPage] all shipIds in Firestore:", [...new Set(Object.values(allFirebaseCrew).map(m => m.shipId))]);
-  console.error("[ShipPage] shipCrew count:", shipCrew.length);
 
   const flashSaved = () => {
     if (savedTimer[0]) clearTimeout(savedTimer[0]);
@@ -893,11 +888,6 @@ const ShipPage = () => {
         }}>
           Crew Manifest
         </h2>
-
-        {/* TEMP DEBUG — remove after diagnosis */}
-        <p style={{ color: "#ff0", fontSize: "0.7rem", marginBottom: "0.5rem" }}>
-          DEBUG: shipSlug="{shipSlug}" | allCrew={Object.keys(allFirebaseCrew).length} | shipIds=[{[...new Set(Object.values(allFirebaseCrew).map(m => m.shipId))].join(", ")}] | matched={shipCrew.length}
-        </p>
 
         {shipCrew.length > 0 ? (
           shipCrew.map(({ slug, member }, i) => (
