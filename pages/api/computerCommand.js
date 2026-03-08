@@ -1,51 +1,79 @@
 /**
  * POST /api/computerCommand
- * Processes a Starfleet Computer command and returns a formatted response.
+ * Processes a Starfleet Computer command with short-term per-ship memory.
  *
- * Body: { message: string, playerId: string, boardId?: string }
+ * Body: {
+ *   command?: string,
+ *   message?: string,
+ *   shipId?: string,
+ *   boardId?: string,
+ *   playerId?: string
+ * }
  */
 
-import { detectComputerCommand } from "../../src/server/computerCore/detectComputerCommand.js";
-import { parseIntent }           from "../../src/server/computerCore/parseIntent.js";
-import { executeComputerCommand } from "../../src/server/computerCore/commandRouter.js";
+import { routeCommand } from "../../src/server/computerCore/commandRouter.js";
+import { executeCommand } from "../../src/server/computerCore/commandExecutor.js";
 import { formatComputerResponse } from "../../src/server/computerCore/formatComputerResponse.js";
+import { getMemory } from "../../src/server/computerCore/computerMemory.js";
+
+function normalizeCommand(text) {
+  const raw = String(text || "").trim();
+  if (!raw) return "";
+
+  // Accept either raw command or prefixed style: "Computer, ..."
+  if (raw.toLowerCase().startsWith("computer,")) {
+    return raw.slice("computer,".length).trim();
+  }
+
+  return raw;
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { message, playerId, boardId = "" } = req.body ?? {};
+  const {
+    command,
+    message,
+    shipId,
+    boardId = "",
+    playerId = "",
+  } = req.body ?? {};
 
-  if (!message || typeof message !== "string") {
-    return res.status(400).json({ error: "message is required." });
+  const commandText = normalizeCommand(command ?? message);
+  const resolvedShipId = shipId || boardId;
+
+  if (!commandText) {
+    return res.status(400).json({ error: "command is required." });
   }
 
-  // ── 1. Detect command ──
-  const detection = detectComputerCommand(message);
-  if (!detection.isComputerCommand) {
-    return res.status(400).json({ error: "Not a computer command." });
+  if (!resolvedShipId || typeof resolvedShipId !== "string") {
+    return res.status(400).json({ error: "shipId is required." });
   }
 
-  // ── 2. Parse intent ──
-  const intentData = parseIntent(detection.commandText);
+  const memory = getMemory(resolvedShipId);
+  const action = routeCommand(commandText, memory);
 
-  // ── 3. Execute against game data ──
   let result;
   try {
-    result = await executeComputerCommand(intentData, { playerId, boardId });
+    result = await executeCommand(action, {
+      shipId: resolvedShipId,
+      boardId: boardId || resolvedShipId,
+      playerId,
+      command: commandText,
+    });
   } catch (err) {
-    console.error("[computerCommand] Router error:", err);
-    // Return a graceful computer response rather than a raw error
-    result = { type: "unknown" };
+    console.error("[computerCommand] Execution error:", err);
+    result = { type: "unknown", message: "Computer core execution fault." };
   }
 
-  // ── 4. Format as Starfleet computer output ──
   const response = formatComputerResponse(result);
 
   return res.status(200).json({
     response,
-    intent: intentData.intent,
-    target: intentData.target,
+    action,
+    result,
+    memory: getMemory(resolvedShipId),
   });
 }

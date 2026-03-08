@@ -7,7 +7,7 @@
 const HEADER = "## STARFLEET COMPUTER\n\n";
 
 /**
- * @param {object} result  Output from executeComputerCommand()
+ * @param {object} result  Output from executeCommand()
  * @returns {string}  Formatted plain-text response
  */
 export function formatComputerResponse(result) {
@@ -19,6 +19,12 @@ export function formatComputerResponse(result) {
 
     case "scan_system":
       return formatScanSystem(result);
+
+    case "anomaly_analysis":
+      return formatAnomalyAnalysis(result);
+
+    case "crew_manifest":
+      return formatCrewManifest(result);
 
     case "system_information":
       return formatSystemInformation(result);
@@ -40,8 +46,8 @@ export function formatComputerResponse(result) {
       return (
         HEADER +
         "Unable to determine request. Please specify command.\n\n" +
-        "Supported commands: nearby systems · scan system · plot course · " +
-        "mission report · archive search · ship status"
+        "Supported commands: scan anomaly · analyze it · compare it with archive · " +
+        "crew · status · mission report"
       );
   }
 }
@@ -58,6 +64,36 @@ function formatScanSystem({ report, scanType }) {
   }[scanType] ?? "";
 
   return HEADER + (clarity ? `${clarity}\n\n` : "") + report;
+}
+
+function formatAnomalyAnalysis({ summary, findings }) {
+  let out = HEADER;
+  out += "ANOMALY ANALYSIS\n\n";
+  out += `${summary ?? "No analytical summary available."}\n\n`;
+
+  if (Array.isArray(findings) && findings.length > 0) {
+    out += "FINDINGS:\n";
+    findings.forEach((item) => {
+      out += `  • ${item}\n`;
+    });
+  }
+
+  return out.trim();
+}
+
+function formatCrewManifest({ shipId, crew }) {
+  let out = HEADER;
+  out += `CREW MANIFEST${shipId ? ` — ${shipId}` : ""}\n\n`;
+
+  if (!Array.isArray(crew) || crew.length === 0) {
+    return out + "No assigned crew records found.";
+  }
+
+  crew.forEach((member, idx) => {
+    out += `${idx + 1}. ${member.rank} ${member.name} — ${member.position}\n`;
+  });
+
+  return out.trim();
 }
 
 function formatNearbySystems({ discovered, frontier, total }) {
