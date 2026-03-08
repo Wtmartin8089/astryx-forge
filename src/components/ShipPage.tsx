@@ -5,7 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { getShips, saveShips, getCrew, saveCrew } from "../utils/gameData";
-import { subscribeToShipCrew, subscribeToAllCrew, updateCharacter } from "../utils/crewFirestore";
+import { subscribeToAllCrew, updateCharacter } from "../utils/crewFirestore";
 import type { ShipData, ShipWeapon, CrewMember } from "../types/fleet";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
 import { LUG_SHIP_CLASSES } from "../data/lugShipClasses";
@@ -43,7 +43,6 @@ const ShipPage = () => {
 
   const [shipsData, setShipsData] = useState<Record<string, ShipData>>(() => getShips());
   const [crewData, setCrewData] = useState<Record<string, CrewMember>>(() => getCrew());
-  const [firebaseCrew, setFirebaseCrew] = useState<Record<string, CrewMember>>({});
   const [allFirebaseCrew, setAllFirebaseCrew] = useState<Record<string, CrewMember>>({});
   const [editMode, setEditMode] = useState<boolean>(() => searchParams.get("edit") === "true");
 
@@ -65,14 +64,7 @@ const ShipPage = () => {
     return () => clearTimeout(timer);
   }, [shipSlug]);
 
-  // Real-time crew listener — keeps crew manifest in sync with Crew Roster page
-  useEffect(() => {
-    if (!shipSlug) return;
-    const unsubscribe = subscribeToShipCrew(shipSlug, setFirebaseCrew);
-    return () => unsubscribe();
-  }, [shipSlug]);
-
-  // All crew listener — drives the "assign crew" dropdown in edit mode
+  // All crew listener — same source as Crew Roster, filtered in memory per ship
   useEffect(() => {
     const unsubscribe = subscribeToAllCrew(setAllFirebaseCrew);
     return () => unsubscribe();
@@ -132,8 +124,10 @@ const ShipPage = () => {
 
   const colors = shipColors[shipSlug!] || { primary: "#333", accent: "#ff9900" };
 
-  // Derived from real-time Firestore listener — always matches Crew Roster page
-  const shipCrew = Object.entries(firebaseCrew).map(([slug, member]) => ({ slug, member }));
+  // Same filter logic as Crew Roster — guaranteed to match
+  const shipCrew = Object.entries(allFirebaseCrew)
+    .filter(([, member]) => member.shipId === shipSlug)
+    .map(([slug, member]) => ({ slug, member }));
 
   const flashSaved = () => {
     if (savedTimer[0]) clearTimeout(savedTimer[0]);
