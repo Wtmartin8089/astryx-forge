@@ -44,6 +44,7 @@ export type CrewMember = {
   disadvantages: string[];
   skills: string[];
   notes: string;
+  biography: string;
   ownerId: string | null;
   ownerEmail: string | null;
   status: "active" | "pending";

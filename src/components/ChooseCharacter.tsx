@@ -395,6 +395,7 @@ const ChooseCharacter = () => {
       disadvantages: form.disadvantages,
       skills: [],
       notes: form.notes.trim(),
+      biography: "",
       ownerId: user.uid,
       ownerEmail: user.email ?? "",
       status: "pending",

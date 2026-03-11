@@ -1299,6 +1299,49 @@ const CrewPage = () => {
         </div>
       )}
 
+      {/* Biography Panel */}
+      {(editMode || member.biography) && (
+        <div
+          style={{
+            backgroundColor: "#111",
+            border: "2px solid #6699cc",
+            borderRadius: "0 30px 0 0",
+            padding: "1.5rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <h2
+            style={{
+              color: "#6699cc",
+              fontSize: "0.85rem",
+              letterSpacing: "2px",
+              marginBottom: "0.75rem",
+              textTransform: "uppercase",
+            }}
+          >
+            Biographical Information
+          </h2>
+          {editMode ? (
+            <textarea
+              value={member.biography ?? ""}
+              placeholder="Character biography..."
+              name="biography"
+              rows={5}
+              onChange={(e) => handleFieldChange("biography", e.target.value)}
+              style={{
+                ...inputStyle("#6699cc"),
+                resize: "vertical",
+                lineHeight: "1.6",
+              }}
+            />
+          ) : (
+            <p style={{ color: "#aaa", lineHeight: "1.6", fontSize: "0.9rem", margin: 0, whiteSpace: "pre-wrap" }}>
+              {member.biography}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Edit-mode action buttons */}
       {editMode && (
         <div

@@ -248,10 +248,10 @@ const PersonnelProfile = () => {
         marginBottom: "1.5rem",
       }}>
         <h3 style={{ color: rankColor, fontSize: "0.75rem", letterSpacing: "2px", textTransform: "uppercase", margin: "0 0 1rem" }}>
-          Biography
+          Biographical Information
         </h3>
         <p style={{ color: "#aaa", fontSize: "0.9rem", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>
-          {member.notes?.trim() || "No biographical data on file."}
+          {member.biography?.trim() || "No biography available."}
         </p>
       </div>
 

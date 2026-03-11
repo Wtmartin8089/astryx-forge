@@ -3,7 +3,7 @@ import defaultCrewJson from "../data/crewData.json";
 import type { ShipData, CrewMember } from "../types/fleet";
 
 const defaultShips = defaultShipsJson as Record<string, ShipData>;
-const defaultCrew = defaultCrewJson as Record<string, CrewMember>;
+const defaultCrew = defaultCrewJson as unknown as Record<string, CrewMember>;
 
 export function getShips(): Record<string, ShipData> {
   const saved = localStorage.getItem("shipsData");
