@@ -41,6 +41,9 @@ const NavBar = () => {
       <Link to="/crew" style={linkStyle("/crew")}>
         Crew
       </Link>
+      <Link to="/personnel" style={linkStyle("/personnel")}>
+        Personnel
+      </Link>
       <Link to="/choose-character" style={linkStyle("/choose-character")}>
         Join Crew
       </Link>
