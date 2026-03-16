@@ -50,6 +50,9 @@ const NavBar = () => {
 <Link to="/stardate" style={linkStyle("/stardate")}>
         Stardate
       </Link>
+      <Link to="/missions" style={linkStyle("/missions")}>
+        Missions
+      </Link>
       <Link to="/forum" style={linkStyle("/forum")}>
         Forum
       </Link>

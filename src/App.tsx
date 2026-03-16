@@ -22,6 +22,7 @@ import PersonnelDatabase from "./components/PersonnelDatabase";
 import PersonnelProfile from "./components/PersonnelProfile";
 import AwardsConsole from "./components/admin/AwardsConsole";
 import TransmissionsConsole from "./components/admin/TransmissionsConsole";
+import MissionBoard from "./components/MissionBoard";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
@@ -80,6 +81,7 @@ function App() {
         <Route path="/personnel/:crewSlug" element={<PersonnelProfile />} />
         <Route path="/admin/awards" element={<AwardsConsole />} />
         <Route path="/admin/transmissions" element={<TransmissionsConsole />} />
+        <Route path="/missions" element={<MissionBoard />} />
         <Route path="/create-campaign" element={<CreateCampaign />} />
         <Route path="/map/:campaignId" element={<CampaignMap />} />
         <Route path="/sector/:sectorId" element={<SectorMap />} />
