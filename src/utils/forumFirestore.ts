@@ -1,3 +1,8 @@
+/**
+ * forumFirestore.ts
+ * All forum data lives in the `forum` collection, keyed by `shipId`.
+ * Category values match forumService.ts: "general" | "mission" | "engineering" | "lounge"
+ */
 import {
   collection,
   addDoc,
@@ -15,15 +20,20 @@ import {
 import { db } from "../firebase/firebaseConfig";
 import type { ForumCategoryId } from "../data/forumCategories";
 
+const COLLECTION = "forum";
+
 export interface ForumThread {
   id: string;
   title: string;
-  boardId: string;
+  shipId: string;   // was boardId — now matches the `forum` collection field
+  boardId?: string; // legacy alias kept for compatibility
   category: ForumCategoryId;
   author: string;
-  authorUid: string;
+  authorUid?: string;
+  content?: string;
   createdAt: Timestamp | null;
   lastReplyAt: Timestamp | null;
+  lastActivity?: Timestamp | null;
   replyCount: number;
   pinned: boolean;
   missionId?: string;
@@ -38,31 +48,51 @@ export interface ForumReply {
   createdAt: Timestamp | null;
 }
 
-const threadsCol = collection(db, "forumThreads");
+// ── Thread counts ─────────────────────────────────────────────────────────────
+
+export function subscribeToThreadCounts(
+  boardId: string,
+  callback: (counts: Record<string, number>) => void,
+): () => void {
+  const q = query(collection(db, COLLECTION), where("shipId", "==", boardId));
+  return onSnapshot(q, (snapshot) => {
+    const counts: Record<string, number> = {};
+    snapshot.docs.forEach((d) => {
+      const cat = d.data().category as string;
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    console.log("[Forum] Thread counts for", boardId, counts);
+    callback(counts);
+  });
+}
+
+// ── Thread list ───────────────────────────────────────────────────────────────
 
 export function subscribeToThreads(
   boardId: string,
   category: ForumCategoryId,
   callback: (threads: ForumThread[]) => void,
 ): () => void {
-  // No orderBy — avoids composite index requirement. Sort client-side.
   const q = query(
-    threadsCol,
-    where("boardId", "==", boardId),
+    collection(db, COLLECTION),
+    where("shipId", "==", boardId),
     where("category", "==", category),
   );
   return onSnapshot(q, (snapshot) => {
     const threads = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as ForumThread);
-    // Pinned first, then most-recently-replied
+    console.log("Loaded forum threads:", threads);
+    // Pinned first, then newest
     threads.sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-      const aTime = a.lastReplyAt?.toDate?.()?.getTime() ?? 0;
-      const bTime = b.lastReplyAt?.toDate?.()?.getTime() ?? 0;
+      const aTime = (a.lastReplyAt ?? a.lastActivity)?.toDate?.()?.getTime() ?? 0;
+      const bTime = (b.lastReplyAt ?? b.lastActivity)?.toDate?.()?.getTime() ?? 0;
       return bTime - aTime;
     });
     callback(threads);
   });
 }
+
+// ── Create thread (user-initiated) ────────────────────────────────────────────
 
 export async function createThread(
   boardId: string,
@@ -74,19 +104,21 @@ export async function createThread(
   const now = serverTimestamp();
   const authorName = user.email || "Anonymous";
 
-  const threadRef = await addDoc(threadsCol, {
+  const threadRef = await addDoc(collection(db, COLLECTION), {
     title,
-    boardId,
+    shipId: boardId,
     category,
     author: authorName,
     authorUid: user.uid,
+    content: firstReplyContent,
     createdAt: now,
     lastReplyAt: now,
+    lastActivity: now,
     replyCount: 1,
     pinned: false,
   });
 
-  await addDoc(collection(db, "forumThreads", threadRef.id, "replies"), {
+  await addDoc(collection(db, COLLECTION, threadRef.id, "replies"), {
     content: firstReplyContent,
     author: authorName,
     authorUid: user.uid,
@@ -97,12 +129,14 @@ export async function createThread(
   return threadRef.id;
 }
 
+// ── Replies ───────────────────────────────────────────────────────────────────
+
 export function subscribeToReplies(
   threadId: string,
   callback: (replies: ForumReply[]) => void,
 ): () => void {
   const q = query(
-    collection(db, "forumThreads", threadId, "replies"),
+    collection(db, COLLECTION, threadId, "replies"),
     orderBy("createdAt", "asc"),
   );
   return onSnapshot(q, (snapshot) => {
@@ -120,7 +154,7 @@ export async function addReply(
 ): Promise<void> {
   const authorName = user.email || "Anonymous";
 
-  await addDoc(collection(db, "forumThreads", threadId, "replies"), {
+  await addDoc(collection(db, COLLECTION, threadId, "replies"), {
     content,
     author: authorName,
     authorUid: user.uid,
@@ -128,43 +162,48 @@ export async function addReply(
     createdAt: serverTimestamp(),
   });
 
-  await updateDoc(doc(db, "forumThreads", threadId), {
+  await updateDoc(doc(db, COLLECTION, threadId), {
     lastReplyAt: serverTimestamp(),
+    lastActivity: serverTimestamp(),
     replyCount: increment(1),
   });
 }
 
-/**
- * Creates a pinned Mission Briefing thread in the given ship's forum board.
- * Skips creation if a thread for this missionId already exists on that board.
- */
+// ── Legacy: createMissionBriefingThread (kept for backwards compat) ───────────
+// New code should use createMissionThread() from forumService.ts instead.
+
 export async function createMissionBriefingThread(
   missionId: string,
   boardId: string,
   title: string,
   content: string,
 ): Promise<string | null> {
-  // Avoid duplicate threads for the same mission on the same board
   const existing = await getDocs(
-    query(threadsCol, where("boardId", "==", boardId), where("missionId", "==", missionId))
+    query(
+      collection(db, COLLECTION),
+      where("shipId", "==", boardId),
+      where("missionId", "==", missionId),
+    )
   );
   if (!existing.empty) return null;
 
   const now = serverTimestamp();
-  const threadRef = await addDoc(threadsCol, {
+  const threadRef = await addDoc(collection(db, COLLECTION), {
     title,
-    boardId,
-    category: "missions" as ForumCategoryId,
+    shipId: boardId,
+    category: "mission" as ForumCategoryId,
     author: "STARFLEET COMMAND",
     authorUid: "STARFLEET_COMMAND",
+    content,
     createdAt: now,
     lastReplyAt: now,
+    lastActivity: now,
     replyCount: 1,
     pinned: true,
     missionId,
   });
 
-  await addDoc(collection(db, "forumThreads", threadRef.id, "replies"), {
+  await addDoc(collection(db, COLLECTION, threadRef.id, "replies"), {
     content,
     author: "STARFLEET COMMAND",
     authorUid: "STARFLEET_COMMAND",
@@ -173,19 +212,4 @@ export async function createMissionBriefingThread(
   });
 
   return threadRef.id;
-}
-
-export function subscribeToThreadCounts(
-  boardId: string,
-  callback: (counts: Record<string, number>) => void,
-): () => void {
-  const q = query(threadsCol, where("boardId", "==", boardId));
-  return onSnapshot(q, (snapshot) => {
-    const counts: Record<string, number> = {};
-    snapshot.docs.forEach((d) => {
-      const cat = d.data().category as string;
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    callback(counts);
-  });
 }
