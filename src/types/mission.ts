@@ -11,7 +11,8 @@ export type Mission = {
   discovery: string;
   possibleOutcomes: string[];
   status: MissionStatus;
-  assignedShip?: string;
+  shipId?: string;
+  assignedShip?: string; // legacy field — use shipId going forward
   stardate?: number;
   createdAt?: number;
 };

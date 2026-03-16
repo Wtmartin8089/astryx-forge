@@ -85,6 +85,7 @@ const Forum: React.FC = () => {
     return subscribeToReplies(selectedThread.id, setReplies);
   }, [selectedThread]);
 
+
   /* ── Navigation helpers ── */
   const goBack = useCallback(() => {
     if (selectedThread) {

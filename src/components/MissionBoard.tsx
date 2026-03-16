@@ -11,6 +11,7 @@ import {
   seedStarterMissions,
 } from "../server/routes/missions";
 import { getShips } from "../utils/gameData";
+import { createMissionThread } from "../server/forum/forumService";
 import { starterMissions } from "../data/starterMissions";
 import { MISSION_TYPES } from "../data/missionTemplates";
 import type { Mission, MissionStatus } from "../types/mission";
@@ -28,16 +29,20 @@ const MissionBoard = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [filter, setFilter] = useState<MissionStatus | "all">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [shipNames] = useState<string[]>(() =>
-    Object.values(getShips()).map((s) => s.name).filter(Boolean)
+  const [shipEntries] = useState<{ id: string; name: string }[]>(() =>
+    Object.entries(getShips()).map(([id, s]) => ({ id, name: s.name })).filter((s) => s.name)
   );
   const [generating, setGenerating] = useState(false);
   const [genType, setGenType] = useState("");
   const [genSystem, setGenSystem] = useState("");
 
-  const auth = getAuth();
-  const user = auth.currentUser;
-  const userIsAdmin = user ? isAdmin(user.uid) : false;
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const auth = getAuth();
+    // onAuthStateChanged so admin status is reactive, not a stale snapshot
+    return auth.onAuthStateChanged((u) => setUserIsAdmin(u ? isAdmin(u.uid) : false));
+  }, []);
 
   useEffect(() => {
     const unsub = subscribeMissions(setMissions);
@@ -64,6 +69,49 @@ const MissionBoard = () => {
   const handleSeed = async () => {
     const n = await seedStarterMissions(starterMissions, true);
     alert(`${n} starter missions seeded.`);
+  };
+
+  const handleAssignShip = async (m: Mission, shipId: string) => {
+    await assignMissionToShip(m.id!, shipId);
+    if (!shipId) return;
+    await createMissionThread(m, shipId);
+  };
+
+  const handleSyncForumThreads = async () => {
+    const shipMap = getShips();
+    const nameToId = Object.fromEntries(
+      Object.entries(shipMap).map(([id, s]) => [s.name, id])
+    );
+
+    let migrated = 0;
+    let created = 0;
+
+    for (const m of missions) {
+      if (!m.id) continue;
+
+      let shipId = m.shipId;
+
+      // Migrate legacy assignedShip (name) → shipId (slug)
+      if (!shipId && m.assignedShip) {
+        const resolved = nameToId[m.assignedShip];
+        if (resolved) {
+          await assignMissionToShip(m.id, resolved);
+          shipId = resolved;
+          migrated++;
+        }
+      }
+
+      if (!shipId) continue;
+
+      const result = await createMissionThread(m, shipId);
+      if (result) created++;
+    }
+
+    alert(
+      `Sync complete.\n` +
+      `• ${migrated} mission(s) updated to new shipId format\n` +
+      `• ${created} forum thread(s) created`
+    );
   };
 
   const inputStyle: React.CSSProperties = {
@@ -172,6 +220,22 @@ const MissionBoard = () => {
             >
               SEED STARTERS
             </button>
+            <button
+              onClick={handleSyncForumThreads}
+              style={{
+                backgroundColor: "transparent",
+                border: "1px solid #6699cc60",
+                borderRadius: "20px",
+                color: "#6699cc",
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: "0.65rem",
+                letterSpacing: "1.5px",
+                padding: "0.35rem 0.9rem",
+                cursor: "pointer",
+              }}
+            >
+              SYNC FORUM
+            </button>
           </div>
         )}
       </div>
@@ -206,7 +270,11 @@ const MissionBoard = () => {
                 <p style={{ color: "#fff", fontSize: "0.88rem", fontWeight: "bold", margin: 0, letterSpacing: "0.5px" }}>{m.title}</p>
                 <p style={{ color: "#555", fontSize: "0.7rem", margin: "0.2rem 0 0" }}>
                   {m.system} · <span style={{ color: sc, textTransform: "uppercase", letterSpacing: "1px" }}>{m.status}</span>
-                  {m.assignedShip && <span style={{ marginLeft: "0.75rem", color: "#9933cc" }}>⬡ {m.assignedShip}</span>}
+                  {(m.shipId || m.assignedShip) && (
+                    <span style={{ marginLeft: "0.75rem", color: "#9933cc" }}>
+                      ⬡ {m.shipId ? (getShips()[m.shipId]?.name || m.shipId) : m.assignedShip}
+                    </span>
+                  )}
                   {m.stardate && <span style={{ marginLeft: "0.75rem", color: "#444" }}>SD {m.stardate}</span>}
                 </p>
               </div>
@@ -258,13 +326,13 @@ const MissionBoard = () => {
                   <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem", alignItems: "center" }}>
                     {/* Ship assignment */}
                     <select
-                      value={m.assignedShip || ""}
-                      onChange={(e) => assignMissionToShip(m.id!, e.target.value)}
+                      value={m.shipId || ""}
+                      onChange={(e) => handleAssignShip(m, e.target.value)}
                       style={{
                         backgroundColor: "#0a0a0a",
                         border: "1px solid #9933cc60",
                         borderRadius: "20px",
-                        color: m.assignedShip ? "#9933cc" : "#555",
+                        color: m.shipId ? "#9933cc" : "#555",
                         fontFamily: "'Orbitron', sans-serif",
                         fontSize: "0.62rem",
                         letterSpacing: "1px",
@@ -273,8 +341,8 @@ const MissionBoard = () => {
                       }}
                     >
                       <option value="">— Assign Ship —</option>
-                      {shipNames.map((name) => (
-                        <option key={name} value={name}>{name}</option>
+                      {shipEntries.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </select>
                     {(["active", "pending", "completed", "failed"] as MissionStatus[]).map((s) => (

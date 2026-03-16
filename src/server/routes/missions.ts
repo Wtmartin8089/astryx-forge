@@ -43,15 +43,14 @@ export function subscribeMissions(
   );
 }
 
-/** Real-time subscription filtered to missions assigned to a specific ship. */
+/** Real-time subscription filtered to missions assigned to a specific ship (by shipId/slug). */
 export function subscribeMissionsByShip(
-  shipName: string,
+  shipId: string,
   callback: (missions: Mission[]) => void
 ): Unsubscribe {
   const q = query(
     collection(db, COLLECTION),
-    where("assignedShip", "==", shipName),
-    orderBy("createdAt", "desc")
+    where("shipId", "==", shipId)
   );
   return onSnapshot(q, (snap) =>
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Mission)))
@@ -101,10 +100,10 @@ export async function updateMissionStatus(
 
 export async function assignMissionToShip(
   id: string,
-  shipName: string
+  shipId: string
 ): Promise<void> {
   await updateDoc(doc(db, COLLECTION, id), {
-    assignedShip: shipName || null,
+    shipId: shipId || null,
   });
 }
 

@@ -10,8 +10,11 @@ import type { ShipData, ShipWeapon, CrewMember } from "../types/fleet";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
 import { LUG_SHIP_CLASSES } from "../data/lugShipClasses";
 import FleetTransmissions from "./FleetTransmissions";
-import { subscribeMissionsByShip } from "../server/routes/missions";
-import type { Mission } from "../types/mission";
+import {
+  subscribeToShipForumThreads,
+  ensureStarterThreads,
+  type ShipForumThread,
+} from "../server/forum/forumService";
 import "../assets/lcars.css";
 
 const shipColors: Record<string, { primary: string; accent: string }> = {
@@ -51,7 +54,7 @@ const ShipPage = () => {
 
   const [visible, setVisible] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
-  const [shipMissions, setShipMissions] = useState<Mission[]>([]);
+  const [forumThreads, setForumThreads] = useState<ShipForumThread[]>([]);
   const [postText, setPostText] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -106,12 +109,13 @@ const ShipPage = () => {
     return () => unsubscribe();
   }, [shipSlug]);
 
-  // Assigned missions listener
+  // Ship forum threads — subscribe + seed starter threads on first load
   useEffect(() => {
-    const name = shipsData[shipSlug!]?.name;
-    if (!name) return;
-    return subscribeMissionsByShip(name, setShipMissions);
-  }, [shipSlug, shipsData]);
+    if (!shipSlug) return;
+    const shipName = shipsData[shipSlug]?.name || shipSlug;
+    ensureStarterThreads(shipSlug, shipName).catch(console.error);
+    return subscribeToShipForumThreads(shipSlug, setForumThreads);
+  }, [shipSlug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1126,61 +1130,50 @@ const ShipPage = () => {
           </div>
         </form>
 
-        {/* Mission Briefings */}
-        {shipMissions.length > 0 && (
-          <div style={{ marginBottom: "1.5rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
-              <span style={{
-                backgroundColor: "#33cc9920",
-                border: "1px solid #33cc99",
-                borderRadius: "20px",
-                color: "#33cc99",
-                fontSize: "0.65rem",
-                fontFamily: "'Orbitron', sans-serif",
-                letterSpacing: "2px",
-                padding: "0.2rem 0.75rem",
-                textTransform: "uppercase",
-                whiteSpace: "nowrap",
-              }}>
-                Mission Briefings
-              </span>
-              <div style={{ flex: 1, height: "1px", backgroundColor: "#33cc9930" }} />
-            </div>
-            {shipMissions.map((m) => (
-              <div key={m.id} style={{
-                backgroundColor: "#0a1a10",
-                border: "1px solid #33cc9930",
-                borderLeft: "3px solid #33cc99",
-                borderRadius: "4px",
-                padding: "1rem 1.25rem",
-                marginBottom: "0.75rem",
-                fontFamily: "'Orbitron', sans-serif",
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.4rem", flexWrap: "wrap", gap: "0.4rem" }}>
-                  <span style={{ color: "#33cc99", fontSize: "0.8rem", fontWeight: "bold", letterSpacing: "1px" }}>{m.title}</span>
-                  <span style={{ color: "#555", fontSize: "0.68rem" }}>SD {m.stardate}</span>
-                </div>
-                <p style={{ color: "#C8D8F0", margin: "0 0 0.75rem", fontSize: "0.85rem", lineHeight: 1.7 }}>{m.briefing}</p>
-                <div style={{ marginBottom: "0.5rem" }}>
-                  <span style={{ color: "#555", fontSize: "0.62rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>Objectives</span>
-                  <ul style={{ margin: "0.4rem 0 0", padding: 0, listStyle: "none" }}>
-                    {m.objectives.map((obj, i) => (
-                      <li key={i} style={{ color: "#aaa", fontSize: "0.78rem", lineHeight: 1.7, display: "flex", gap: "0.5rem" }}>
-                        <span style={{ color: "#33cc99", flexShrink: 0 }}>›</span>{obj}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
-                  <span style={{ color: "#444", fontSize: "0.68rem" }}>
-                    Complication: <span style={{ color: "#F5B942" }}>{m.complication}</span>
-                  </span>
-                </div>
+        {/* Mission Briefings — from forum collection, category: "mission" */}
+        {(() => {
+          const missionThreads = forumThreads.filter((t) => t.category === "mission");
+          if (missionThreads.length === 0) return null;
+          return (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                <span style={{
+                  backgroundColor: "#33cc9920",
+                  border: "1px solid #33cc99",
+                  borderRadius: "20px",
+                  color: "#33cc99",
+                  fontSize: "0.65rem",
+                  fontFamily: "'Orbitron', sans-serif",
+                  letterSpacing: "2px",
+                  padding: "0.2rem 0.75rem",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                }}>
+                  Mission Briefings
+                </span>
+                <div style={{ flex: 1, height: "1px", backgroundColor: "#33cc9930" }} />
               </div>
-            ))}
-            <div style={{ height: "1px", backgroundColor: "#33cc9920", marginBottom: "1.25rem" }} />
-          </div>
-        )}
+              {missionThreads.map((t) => (
+                <div key={t.id} style={{
+                  backgroundColor: "#0a1a10",
+                  border: "1px solid #33cc9930",
+                  borderLeft: "3px solid #33cc99",
+                  borderRadius: "4px",
+                  padding: "1rem 1.25rem",
+                  marginBottom: "0.75rem",
+                  fontFamily: "'Orbitron', sans-serif",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.4rem", flexWrap: "wrap", gap: "0.4rem" }}>
+                    <span style={{ color: "#33cc99", fontSize: "0.8rem", fontWeight: "bold", letterSpacing: "1px" }}>{t.title}</span>
+                    <span style={{ color: "#555", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "1px" }}>Starfleet Command</span>
+                  </div>
+                  <p style={{ color: "#C8D8F0", margin: 0, fontSize: "0.85rem", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{t.content}</p>
+                </div>
+              ))}
+              <div style={{ height: "1px", backgroundColor: "#33cc9920", marginBottom: "1.25rem" }} />
+            </div>
+          );
+        })()}
 
         {/* Fleet Command Transmissions */}
         <FleetTransmissions shipName={shipsData[shipSlug!]?.name} />

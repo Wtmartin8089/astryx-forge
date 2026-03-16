@@ -2,6 +2,7 @@ import {
   collection,
   addDoc,
   doc,
+  getDocs,
   onSnapshot,
   query,
   where,
@@ -25,6 +26,7 @@ export interface ForumThread {
   lastReplyAt: Timestamp | null;
   replyCount: number;
   pinned: boolean;
+  missionId?: string;
 }
 
 export interface ForumReply {
@@ -43,17 +45,22 @@ export function subscribeToThreads(
   category: ForumCategoryId,
   callback: (threads: ForumThread[]) => void,
 ): () => void {
+  // No orderBy — avoids composite index requirement. Sort client-side.
   const q = query(
     threadsCol,
     where("boardId", "==", boardId),
     where("category", "==", category),
-    orderBy("pinned", "desc"),
-    orderBy("lastReplyAt", "desc"),
   );
   return onSnapshot(q, (snapshot) => {
-    callback(
-      snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as ForumThread),
-    );
+    const threads = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as ForumThread);
+    // Pinned first, then most-recently-replied
+    threads.sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      const aTime = a.lastReplyAt?.toDate?.()?.getTime() ?? 0;
+      const bTime = b.lastReplyAt?.toDate?.()?.getTime() ?? 0;
+      return bTime - aTime;
+    });
+    callback(threads);
   });
 }
 
@@ -125,6 +132,47 @@ export async function addReply(
     lastReplyAt: serverTimestamp(),
     replyCount: increment(1),
   });
+}
+
+/**
+ * Creates a pinned Mission Briefing thread in the given ship's forum board.
+ * Skips creation if a thread for this missionId already exists on that board.
+ */
+export async function createMissionBriefingThread(
+  missionId: string,
+  boardId: string,
+  title: string,
+  content: string,
+): Promise<string | null> {
+  // Avoid duplicate threads for the same mission on the same board
+  const existing = await getDocs(
+    query(threadsCol, where("boardId", "==", boardId), where("missionId", "==", missionId))
+  );
+  if (!existing.empty) return null;
+
+  const now = serverTimestamp();
+  const threadRef = await addDoc(threadsCol, {
+    title,
+    boardId,
+    category: "missions" as ForumCategoryId,
+    author: "STARFLEET COMMAND",
+    authorUid: "STARFLEET_COMMAND",
+    createdAt: now,
+    lastReplyAt: now,
+    replyCount: 1,
+    pinned: true,
+    missionId,
+  });
+
+  await addDoc(collection(db, "forumThreads", threadRef.id, "replies"), {
+    content,
+    author: "STARFLEET COMMAND",
+    authorUid: "STARFLEET_COMMAND",
+    attachmentUrl: "",
+    createdAt: now,
+  });
+
+  return threadRef.id;
 }
 
 export function subscribeToThreadCounts(
