@@ -71,6 +71,27 @@ const MissionBoard = () => {
     alert(`${n} starter missions seeded.`);
   };
 
+  const handleDeduplicateMissions = async () => {
+    // Group by title — keep the first (oldest by array order), delete the rest
+    const seen = new Map<string, string>(); // title → first id
+    const toDelete: string[] = [];
+    for (const m of [...missions].reverse()) { // reverse so oldest is processed last (wins)
+      if (seen.has(m.title)) {
+        toDelete.push(seen.get(m.title)!);
+      }
+      seen.set(m.title, m.id!);
+    }
+    if (toDelete.length === 0) {
+      alert("No duplicate missions found.");
+      return;
+    }
+    if (!confirm(`Delete ${toDelete.length} duplicate mission(s)?`)) return;
+    for (const id of toDelete) {
+      await deleteMission(id);
+    }
+    alert(`Deleted ${toDelete.length} duplicate(s).`);
+  };
+
   const handleAssignShip = async (m: Mission, shipId: string) => {
     await assignMissionToShip(m.id!, shipId);
     if (!shipId) return;
@@ -235,6 +256,22 @@ const MissionBoard = () => {
               }}
             >
               SYNC FORUM
+            </button>
+            <button
+              onClick={handleDeduplicateMissions}
+              style={{
+                backgroundColor: "transparent",
+                border: "1px solid #cc333360",
+                borderRadius: "20px",
+                color: "#cc6666",
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: "0.65rem",
+                letterSpacing: "1.5px",
+                padding: "0.35rem 0.9rem",
+                cursor: "pointer",
+              }}
+            >
+              DEDUPLICATE
             </button>
           </div>
         )}
