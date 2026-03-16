@@ -14,7 +14,7 @@ import { getAuth } from "firebase/auth";
 import { db } from "../firebase/firebaseConfig";
 import { getShips } from "../utils/gameData";
 import type { CrewMember, ShipData } from "../types/fleet";
-import starfleetAwards from "../data/starfleetAwards";
+import starfleetDecorations from "../data/starfleetDecorations";
 import "../assets/lcars.css";
 
 const rankColors: Record<string, string> = {
@@ -325,23 +325,20 @@ const PersonnelProfile = () => {
           Starfleet Decorations
         </h3>
         {member.awards && member.awards.length > 0 ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-start" }}>
-            {member.awards.map((awardId) => {
-              const def = starfleetAwards.find((a) => a.id === awardId);
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            {member.awards.map((award, i) => {
+              const def = starfleetDecorations.find((d) => d.id === award.awardId);
               if (!def) return null;
               return (
-                <div
-                  key={awardId}
-                  title={def.description}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "0.4rem",
-                    width: "72px",
-                    cursor: "default",
-                  }}
-                >
+                <div key={i} style={{
+                  display: "flex",
+                  gap: "1rem",
+                  alignItems: "flex-start",
+                  backgroundColor: "#0a0a0a",
+                  border: `1px solid ${rankColor}20`,
+                  borderRadius: "6px",
+                  padding: "1rem",
+                }}>
                   <img
                     src={def.image}
                     alt={def.name}
@@ -352,20 +349,27 @@ const PersonnelProfile = () => {
                       objectFit: "contain",
                       borderRadius: "4px",
                       border: `1px solid ${rankColor}30`,
-                      backgroundColor: "#0a0a0a",
-                      padding: "2px",
+                      backgroundColor: "#111",
+                      padding: "4px",
+                      flexShrink: 0,
                     }}
                   />
-                  <span style={{
-                    color: "#888",
-                    fontSize: "0.55rem",
-                    letterSpacing: "0.5px",
-                    textAlign: "center",
-                    lineHeight: 1.3,
-                    textTransform: "uppercase",
-                  }}>
-                    {def.name}
-                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ color: rankColor, fontSize: "0.82rem", fontWeight: "bold", margin: "0 0 0.3rem", letterSpacing: "0.5px" }}>
+                      {def.name}
+                    </p>
+                    <p style={{ color: "#aaa", fontSize: "0.82rem", margin: "0 0 0.5rem", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      {award.citation}
+                    </p>
+                    <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+                      <span style={{ color: "#555", fontSize: "0.65rem", letterSpacing: "1px" }}>
+                        AWARDED BY: <span style={{ color: "#777" }}>{award.awardedBy}</span>
+                      </span>
+                      <span style={{ color: "#555", fontSize: "0.65rem", letterSpacing: "1px" }}>
+                        SD {award.stardate}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               );
             })}

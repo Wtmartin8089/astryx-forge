@@ -1,3 +1,10 @@
+export type AwardEntry = {
+  awardId: string;
+  citation: string;
+  awardedBy: string;
+  stardate: string;
+};
+
 export type ShipWeapon = {
   name: string;
   damage: number;
@@ -47,7 +54,7 @@ export type CrewMember = {
   biography: string;
   portrait: string;
   serviceRecord?: string[];
-  awards?: string[];
+  awards?: AwardEntry[];
   ownerId: string | null;
   ownerEmail: string | null;
   status: "active" | "pending";
