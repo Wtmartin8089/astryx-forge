@@ -6,9 +6,11 @@ import {
   subscribeMissions,
   generateAndStoreMission,
   updateMissionStatus,
+  assignMissionToShip,
   deleteMission,
   seedStarterMissions,
 } from "../server/routes/missions";
+import { getShips } from "../utils/gameData";
 import { starterMissions } from "../data/starterMissions";
 import { MISSION_TYPES } from "../data/missionTemplates";
 import type { Mission, MissionStatus } from "../types/mission";
@@ -26,6 +28,9 @@ const MissionBoard = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [filter, setFilter] = useState<MissionStatus | "all">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [shipNames] = useState<string[]>(() =>
+    Object.values(getShips()).map((s) => s.name).filter(Boolean)
+  );
   const [generating, setGenerating] = useState(false);
   const [genType, setGenType] = useState("");
   const [genSystem, setGenSystem] = useState("");
@@ -201,6 +206,7 @@ const MissionBoard = () => {
                 <p style={{ color: "#fff", fontSize: "0.88rem", fontWeight: "bold", margin: 0, letterSpacing: "0.5px" }}>{m.title}</p>
                 <p style={{ color: "#555", fontSize: "0.7rem", margin: "0.2rem 0 0" }}>
                   {m.system} · <span style={{ color: sc, textTransform: "uppercase", letterSpacing: "1px" }}>{m.status}</span>
+                  {m.assignedShip && <span style={{ marginLeft: "0.75rem", color: "#9933cc" }}>⬡ {m.assignedShip}</span>}
                   {m.stardate && <span style={{ marginLeft: "0.75rem", color: "#444" }}>SD {m.stardate}</span>}
                 </p>
               </div>
@@ -249,7 +255,28 @@ const MissionBoard = () => {
                 </div>
 
                 {userIsAdmin && (
-                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
+                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem", alignItems: "center" }}>
+                    {/* Ship assignment */}
+                    <select
+                      value={m.assignedShip || ""}
+                      onChange={(e) => assignMissionToShip(m.id!, e.target.value)}
+                      style={{
+                        backgroundColor: "#0a0a0a",
+                        border: "1px solid #9933cc60",
+                        borderRadius: "20px",
+                        color: m.assignedShip ? "#9933cc" : "#555",
+                        fontFamily: "'Orbitron', sans-serif",
+                        fontSize: "0.62rem",
+                        letterSpacing: "1px",
+                        padding: "0.25rem 0.65rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value="">— Assign Ship —</option>
+                      {shipNames.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
                     {(["active", "pending", "completed", "failed"] as MissionStatus[]).map((s) => (
                       <button
                         key={s}

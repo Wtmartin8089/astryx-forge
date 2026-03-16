@@ -83,6 +83,15 @@ export async function updateMissionStatus(
   await updateDoc(doc(db, COLLECTION, id), { status });
 }
 
+export async function assignMissionToShip(
+  id: string,
+  shipName: string
+): Promise<void> {
+  await updateDoc(doc(db, COLLECTION, id), {
+    assignedShip: shipName || null,
+  });
+}
+
 export async function deleteMission(id: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTION, id));
 }
