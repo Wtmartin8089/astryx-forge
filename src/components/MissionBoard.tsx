@@ -71,69 +71,12 @@ const MissionBoard = () => {
     alert(`${n} starter missions seeded.`);
   };
 
-  const handleDeduplicateMissions = async () => {
-    // Group by title — keep the first (oldest by array order), delete the rest
-    const seen = new Map<string, string>(); // title → first id
-    const toDelete: string[] = [];
-    for (const m of [...missions].reverse()) { // reverse so oldest is processed last (wins)
-      if (seen.has(m.title)) {
-        toDelete.push(seen.get(m.title)!);
-      }
-      seen.set(m.title, m.id!);
-    }
-    if (toDelete.length === 0) {
-      alert("No duplicate missions found.");
-      return;
-    }
-    if (!confirm(`Delete ${toDelete.length} duplicate mission(s)?`)) return;
-    for (const id of toDelete) {
-      await deleteMission(id);
-    }
-    alert(`Deleted ${toDelete.length} duplicate(s).`);
-  };
-
   const handleAssignShip = async (m: Mission, shipId: string) => {
     await assignMissionToShip(m.id!, shipId);
     if (!shipId) return;
     await createMissionThread(m, shipId);
   };
 
-  const handleSyncForumThreads = async () => {
-    const shipMap = getShips();
-    const nameToId = Object.fromEntries(
-      Object.entries(shipMap).map(([id, s]) => [s.name, id])
-    );
-
-    let migrated = 0;
-    let created = 0;
-
-    for (const m of missions) {
-      if (!m.id) continue;
-
-      let shipId = m.shipId;
-
-      // Migrate legacy assignedShip (name) → shipId (slug)
-      if (!shipId && m.assignedShip) {
-        const resolved = nameToId[m.assignedShip];
-        if (resolved) {
-          await assignMissionToShip(m.id, resolved);
-          shipId = resolved;
-          migrated++;
-        }
-      }
-
-      if (!shipId) continue;
-
-      const result = await createMissionThread(m, shipId);
-      if (result) created++;
-    }
-
-    alert(
-      `Sync complete.\n` +
-      `• ${migrated} mission(s) updated to new shipId format\n` +
-      `• ${created} forum thread(s) created`
-    );
-  };
 
   const inputStyle: React.CSSProperties = {
     backgroundColor: "#0a0a0a",
@@ -240,38 +183,6 @@ const MissionBoard = () => {
               }}
             >
               SEED STARTERS
-            </button>
-            <button
-              onClick={handleSyncForumThreads}
-              style={{
-                backgroundColor: "transparent",
-                border: "1px solid #6699cc60",
-                borderRadius: "20px",
-                color: "#6699cc",
-                fontFamily: "'Orbitron', sans-serif",
-                fontSize: "0.65rem",
-                letterSpacing: "1.5px",
-                padding: "0.35rem 0.9rem",
-                cursor: "pointer",
-              }}
-            >
-              SYNC FORUM
-            </button>
-            <button
-              onClick={handleDeduplicateMissions}
-              style={{
-                backgroundColor: "transparent",
-                border: "1px solid #cc333360",
-                borderRadius: "20px",
-                color: "#cc6666",
-                fontFamily: "'Orbitron', sans-serif",
-                fontSize: "0.65rem",
-                letterSpacing: "1.5px",
-                padding: "0.35rem 0.9rem",
-                cursor: "pointer",
-              }}
-            >
-              DEDUPLICATE
             </button>
           </div>
         )}
