@@ -5,6 +5,11 @@ export type AwardEntry = {
   stardate: string;
 };
 
+export type ServiceHistoryEntry = {
+  year: number;
+  event: string;
+};
+
 export type ShipWeapon = {
   name: string;
   damage: number;
@@ -54,6 +59,7 @@ export type CrewMember = {
   biography: string;
   portrait: string;
   serviceRecord?: string[];
+  serviceHistory?: ServiceHistoryEntry[];
   awards?: AwardEntry[];
   ownerId: string | null;
   ownerEmail: string | null;

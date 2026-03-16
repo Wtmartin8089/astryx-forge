@@ -13,7 +13,7 @@ import {
 import { getAuth } from "firebase/auth";
 import { db } from "../firebase/firebaseConfig";
 import { getShips } from "../utils/gameData";
-import type { CrewMember, ShipData } from "../types/fleet";
+import type { CrewMember, ShipData, ServiceHistoryEntry } from "../types/fleet";
 import starfleetDecorations from "../data/starfleetDecorations";
 import "../assets/lcars.css";
 
@@ -312,6 +312,57 @@ const PersonnelProfile = () => {
           </p>
         )}
       </div>
+
+      {/* Service History Timeline */}
+      {member.serviceHistory && member.serviceHistory.length > 0 && (
+        <div style={{
+          backgroundColor: "#111",
+          border: "1px solid #333",
+          borderRadius: "4px",
+          padding: "1.5rem",
+          marginBottom: "1.5rem",
+        }}>
+          <h3 style={{ color: rankColor, fontSize: "0.75rem", letterSpacing: "2px", textTransform: "uppercase", margin: "0 0 1.25rem" }}>
+            Service History
+          </h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {[...(member.serviceHistory as ServiceHistoryEntry[])].sort((a, b) => a.year - b.year).map((entry, i) => (
+              <div key={i} style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                {/* Timeline spine */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                  <div style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    backgroundColor: rankColor,
+                    marginTop: "0.35rem",
+                    flexShrink: 0,
+                  }} />
+                  {i < (member.serviceHistory as ServiceHistoryEntry[]).length - 1 && (
+                    <div style={{ width: "2px", flex: 1, backgroundColor: `${rankColor}30`, minHeight: "1.5rem" }} />
+                  )}
+                </div>
+                {/* Entry content */}
+                <div style={{ paddingBottom: "1.1rem" }}>
+                  <span style={{
+                    color: rankColor,
+                    fontSize: "0.7rem",
+                    fontWeight: "bold",
+                    letterSpacing: "1px",
+                    display: "block",
+                    marginBottom: "0.2rem",
+                  }}>
+                    {entry.year}
+                  </span>
+                  <p style={{ color: "#aaa", fontSize: "0.88rem", margin: 0, lineHeight: 1.5 }}>
+                    {entry.event}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Starfleet Decorations */}
       <div style={{

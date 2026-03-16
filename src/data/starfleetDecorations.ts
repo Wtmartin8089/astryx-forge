@@ -66,6 +66,98 @@ const starfleetDecorations: DecorationDefinition[] = [
     description: "Awarded to personnel directly involved in a successful first contact with a previously unknown species.",
     image: "/awards/FirstContact.png",
   },
+
+  // Extended decoration library
+  {
+    id: "starfleet_medal_of_merit",
+    name: "Starfleet Medal of Merit",
+    description: "Awarded for distinguished meritorious service above and beyond the call of duty.",
+    image: "/awards/StarfleetMedal.png",
+  },
+  {
+    id: "diplomacy_medal",
+    name: "Diplomacy Medal",
+    description: "Awarded for exceptional diplomatic achievement in service of Federation interests.",
+    image: "/awards/MEDAL_DIPLOMATIC_FULL.png",
+  },
+  {
+    id: "command_citation_of_merit",
+    name: "Command Citation of Merit",
+    description: "Awarded by Starfleet Command for distinguished command leadership.",
+    image: "/awards/Citation_CinC.png",
+  },
+  {
+    id: "exploration_achievement_medal",
+    name: "Exploration Achievement Medal",
+    description: "Awarded for significant achievement in the exploration of uncharted space.",
+    image: "/awards/MEDAL_DELTA_FULL.png",
+  },
+  {
+    id: "dominion_war_campaign_medal",
+    name: "Dominion War Campaign Medal",
+    description: "Awarded for active service in combat operations during the Dominion War.",
+    image: "/awards/MEDAL_DOMINION_WAR_FULL.png",
+  },
+  {
+    id: "klingon_campaign_medal",
+    name: "Klingon Campaign Medal",
+    description: "Awarded for distinguished service in joint operations with the Klingon Defense Force.",
+    image: "/awards/MEDAL_KLINGON_WAR_FULL.png",
+  },
+  {
+    id: "cardassian_border_campaign_medal",
+    name: "Cardassian Border Campaign Medal",
+    description: "Awarded for patrol and security service along the Cardassian border.",
+    image: "/awards/MEDAL_OUTBACK_FULL.png",
+  },
+  {
+    id: "exploration_ribbon",
+    name: "Exploration Ribbon",
+    description: "Awarded for participation in deep-space exploration beyond Federation territory.",
+    image: "/awards/MEDAL_DELTA_FULL.png",
+  },
+  {
+    id: "first_contact_ribbon",
+    name: "First Contact Ribbon",
+    description: "Awarded for direct involvement in a successful first contact mission.",
+    image: "/awards/FirstContact.png",
+  },
+  {
+    id: "combat_service_ribbon",
+    name: "Combat Service Ribbon",
+    description: "Awarded for active combat service in defense of the Federation.",
+    image: "/awards/CombatMerit.png",
+  },
+  {
+    id: "scientific_survey_ribbon",
+    name: "Scientific Survey Ribbon",
+    description: "Awarded for contributions to scientific survey operations in uncharted regions.",
+    image: "/awards/Achievement_Sciences.png",
+  },
+  {
+    id: "starbase_service_ribbon",
+    name: "Starbase Service Ribbon",
+    description: "Awarded for distinguished service aboard a Federation Starbase.",
+    image: "/awards/CommendationMedal.png",
+  },
+  {
+    id: "fleet_command_ribbon",
+    name: "Fleet Command Ribbon",
+    description: "Awarded to officers who have commanded a Starfleet task force or fleet element.",
+    image: "/awards/AdmiralsStar.png",
+  },
+  {
+    id: "long_service_ribbon",
+    name: "Long Service Ribbon",
+    description: "Awarded for five or more years of continuous distinguished Starfleet service.",
+    image: "/awards/MEDAL_FIVE_YEAR_FULL.png",
+  },
+  {
+    id: "alliance_service_ribbon",
+    name: "Alliance Service Ribbon",
+    description: "Awarded for service that strengthened the Federation–Klingon Alliance.",
+    image: "/awards/Victory_Klingon1.png",
+  },
 ];
 
 export default starfleetDecorations;
