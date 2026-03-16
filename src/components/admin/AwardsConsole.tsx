@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot, doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../../firebase/firebaseConfig";
 import { isAdmin } from "../../utils/adminAuth";
 import starfleetDecorations from "../../data/starfleetDecorations";
-import type { CrewMember, AwardEntry } from "../../types/fleet";
+import { grantAward } from "../../server/awards/awardEngine";
+import { generateCitation, EVENT_TYPES } from "../../server/awards/citationGenerator";
+import type { CrewMember } from "../../types/fleet";
 import "../../assets/lcars.css";
 
 function currentStardate(): string {
@@ -20,10 +22,20 @@ type CrewEntry = { slug: string; member: CrewMember };
 const AwardsConsole = () => {
   const [visible, setVisible] = useState(false);
   const [crew, setCrew] = useState<CrewEntry[]>([]);
+
+  // Award fields
   const [selectedSlug, setSelectedSlug] = useState("");
   const [selectedAwardId, setSelectedAwardId] = useState("");
-  const [citation, setCitation] = useState("");
   const [awardedBy, setAwardedBy] = useState("");
+  const [citation, setCitation] = useState("");
+
+  // Event fields (for citation generation)
+  const [eventType, setEventType] = useState("");
+  const [eventLocation, setEventLocation] = useState("");
+  const [eventSpecies, setEventSpecies] = useState("");
+  const [eventShip, setEventShip] = useState("");
+  const [showEventPanel, setShowEventPanel] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -45,7 +57,6 @@ const AwardsConsole = () => {
     return () => { unsub(); clearTimeout(timer); };
   }, []);
 
-  // Pre-fill awardedBy with current user's email
   useEffect(() => {
     if (user?.email && !awardedBy) setAwardedBy(user.email);
   }, [user]);
@@ -79,30 +90,58 @@ const AwardsConsole = () => {
     );
   }
 
+  const handleGenerateCitation = () => {
+    if (!eventType) return;
+    const sd = currentStardate();
+    const selectedMember = crew.find((c) => c.slug === selectedSlug);
+    const ship = eventShip || selectedMember?.member.shipId || "";
+    const text = generateCitation({
+      eventType,
+      location: eventLocation,
+      species: eventSpecies,
+      ship,
+      stardate: sd,
+    });
+    setCitation(text);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSlug || !selectedAwardId || !citation.trim() || !awardedBy.trim()) return;
+    if (!selectedSlug || !selectedAwardId || !awardedBy.trim()) return;
     setSaving(true);
     setSuccessMsg("");
     setErrorMsg("");
 
-    const entry: AwardEntry = {
-      awardId: selectedAwardId,
-      citation: citation.trim(),
-      awardedBy: awardedBy.trim(),
-      stardate: currentStardate(),
-    };
-
     try {
-      await updateDoc(doc(db, "crew", selectedSlug), {
-        awards: arrayUnion(entry),
+      const entry = await grantAward({
+        crewSlug: selectedSlug,
+        awardId: selectedAwardId,
+        awardedBy: awardedBy.trim(),
+        stardate: currentStardate(),
+        ...(citation.trim()
+          ? { manualCitation: citation.trim() }
+          : {
+              event: {
+                eventType: eventType || "meritorious_service",
+                location: eventLocation,
+                species: eventSpecies,
+                ship: eventShip,
+              },
+            }),
       });
+
       const recipientName = crew.find((c) => c.slug === selectedSlug)?.member.name || selectedSlug;
       const awardName = starfleetDecorations.find((d) => d.id === selectedAwardId)?.name || selectedAwardId;
       setSuccessMsg(`${awardName} awarded to ${recipientName}.`);
-      setCitation("");
+
+      // Auto-fill citation preview with what was stored
+      setCitation(entry.citation);
       setSelectedAwardId("");
       setSelectedSlug("");
+      setEventType("");
+      setEventLocation("");
+      setEventSpecies("");
+      setEventShip("");
     } catch (err) {
       setErrorMsg("Failed to save award. Check your connection.");
       console.error(err);
@@ -133,6 +172,7 @@ const AwardsConsole = () => {
 
   const selectedDecoration = starfleetDecorations.find((d) => d.id === selectedAwardId);
   const selectedCharacter = crew.find((c) => c.slug === selectedSlug)?.member;
+  const canSubmit = !saving && !!selectedSlug && !!selectedAwardId && !!awardedBy.trim();
 
   return (
     <div style={{
@@ -228,16 +268,108 @@ const AwardsConsole = () => {
               />
             </div>
 
+            {/* Event Details (collapsible) */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowEventPanel((v) => !v)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#F5B942",
+                  fontFamily: "'Orbitron', sans-serif",
+                  fontSize: "0.65rem",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                }}
+              >
+                <span>{showEventPanel ? "▾" : "▸"}</span>
+                Mission Event Details
+              </button>
+
+              {showEventPanel && (
+                <div style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div>
+                    <label style={labelStyle}>Event Type</label>
+                    <select
+                      value={eventType}
+                      onChange={(e) => setEventType(e.target.value)}
+                      style={{ ...inputStyle, cursor: "pointer" }}
+                    >
+                      <option value="">— Select event —</option>
+                      {EVENT_TYPES.map((et) => (
+                        <option key={et.value} value={et.value}>{et.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Location / Region</label>
+                    <input
+                      type="text"
+                      value={eventLocation}
+                      onChange={(e) => setEventLocation(e.target.value)}
+                      placeholder="Badlands, Cardassia Prime..."
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Species (for first contact / diplomatic)</label>
+                    <input
+                      type="text"
+                      value={eventSpecies}
+                      onChange={(e) => setEventSpecies(e.target.value)}
+                      placeholder="Romulan, Vorta..."
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Vessel</label>
+                    <input
+                      type="text"
+                      value={eventShip}
+                      onChange={(e) => setEventShip(e.target.value)}
+                      placeholder="USS Malinche, NCC-38997"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!eventType}
+                    onClick={handleGenerateCitation}
+                    style={{
+                      backgroundColor: eventType ? "#9933cc" : "transparent",
+                      border: eventType ? "none" : "1px solid #9933cc40",
+                      borderRadius: "20px",
+                      color: eventType ? "#fff" : "#9933cc60",
+                      padding: "0.5rem 1.25rem",
+                      fontFamily: "'Orbitron', sans-serif",
+                      fontSize: "0.72rem",
+                      letterSpacing: "1.5px",
+                      cursor: eventType ? "pointer" : "not-allowed",
+                      transition: "all 0.2s",
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    GENERATE CITATION
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Citation */}
             <div>
               <label style={labelStyle}>Citation</label>
               <textarea
                 value={citation}
                 onChange={(e) => setCitation(e.target.value)}
-                placeholder="For exceptional service in..."
-                rows={4}
+                placeholder="Enter citation text or use Mission Event Details above to auto-generate..."
+                rows={5}
                 style={{ ...inputStyle, resize: "vertical", lineHeight: "1.6" }}
-                required
               />
             </div>
 
@@ -252,7 +384,7 @@ const AwardsConsole = () => {
 
             <button
               type="submit"
-              disabled={saving || !selectedSlug || !selectedAwardId || !citation.trim() || !awardedBy.trim()}
+              disabled={!canSubmit}
               style={{
                 backgroundColor: saving ? "transparent" : "#F5B942",
                 border: saving ? "1px solid #F5B94260" : "none",
@@ -263,8 +395,8 @@ const AwardsConsole = () => {
                 fontWeight: "bold",
                 fontSize: "0.78rem",
                 letterSpacing: "1.5px",
-                cursor: saving ? "wait" : "pointer",
-                opacity: (!selectedSlug || !selectedAwardId || !citation.trim() || !awardedBy.trim()) ? 0.4 : 1,
+                cursor: saving ? "wait" : canSubmit ? "pointer" : "not-allowed",
+                opacity: canSubmit ? 1 : 0.4,
                 transition: "all 0.2s",
               }}
             >
