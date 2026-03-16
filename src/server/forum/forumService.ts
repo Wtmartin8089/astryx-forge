@@ -15,7 +15,7 @@ import {
 import { db } from "../../firebase/firebaseConfig";
 import type { Mission } from "../../types/mission";
 
-export type ForumCategory = "general" | "mission" | "engineering" | "lounge";
+export type ForumCategory = "bridge" | "mission" | "engineering" | "tenForward" | "holodeck";
 
 export interface ShipForumThread {
   id?: string;
@@ -117,23 +117,30 @@ export async function ensureStarterThreads(
   const starters: Omit<ShipForumThread, "id">[] = [
     {
       shipId,
-      category: "general",
-      title: `Welcome Aboard the ${shipName}`,
-      content: `Welcome to the crew forum for the ${shipName}. Post general announcements and crew discussions here.`,
+      category: "bridge",
+      title: `${shipName} — Bridge Communications`,
+      content: `Official crew announcements and command-level communications for the ${shipName}.`,
       author: "Starfleet Command",
     },
     {
       shipId,
       category: "engineering",
       title: "Engineering Systems Log",
-      content: `Use this thread to log engineering reports, maintenance updates, and system status for the ${shipName}.`,
+      content: `Log engineering reports, maintenance updates, and system status for the ${shipName}.`,
       author: "Chief Engineer",
     },
     {
       shipId,
-      category: "lounge",
-      title: "Crew Lounge",
-      content: `Off-duty crew discussion. Relax and enjoy your downtime aboard the ${shipName}.`,
+      category: "tenForward",
+      title: "Welcome to Ten Forward",
+      content: `Off-duty crew lounge. Relax, share stories, and enjoy your downtime aboard the ${shipName}.`,
+      author: "Starfleet Command",
+    },
+    {
+      shipId,
+      category: "holodeck",
+      title: "Holodeck Reservations & Programs",
+      content: `Reserve holodeck time and share program recommendations with the crew of the ${shipName}.`,
       author: "Starfleet Command",
     },
   ];
