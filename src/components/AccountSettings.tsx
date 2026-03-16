@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { getAuth, deleteUser, signOut, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { isAdmin } from "../utils/adminAuth";
 import { seedCrewData, unclaimAllByUser } from "../utils/crewFirestore";
-import { doc, updateDoc } from "firebase/firestore";
+import { updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import defaultCrewJson from "../data/crewData.json";
 import type { CrewMember } from "../types/fleet";
@@ -248,8 +248,15 @@ const AccountSettings = () => {
                     { awardId: "alliance_service_ribbon", citation: "For service that materially strengthened the Federation–Klingon Alliance through joint operations, personal example, and the embodiment of both cultures' highest values.", awardedBy: "Office of the Commander, Starfleet", stardate: "50400.0" },
                   ];
 
-                  await updateDoc(doc(db, "crew", "raghkor"), { biography, serviceHistory, awards });
-                  alert("Ragh'Kor personnel record updated successfully!");
+                  // Find Ragh'Kor's document by name (slug may vary)
+                  const snap = await getDocs(query(collection(db, "crew"), where("name", "==", "Ragh'Kor")));
+                  if (snap.empty) {
+                    alert("Could not find Ragh'Kor in Firestore.\nCheck that the character name is exactly \"Ragh'Kor\" in the database.");
+                    return;
+                  }
+                  const docRef = snap.docs[0].ref;
+                  await updateDoc(docRef, { biography, serviceHistory, awards });
+                  alert(`Ragh'Kor personnel record updated!\nDocument ID: ${snap.docs[0].id}`);
                 } catch (err: any) {
                   alert("Update failed: " + err.message);
                 }
