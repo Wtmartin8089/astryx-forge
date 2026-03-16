@@ -13,6 +13,7 @@ import {
   deleteDoc,
   onSnapshot,
   query,
+  where,
   orderBy,
   serverTimestamp,
   type Unsubscribe,
@@ -37,6 +38,21 @@ export function subscribeMissions(
   callback: (missions: Mission[]) => void
 ): Unsubscribe {
   const q = query(collection(db, COLLECTION), orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snap) =>
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Mission)))
+  );
+}
+
+/** Real-time subscription filtered to missions assigned to a specific ship. */
+export function subscribeMissionsByShip(
+  shipName: string,
+  callback: (missions: Mission[]) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, COLLECTION),
+    where("assignedShip", "==", shipName),
+    orderBy("createdAt", "desc")
+  );
   return onSnapshot(q, (snap) =>
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Mission)))
   );
