@@ -15,7 +15,7 @@ import {
 import { db } from "../../firebase/firebaseConfig";
 import type { Mission } from "../../types/mission";
 
-export type ForumCategory = "bridge" | "mission" | "engineering" | "tenForward" | "holodeck";
+export type ForumCategory = "bridge" | "mission" | "engineering" | "sickbay" | "tenForward" | "holodeck";
 
 export interface ShipForumThread {
   id?: string;
@@ -128,6 +128,13 @@ export async function ensureStarterThreads(
       title: "Engineering Systems Log",
       content: `Log engineering reports, maintenance updates, and system status for the ${shipName}.`,
       author: "Chief Engineer",
+    },
+    {
+      shipId,
+      category: "sickbay",
+      title: "Medical Log",
+      content: `Submit medical reports, crew health updates, and sickbay notices for the ${shipName}.`,
+      author: "Chief Medical Officer",
     },
     {
       shipId,
