@@ -175,16 +175,34 @@ const PersonnelProfile = () => {
         flexWrap: "wrap",
         gap: "1.5rem",
       }}>
-        <div>
-          <p style={{ color: rankColor, fontSize: "0.7rem", margin: "0 0 0.4rem", letterSpacing: "2px", textTransform: "uppercase" }}>
-            {member.rank}
-          </p>
-          <h2 style={{ color: "#fff", fontSize: "2rem", margin: "0 0 0.5rem", fontWeight: "bold" }}>
-            {member.name}
-          </h2>
-          <p style={{ color: "#aaa", fontSize: "0.9rem", margin: 0 }}>
-            {member.species} · {member.position}
-          </p>
+        <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start" }}>
+          {/* Portrait */}
+          <img
+            src={member.portrait?.trim() || "/portraits/default.svg"}
+            alt={member.name}
+            className="character-portrait"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/portraits/default.svg"; }}
+            style={{
+              width: "110px",
+              height: "130px",
+              objectFit: "cover",
+              borderRadius: "4px",
+              border: `2px solid ${rankColor}40`,
+              flexShrink: 0,
+              backgroundColor: "#0a0a0a",
+            }}
+          />
+          <div>
+            <p style={{ color: rankColor, fontSize: "0.7rem", margin: "0 0 0.4rem", letterSpacing: "2px", textTransform: "uppercase" }}>
+              {member.rank}
+            </p>
+            <h2 style={{ color: "#fff", fontSize: "2rem", margin: "0 0 0.5rem", fontWeight: "bold" }}>
+              {member.name}
+            </h2>
+            <p style={{ color: "#aaa", fontSize: "0.9rem", margin: 0 }}>
+              {member.species} · {member.position}
+            </p>
+          </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", alignItems: "flex-end" }}>

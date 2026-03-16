@@ -45,6 +45,7 @@ const Starbase = () => {
       skills: [],
       notes: "",
       biography: "",
+      portrait: "",
       ownerId: userIsAdmin ? null : (currentUser?.uid ?? null),
       ownerEmail: userIsAdmin ? null : (currentUser?.email ?? null),
       status: userIsAdmin ? "active" : "pending",

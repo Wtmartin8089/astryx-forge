@@ -673,6 +673,45 @@ const CrewPage = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Portrait URL */}
+              <div>
+                <label
+                  style={{
+                    color: "#888",
+                    fontSize: "0.75rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    display: "block",
+                    marginBottom: "0.25rem",
+                  }}
+                >
+                  Portrait URL
+                </label>
+                <input
+                  type="text"
+                  name="portrait"
+                  value={member.portrait ?? ""}
+                  placeholder="/portraits/character.jpg"
+                  onChange={(e) => handleFieldChange("portrait", e.target.value)}
+                  style={inputStyle(accentColor)}
+                />
+                {member.portrait && (
+                  <img
+                    src={member.portrait}
+                    alt="Portrait preview"
+                    style={{
+                      marginTop: "0.5rem",
+                      width: "80px",
+                      height: "80px",
+                      objectFit: "cover",
+                      borderRadius: "4px",
+                      border: `1px solid ${accentColor}40`,
+                    }}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/portraits/default.svg"; }}
+                  />
+                )}
+              </div>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
