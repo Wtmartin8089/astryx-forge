@@ -152,7 +152,7 @@ const PersonnelProfile = () => {
           padding: "0 2rem",
         }}>
           <h1 style={{ margin: 0, color: "#000", fontSize: "1.4rem", fontWeight: "bold", letterSpacing: "3px" }}>
-            PERSONNEL FILE
+            STARFLEET PERSONNEL FILE
           </h1>
           <span style={{ color: "#00000070", fontSize: "0.7rem", letterSpacing: "1px" }}>
             SD {currentStardate()}
@@ -183,8 +183,8 @@ const PersonnelProfile = () => {
             className="character-portrait"
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/portraits/default.svg"; }}
             style={{
-              width: "110px",
-              height: "130px",
+              width: "200px",
+              height: "auto",
               objectFit: "cover",
               borderRadius: "4px",
               border: `2px solid ${rankColor}40`,
@@ -242,8 +242,13 @@ const PersonnelProfile = () => {
         {[
           { label: "Species", value: member.species },
           { label: "Rank", value: member.rank },
-          { label: "Position", value: member.position },
-          { label: "Ship Assignment", value: shipName },
+          {
+            label: "Position",
+            value: member.rank === "Fleet Admiral"
+              ? "Fleet Commander"
+              : member.position,
+          },
+          { label: "Assignment", value: shipName },
         ].map(({ label, value }) => (
           <div key={label} style={{
             backgroundColor: "#111",
@@ -271,6 +276,40 @@ const PersonnelProfile = () => {
         <p style={{ color: "#aaa", fontSize: "0.9rem", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>
           {member.biography?.trim() || "No biography available."}
         </p>
+      </div>
+
+      {/* Service Record */}
+      <div style={{
+        backgroundColor: "#111",
+        border: "1px solid #333",
+        borderRadius: "4px",
+        padding: "1.5rem",
+        marginBottom: "1.5rem",
+      }}>
+        <h3 style={{ color: rankColor, fontSize: "0.75rem", letterSpacing: "2px", textTransform: "uppercase", margin: "0 0 1rem" }}>
+          Service Record
+        </h3>
+        {member.serviceRecord && member.serviceRecord.length > 0 ? (
+          <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+            {member.serviceRecord.map((entry, i) => (
+              <li key={i} style={{
+                color: "#aaa",
+                fontSize: "0.9rem",
+                lineHeight: 1.8,
+                display: "flex",
+                gap: "0.6rem",
+                alignItems: "baseline",
+              }}>
+                <span style={{ color: rankColor, flexShrink: 0 }}>•</span>
+                {entry}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p style={{ color: "#aaa", fontSize: "0.9rem", margin: 0 }}>
+            No service record available.
+          </p>
+        )}
       </div>
 
       {/* Service History */}

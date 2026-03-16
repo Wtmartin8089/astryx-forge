@@ -46,6 +46,7 @@ export type CrewMember = {
   notes: string;
   biography: string;
   portrait: string;
+  serviceRecord?: string[];
   ownerId: string | null;
   ownerEmail: string | null;
   status: "active" | "pending";
