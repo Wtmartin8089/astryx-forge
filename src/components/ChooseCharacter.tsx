@@ -397,6 +397,7 @@ const ChooseCharacter = () => {
       notes: form.notes.trim(),
       biography: "",
       portrait: "",
+      awards: [],
       ownerId: user.uid,
       ownerEmail: user.email ?? "",
       status: "pending",

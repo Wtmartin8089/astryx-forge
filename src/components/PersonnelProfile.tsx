@@ -14,6 +14,7 @@ import { getAuth } from "firebase/auth";
 import { db } from "../firebase/firebaseConfig";
 import { getShips } from "../utils/gameData";
 import type { CrewMember, ShipData } from "../types/fleet";
+import starfleetAwards from "../data/starfleetAwards";
 import "../assets/lcars.css";
 
 const rankColors: Record<string, string> = {
@@ -308,6 +309,70 @@ const PersonnelProfile = () => {
         ) : (
           <p style={{ color: "#aaa", fontSize: "0.9rem", margin: 0 }}>
             No service record available.
+          </p>
+        )}
+      </div>
+
+      {/* Starfleet Decorations */}
+      <div style={{
+        backgroundColor: "#111",
+        border: "1px solid #333",
+        borderRadius: "4px",
+        padding: "1.5rem",
+        marginBottom: "1.5rem",
+      }}>
+        <h3 style={{ color: rankColor, fontSize: "0.75rem", letterSpacing: "2px", textTransform: "uppercase", margin: "0 0 1.25rem" }}>
+          Starfleet Decorations
+        </h3>
+        {member.awards && member.awards.length > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-start" }}>
+            {member.awards.map((awardId) => {
+              const def = starfleetAwards.find((a) => a.id === awardId);
+              if (!def) return null;
+              return (
+                <div
+                  key={awardId}
+                  title={def.description}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                    width: "72px",
+                    cursor: "default",
+                  }}
+                >
+                  <img
+                    src={def.image}
+                    alt={def.name}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/awards/placeholder.svg"; }}
+                    style={{
+                      width: "64px",
+                      height: "64px",
+                      objectFit: "contain",
+                      borderRadius: "4px",
+                      border: `1px solid ${rankColor}30`,
+                      backgroundColor: "#0a0a0a",
+                      padding: "2px",
+                    }}
+                  />
+                  <span style={{
+                    color: "#888",
+                    fontSize: "0.55rem",
+                    letterSpacing: "0.5px",
+                    textAlign: "center",
+                    lineHeight: 1.3,
+                    textTransform: "uppercase",
+                  }}>
+                    {def.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p style={{ color: "#aaa", fontSize: "0.9rem", margin: 0 }}>
+            No decorations awarded.
           </p>
         )}
       </div>

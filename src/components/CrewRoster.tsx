@@ -56,6 +56,7 @@ const CrewRoster = () => {
       notes: "",
       biography: "",
       portrait: "",
+      awards: [],
       ownerId: userIsAdmin ? null : (currentUser?.uid ?? null),
       ownerEmail: userIsAdmin ? null : (currentUser?.email ?? null),
       status: userIsAdmin ? "active" : "pending",
