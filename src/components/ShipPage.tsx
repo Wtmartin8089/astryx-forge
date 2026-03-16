@@ -9,6 +9,7 @@ import { updateCharacter } from "../utils/crewFirestore";
 import type { ShipData, ShipWeapon, CrewMember } from "../types/fleet";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
 import { LUG_SHIP_CLASSES } from "../data/lugShipClasses";
+import FleetTransmissions from "./FleetTransmissions";
 import "../assets/lcars.css";
 
 const shipColors: Record<string, { primary: string; accent: string }> = {
@@ -48,7 +49,6 @@ const ShipPage = () => {
 
   const [visible, setVisible] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
-  const [fleetTransmissions, setFleetTransmissions] = useState<any[]>([]);
   const [postText, setPostText] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -103,20 +103,6 @@ const ShipPage = () => {
     return () => unsubscribe();
   }, [shipSlug]);
 
-  // Fleet Command transmissions listener
-  useEffect(() => {
-    const shipName = shipsData[shipSlug!]?.name;
-    if (!shipName) return;
-    const q = query(
-      collection(db, "fleet_transmissions"),
-      where("targetShip", "==", shipName),
-      orderBy("stardate", "desc")
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setFleetTransmissions(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
-    return () => unsubscribe();
-  }, [shipSlug, shipsData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1132,82 +1118,7 @@ const ShipPage = () => {
         </form>
 
         {/* Fleet Command Transmissions */}
-        {fleetTransmissions.length > 0 && (
-          <div style={{ marginBottom: "1.5rem" }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem",
-              marginBottom: "0.75rem",
-            }}>
-              <span style={{
-                backgroundColor: "#F5B94220",
-                border: "1px solid #F5B942",
-                borderRadius: "20px",
-                color: "#F5B942",
-                fontSize: "0.65rem",
-                fontFamily: "'Orbitron', sans-serif",
-                letterSpacing: "2px",
-                padding: "0.2rem 0.75rem",
-                textTransform: "uppercase",
-              }}>
-                Fleet Command
-              </span>
-              <div style={{ flex: 1, height: "1px", backgroundColor: "#F5B94230" }} />
-            </div>
-            {fleetTransmissions.map((tx) => {
-              const priorityColor =
-                tx.priority === "urgent" ? "#FF4444" :
-                tx.priority === "command" ? "#F5B942" : "#8AAAD0";
-              return (
-                <div key={tx.id} style={{
-                  backgroundColor: "#0D1E0D",
-                  border: "1px solid #F5B94240",
-                  borderLeft: `3px solid ${priorityColor}`,
-                  borderRadius: "4px",
-                  padding: "1rem 1.25rem",
-                  marginBottom: "0.75rem",
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.4rem" }}>
-                    <div>
-                      <span style={{
-                        color: "#F5B942",
-                        fontFamily: "'Orbitron', sans-serif",
-                        fontSize: "0.8rem",
-                        fontWeight: "bold",
-                        letterSpacing: "1px",
-                      }}>
-                        {tx.title}
-                      </span>
-                      {tx.priority && (
-                        <span style={{
-                          marginLeft: "0.75rem",
-                          color: priorityColor,
-                          fontSize: "0.65rem",
-                          fontFamily: "'Orbitron', sans-serif",
-                          letterSpacing: "1.5px",
-                          textTransform: "uppercase",
-                        }}>
-                          [{tx.priority}]
-                        </span>
-                      )}
-                    </div>
-                    <span style={{ color: "#555", fontSize: "0.7rem", whiteSpace: "nowrap" }}>
-                      SD {tx.stardate}
-                    </span>
-                  </div>
-                  <p style={{ color: "#C8D8F0", margin: "0 0 0.4rem", fontSize: "0.88rem", lineHeight: "1.6" }}>
-                    {tx.message}
-                  </p>
-                  <span style={{ color: "#556", fontSize: "0.7rem", fontStyle: "italic" }}>
-                    — {tx.sender}
-                  </span>
-                </div>
-              );
-            })}
-            <div style={{ height: "1px", backgroundColor: "#F5B94220", marginBottom: "1.25rem" }} />
-          </div>
-        )}
+        <FleetTransmissions shipName={shipsData[shipSlug!]?.name} />
 
         {/* Messages */}
         {posts.length === 0 ? (

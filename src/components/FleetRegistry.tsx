@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getShips, saveShips } from "../utils/gameData";
 import type { ShipData } from "../types/fleet";
+import FleetTransmissions from "./FleetTransmissions";
 import "../assets/lcars.css";
 
 const shipColors: Record<string, { primary: string; accent: string }> = {
@@ -229,6 +230,11 @@ const FleetRegistry = () => {
             </Link>
           );
         })}
+      </div>
+
+      {/* Fleet Transmissions */}
+      <div style={{ marginBottom: "2rem" }}>
+        <FleetTransmissions />
       </div>
 
       {/* Bottom LCARS bar */}
