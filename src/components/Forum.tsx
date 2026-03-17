@@ -92,6 +92,7 @@ const Forum: React.FC = () => {
   /* ── Edit/delete reply state ── */
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleEditReply = async (reply: ForumReply) => {
     if (!selectedThread || !editingText.trim()) return;
@@ -100,9 +101,10 @@ const Forum: React.FC = () => {
     setEditingText("");
   };
 
-  const handleDeleteReply = async (reply: ForumReply) => {
-    if (!selectedThread || !confirm("Delete this reply?")) return;
-    await deleteReply(selectedThread.id, reply.id);
+  const handleDeleteReply = async (replyId: string) => {
+    if (!selectedThread) return;
+    await deleteReply(selectedThread.id, replyId);
+    setConfirmDeleteId(null);
   };
 
   /* ── Refresh ships when returning to board selection ── */
@@ -483,12 +485,29 @@ const Forum: React.FC = () => {
                         >
                           Edit
                         </button>
-                        <button
-                          onClick={() => handleDeleteReply(reply)}
-                          style={{ ...styles.inlineBtn, color: "#cc3333" }}
-                        >
-                          Delete
-                        </button>
+                        {confirmDeleteId === reply.id ? (
+                          <>
+                            <button
+                              onClick={() => handleDeleteReply(reply.id)}
+                              style={{ ...styles.inlineBtn, color: "#cc3333" }}
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              style={styles.inlineBtn}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteId(reply.id)}
+                            style={{ ...styles.inlineBtn, color: "#cc3333" }}
+                          >
+                            Delete
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
