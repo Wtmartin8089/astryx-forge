@@ -6,6 +6,7 @@ import { db, storage } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { getShips, saveShips } from "../utils/gameData";
 import { updateCharacter } from "../utils/crewFirestore";
+import { isAdmin } from "../utils/adminAuth";
 import type { ShipData, ShipWeapon, CrewMember } from "../types/fleet";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
 import { LUG_SHIP_CLASSES } from "../data/lugShipClasses";
@@ -13,6 +14,7 @@ import FleetTransmissions from "./FleetTransmissions";
 import {
   subscribeToShipForumThreads,
   ensureStarterThreads,
+  createForumThread,
   type ShipForumThread,
 } from "../server/forum/forumService";
 import "../assets/lcars.css";
@@ -60,10 +62,21 @@ const ShipPage = () => {
   const [loading, setLoading] = useState(false);
   const [assignSelectValue, setAssignSelectValue] = useState<string>("");
   const [showSaved, setShowSaved] = useState(false);
+
+  // Command Console modal
+  const [showCommandConsole, setShowCommandConsole] = useState(false);
+  const [cmdDept, setCmdDept] = useState("engineering");
+  const [cmdTitle, setCmdTitle] = useState("");
+  const [cmdMessage, setCmdMessage] = useState("");
+  const [cmdSending, setCmdSending] = useState(false);
   const savedTimer = useState<ReturnType<typeof setTimeout> | null>(null);
 
   const auth = getAuth();
-  const user = auth.currentUser;
+  const [user, setUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    return auth.onAuthStateChanged((u) => setUser(u));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setVisible(false);
@@ -140,6 +153,50 @@ const ShipPage = () => {
       console.error("Error posting message:", error);
     }
     setLoading(false);
+  };
+
+  // Command directive constants
+  const COMMAND_RANKS = ["Fleet Admiral", "Admiral", "Captain", "Commander", "First Officer", "Chief Engineer", "Chief Medical Officer"];
+  const CMD_DEPARTMENTS = [
+    { id: "bridge", label: "Bridge" },
+    { id: "engineering", label: "Engineering" },
+    { id: "sickbay", label: "Sickbay" },
+    { id: "tenForward", label: "Ten Forward" },
+    { id: "holodeck", label: "Holodeck" },
+  ];
+
+  // Find current user's crew member — check this ship first, then fleet-wide (e.g. Ragh'Kor on starbase)
+  const userCrewMember = (
+    shipCrew.map(({ member }) => member).find((m) => (m as any).ownerId === user?.uid) ??
+    Object.values(allFirebaseCrew).find((m) => (m as any).ownerId === user?.uid)
+  ) as any;
+  const userRank: string = userCrewMember?.rank || "";
+  const userIsAdmin = user ? isAdmin(user.uid) : false;
+  const canTransmitDirective = userIsAdmin || COMMAND_RANKS.includes(userRank);
+
+  const handleTransmitDirective = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cmdTitle.trim() || !cmdMessage.trim() || !shipSlug || !canTransmitDirective) return;
+    setCmdSending(true);
+    try {
+      await createForumThread({
+        shipId: shipSlug,
+        category: cmdDept as any,
+        title: cmdTitle.trim(),
+        content: cmdMessage.trim(),
+        author: userCrewMember?.name || user?.email || "Command Staff",
+        rank: userRank,
+        source: "bridge",
+        type: "command",
+      } as any);
+      setCmdTitle("");
+      setCmdMessage("");
+      setCmdDept("engineering");
+      setShowCommandConsole(false);
+    } catch (err) {
+      console.error("Failed to transmit directive:", err);
+    }
+    setCmdSending(false);
   };
 
   const shipData = shipsData[shipSlug!] || null;
@@ -1053,15 +1110,35 @@ const ShipPage = () => {
         padding: "1.5rem",
         marginBottom: "2rem",
       }}>
-        <h2 style={{
-          color: colors.accent,
-          fontSize: "0.85rem",
-          letterSpacing: "2px",
-          marginBottom: "1rem",
-          textTransform: "uppercase",
-        }}>
-          Ship Communications
-        </h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <h2 style={{
+            color: colors.accent,
+            fontSize: "0.85rem",
+            letterSpacing: "2px",
+            margin: 0,
+            textTransform: "uppercase",
+          }}>
+            Ship Communications
+          </h2>
+          {canTransmitDirective && (
+            <button
+              onClick={() => setShowCommandConsole(true)}
+              style={{
+                backgroundColor: "#9933cc20",
+                border: "1px solid #9933cc",
+                borderRadius: "20px",
+                color: "#9933cc",
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: "0.65rem",
+                letterSpacing: "1.5px",
+                padding: "0.3rem 0.85rem",
+                cursor: "pointer",
+              }}
+            >
+              ⚡ COMMAND CONSOLE
+            </button>
+          )}
+        </div>
 
         {/* Post Form */}
         <form onSubmit={handleSubmit} style={{ marginBottom: "1.5rem" }}>
@@ -1275,6 +1352,176 @@ const ShipPage = () => {
           borderRadius: "0 20px 20px 0",
         }} />
       </div>
+
+      {/* Command Console Modal */}
+      {showCommandConsole && (
+        <div
+          onClick={() => setShowCommandConsole(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "#0d0d0d",
+              border: "1px solid #9933cc",
+              borderTop: "3px solid #9933cc",
+              borderRadius: "4px",
+              padding: "2rem",
+              width: "100%",
+              maxWidth: "520px",
+              fontFamily: "'Orbitron', sans-serif",
+            }}
+          >
+            {/* Modal header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+              <div>
+                <p style={{ color: "#9933cc", fontSize: "0.6rem", letterSpacing: "3px", margin: "0 0 0.25rem", textTransform: "uppercase" }}>
+                  Starfleet Computer Core
+                </p>
+                <h2 style={{ color: "#fff", fontSize: "0.95rem", margin: 0, letterSpacing: "2px" }}>
+                  COMMAND CONSOLE
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowCommandConsole(false)}
+                style={{ background: "none", border: "none", color: "#555", fontSize: "1.25rem", cursor: "pointer", lineHeight: 1 }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleTransmitDirective}>
+              {/* Target Department */}
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", color: "#666", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+                  Target Department
+                </label>
+                <select
+                  value={cmdDept}
+                  onChange={(e) => setCmdDept(e.target.value)}
+                  style={{
+                    width: "100%",
+                    backgroundColor: "#0a0a0a",
+                    border: "1px solid #9933cc40",
+                    borderRadius: "4px",
+                    color: "#ccc",
+                    padding: "0.5rem 0.75rem",
+                    fontFamily: "'Orbitron', sans-serif",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  {CMD_DEPARTMENTS.map((d) => (
+                    <option key={d.id} value={d.id}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Directive Title */}
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", color: "#666", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+                  Directive Title
+                </label>
+                <input
+                  type="text"
+                  value={cmdTitle}
+                  onChange={(e) => setCmdTitle(e.target.value)}
+                  placeholder="Enter directive title..."
+                  style={{
+                    width: "100%",
+                    backgroundColor: "#0a0a0a",
+                    border: "1px solid #9933cc40",
+                    borderRadius: "4px",
+                    color: "#ccc",
+                    padding: "0.5rem 0.75rem",
+                    fontFamily: "'Orbitron', sans-serif",
+                    fontSize: "0.8rem",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              {/* Directive Message */}
+              <div style={{ marginBottom: "1.5rem" }}>
+                <label style={{ display: "block", color: "#666", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+                  Directive Message
+                </label>
+                <textarea
+                  value={cmdMessage}
+                  onChange={(e) => setCmdMessage(e.target.value)}
+                  placeholder="Enter the full directive text..."
+                  rows={5}
+                  style={{
+                    width: "100%",
+                    backgroundColor: "#0a0a0a",
+                    border: "1px solid #9933cc40",
+                    borderRadius: "4px",
+                    color: "#ccc",
+                    padding: "0.5rem 0.75rem",
+                    fontFamily: "'Orbitron', sans-serif",
+                    fontSize: "0.8rem",
+                    resize: "vertical",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              {/* Issuing as */}
+              {userCrewMember && (
+                <p style={{ color: "#444", fontSize: "0.62rem", letterSpacing: "1px", margin: "0 0 1.25rem", textTransform: "uppercase" }}>
+                  Issuing as: <span style={{ color: "#9933cc" }}>{userRank} {userCrewMember.name}</span>
+                </p>
+              )}
+
+              {/* Buttons */}
+              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCommandConsole(false)}
+                  style={{
+                    backgroundColor: "transparent",
+                    border: "1px solid #333",
+                    borderRadius: "20px",
+                    color: "#666",
+                    fontFamily: "'Orbitron', sans-serif",
+                    fontSize: "0.65rem",
+                    letterSpacing: "1.5px",
+                    padding: "0.4rem 1.1rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  disabled={cmdSending || !cmdTitle.trim() || !cmdMessage.trim()}
+                  style={{
+                    backgroundColor: cmdSending || !cmdTitle.trim() || !cmdMessage.trim() ? "#9933cc40" : "#9933cc",
+                    border: "none",
+                    borderRadius: "20px",
+                    color: "#fff",
+                    fontFamily: "'Orbitron', sans-serif",
+                    fontSize: "0.65rem",
+                    letterSpacing: "1.5px",
+                    padding: "0.4rem 1.1rem",
+                    cursor: cmdSending || !cmdTitle.trim() || !cmdMessage.trim() ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {cmdSending ? "TRANSMITTING..." : "TRANSMIT DIRECTIVE"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,7 +1,8 @@
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../firebase/firebaseConfig";
+import { collection, onSnapshot, query } from "firebase/firestore";
+import { storage, db } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { FORUM_CATEGORIES, type ForumCategoryId } from "../data/forumCategories";
 import { getShips, type Ship } from "../data/shipsData";
@@ -41,7 +42,30 @@ function formatTime(ts: { toDate?: () => Date } | null): string {
    ================================================================ */
 const Forum: React.FC = () => {
   const auth = getAuth();
-  const user = auth.currentUser;
+  const [user, setUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    return auth.onAuthStateChanged((u) => setUser(u));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Resolve user's crew character name ── */
+  const [allCrew, setAllCrew] = useState<Record<string, { name: string; ownerId?: string | null }>>({});
+  useEffect(() => {
+    const q = query(collection(db, "crew"));
+    return onSnapshot(q, (snap) => {
+      const result: Record<string, { name: string; ownerId?: string | null }> = {};
+      snap.docs.forEach((d) => { result[d.id] = d.data() as any; });
+      setAllCrew(result);
+    });
+  }, []);
+
+  const userCharacterName = user
+    ? Object.values(allCrew).find((m) => m.ownerId === user.uid)?.name ?? null
+    : null;
+
+  const userWithName = user
+    ? { uid: user.uid, email: user.email, displayName: userCharacterName }
+    : null;
 
   /* ── Navigation state ── */
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
@@ -108,10 +132,10 @@ const Forum: React.FC = () => {
   /* ── Create thread ── */
   const handleCreateThread = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim() || !user || !selectedBoard || !selectedCategory) return;
+    if (!newTitle.trim() || !newContent.trim() || !userWithName || !selectedBoard || !selectedCategory) return;
     setLoading(true);
     try {
-      await createThread(selectedBoard, selectedCategory, newTitle.trim(), newContent.trim(), user);
+      await createThread(selectedBoard, selectedCategory, newTitle.trim(), newContent.trim(), userWithName);
       setNewTitle("");
       setNewContent("");
       setShowNewThread(false);
@@ -124,7 +148,7 @@ const Forum: React.FC = () => {
   /* ── Add reply (with Computer Core interception) ── */
   const handleAddReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim() || !user || !selectedThread) return;
+    if (!replyText.trim() || !userWithName || !selectedThread) return;
     setLoading(true);
     try {
       let attachmentUrl = "";
@@ -135,7 +159,7 @@ const Forum: React.FC = () => {
       }
 
       // Post the player's message first
-      await addReply(selectedThread.id, replyText.trim(), attachmentUrl, user);
+      await addReply(selectedThread.id, replyText.trim(), attachmentUrl, userWithName);
 
       // Check for Computer Core command
       if (replyText.trim().toLowerCase().startsWith("computer,")) {
@@ -145,7 +169,7 @@ const Forum: React.FC = () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               message: replyText.trim(),
-              playerId: user.uid,
+              playerId: userWithName!.uid,
               boardId: selectedBoard ?? "",
             }),
           });
@@ -324,45 +348,96 @@ const Forum: React.FC = () => {
             </p>
           )}
 
-          {threads.map((thread) => (
-            <div
-              key={thread.id}
-              onClick={() => setSelectedThread(thread)}
-              style={styles.threadRow}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLDivElement).style.borderColor = "#ff9900";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLDivElement).style.borderColor = "#333";
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  {thread.pinned && (
-                    <span style={{ color: "#ffcc33", fontSize: "0.7rem" }}>PINNED</span>
+          {threads.map((thread) => {
+            const isDirective = thread.type === "command";
+            return (
+              <div
+                key={thread.id}
+                onClick={() => setSelectedThread(thread)}
+                style={{
+                  ...styles.threadRow,
+                  ...(isDirective ? {
+                    borderLeft: "3px solid #9933cc",
+                    background: "#0d0a14",
+                  } : {}),
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.borderColor = isDirective ? "#9933cc" : "#ff9900";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.borderColor = "#333";
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  {isDirective && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.2rem" }}>
+                      <span style={{
+                        color: "#9933cc",
+                        fontSize: "0.6rem",
+                        letterSpacing: "2px",
+                        fontWeight: "bold",
+                        textTransform: "uppercase",
+                        border: "1px solid #9933cc60",
+                        borderRadius: "3px",
+                        padding: "0.1rem 0.4rem",
+                      }}>
+                        ⚡ BRIDGE DIRECTIVE
+                      </span>
+                    </div>
                   )}
-                  <span style={{ color: "#ff9900", fontSize: "0.95rem" }}>{thread.title}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    {thread.pinned && (
+                      <span style={{ color: "#ffcc33", fontSize: "0.7rem" }}>PINNED</span>
+                    )}
+                    <span style={{ color: isDirective ? "#cc99ff" : "#ff9900", fontSize: "0.95rem" }}>
+                      {thread.title}
+                    </span>
+                  </div>
+                  <span style={{ color: "#666", fontSize: "0.75rem" }}>
+                    by {thread.author}{thread.rank ? ` · ${thread.rank}` : ""} &middot; {formatTime(thread.createdAt)}
+                  </span>
                 </div>
-                <span style={{ color: "#666", fontSize: "0.75rem" }}>
-                  by {thread.author} &middot; {formatTime(thread.createdAt)}
-                </span>
+                <div style={{ textAlign: "right", minWidth: "80px" }}>
+                  <div style={{ color: "#6699cc", fontSize: "0.85rem" }}>
+                    {thread.replyCount} {thread.replyCount === 1 ? "reply" : "replies"}
+                  </div>
+                  <div style={{ color: "#555", fontSize: "0.7rem" }}>
+                    {formatTime(thread.lastReplyAt)}
+                  </div>
+                </div>
               </div>
-              <div style={{ textAlign: "right", minWidth: "80px" }}>
-                <div style={{ color: "#6699cc", fontSize: "0.85rem" }}>
-                  {thread.replyCount} {thread.replyCount === 1 ? "reply" : "replies"}
-                </div>
-                <div style={{ color: "#555", fontSize: "0.7rem" }}>
-                  {formatTime(thread.lastReplyAt)}
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* ── Thread View (replies) ── */}
       {selectedThread && (
         <div>
+          {/* Directive banner */}
+          {selectedThread.type === "command" && (
+            <div style={{
+              backgroundColor: "#1a0d26",
+              border: "1px solid #9933cc60",
+              borderLeft: "3px solid #9933cc",
+              borderRadius: "4px",
+              padding: "0.75rem 1rem",
+              marginBottom: "1rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+            }}>
+              <span style={{ color: "#9933cc", fontSize: "1rem" }}>⚡</span>
+              <div>
+                <p style={{ margin: 0, color: "#9933cc", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", fontWeight: "bold" }}>
+                  Bridge Directive
+                </p>
+                <p style={{ margin: "0.15rem 0 0", color: "#cc99ff", fontSize: "0.8rem" }}>
+                  Issued by {selectedThread.author}{selectedThread.rank ? ` · ${selectedThread.rank}` : ""}
+                </p>
+              </div>
+            </div>
+          )}
           {replies.map((reply) => {
             const isComputerReply = reply.author === "STARFLEET COMPUTER";
             return isComputerReply ? (

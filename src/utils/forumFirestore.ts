@@ -37,6 +37,9 @@ export interface ForumThread {
   replyCount: number;
   pinned: boolean;
   missionId?: string;
+  type?: string;
+  rank?: string;
+  source?: string;
 }
 
 export interface ForumReply {
@@ -99,10 +102,10 @@ export async function createThread(
   category: ForumCategoryId,
   title: string,
   firstReplyContent: string,
-  user: { email: string | null; uid: string },
+  user: { email: string | null; uid: string; displayName?: string | null },
 ): Promise<string> {
   const now = serverTimestamp();
-  const authorName = user.email || "Anonymous";
+  const authorName = user.displayName || user.email || "Anonymous";
 
   const threadRef = await addDoc(collection(db, COLLECTION), {
     title,
@@ -150,9 +153,9 @@ export async function addReply(
   threadId: string,
   content: string,
   attachmentUrl: string,
-  user: { email: string | null; uid: string },
+  user: { email: string | null; uid: string; displayName?: string | null },
 ): Promise<void> {
-  const authorName = user.email || "Anonymous";
+  const authorName = user.displayName || user.email || "Anonymous";
 
   await addDoc(collection(db, COLLECTION, threadId, "replies"), {
     content,
