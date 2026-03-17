@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { getShips } from "../utils/gameData";
 import type { CrewMember, ShipData } from "../types/fleet";
@@ -27,7 +27,7 @@ const PersonnelDatabase = () => {
 
   useEffect(() => {
     setShips(getShips());
-    const q = query(collection(db, "crew"), where("status", "==", "active"));
+    const q = query(collection(db, "crew"));
     const unsub = onSnapshot(q, (snap) => {
       setCrew(snap.docs.map((d) => ({ slug: d.id, member: d.data() as CrewMember })));
     });
