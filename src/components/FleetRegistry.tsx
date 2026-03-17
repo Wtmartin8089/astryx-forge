@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "../firebase/firebaseConfig";
 import { getShips, saveShips } from "../utils/gameData";
 import type { ShipData } from "../types/fleet";
 import FleetTransmissions from "./FleetTransmissions";
@@ -15,7 +17,21 @@ const shipColors: Record<string, { primary: string; accent: string }> = {
 const FleetRegistry = () => {
   const [visible, setVisible] = useState(false);
   const [ships, setShips] = useState<Record<string, ShipData>>({});
+  const [crewCounts, setCrewCounts] = useState<Record<string, number>>({});
   const navigate = useNavigate();
+
+  // Subscribe to active crew counts per ship from Firestore
+  useEffect(() => {
+    const q = query(collection(db, "crew"), where("status", "==", "active"));
+    return onSnapshot(q, (snap) => {
+      const counts: Record<string, number> = {};
+      snap.docs.forEach((d) => {
+        const shipId = d.data().shipId as string;
+        if (shipId) counts[shipId] = (counts[shipId] || 0) + 1;
+      });
+      setCrewCounts(counts);
+    });
+  }, []);
 
   useEffect(() => {
     const loadShips = () => {
@@ -222,7 +238,7 @@ const FleetRegistry = () => {
                       fontSize: "0.75rem",
                       color: "#888",
                     }}>
-                      Crew: {ship.crewIds?.length || 0}
+                      Crew: {crewCounts[slug] || 0}
                     </span>
                   </div>
                 </div>
