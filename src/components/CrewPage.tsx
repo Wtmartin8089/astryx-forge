@@ -112,9 +112,12 @@ const CrewPage = () => {
     return () => clearTimeout(timer);
   }, [crewSlug]);
 
-  // Derive auth state — computed on every render, no hooks after this point
+  // Reactive auth state
   const auth = getAuth();
-  const currentUser = auth.currentUser;
+  const [currentUser, setCurrentUser] = useState(auth.currentUser);
+  useEffect(() => {
+    return auth.onAuthStateChanged((u) => setCurrentUser(u));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const currentUid = currentUser?.uid ?? null;
 
   const canEdit =
