@@ -371,6 +371,13 @@ const Forum: React.FC = () => {
 
           {threads.map((thread) => {
             const isDirective = thread.type === "command";
+            const isFleetDirective = isDirective && thread.source === "starbase";
+            const isBridgeDirective = isDirective && thread.source !== "starbase";
+            const directiveColor = isFleetDirective ? "#ff9900" : "#9933cc";
+            const directiveBg = isFleetDirective ? "#140e00" : "#0d0a14";
+            const directiveLabel = isFleetDirective
+              ? "⚡ FLEET DIRECTIVE — STARBASE MACHIDA"
+              : "⚡ BRIDGE DIRECTIVE";
             return (
               <div
                 key={thread.id}
@@ -378,31 +385,31 @@ const Forum: React.FC = () => {
                 style={{
                   ...styles.threadRow,
                   ...(isDirective ? {
-                    borderLeft: "3px solid #9933cc",
-                    background: "#0d0a14",
+                    borderLeft: `3px solid ${directiveColor}`,
+                    background: directiveBg,
                   } : {}),
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = isDirective ? "#9933cc" : "#ff9900";
+                  (e.currentTarget as HTMLDivElement).style.borderColor = isDirective ? directiveColor : "#ff9900";
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLDivElement).style.borderColor = "#333";
                 }}
               >
                 <div style={{ flex: 1 }}>
-                  {isDirective && (
+                  {(isFleetDirective || isBridgeDirective) && (
                     <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.2rem" }}>
                       <span style={{
-                        color: "#9933cc",
+                        color: directiveColor,
                         fontSize: "0.6rem",
                         letterSpacing: "2px",
                         fontWeight: "bold",
                         textTransform: "uppercase",
-                        border: "1px solid #9933cc60",
+                        border: `1px solid ${directiveColor}60`,
                         borderRadius: "3px",
                         padding: "0.1rem 0.4rem",
                       }}>
-                        ⚡ BRIDGE DIRECTIVE
+                        {directiveLabel}
                       </span>
                     </div>
                   )}
@@ -410,7 +417,7 @@ const Forum: React.FC = () => {
                     {thread.pinned && (
                       <span style={{ color: "#ffcc33", fontSize: "0.7rem" }}>PINNED</span>
                     )}
-                    <span style={{ color: isDirective ? "#cc99ff" : "#ff9900", fontSize: "0.95rem" }}>
+                    <span style={{ color: isFleetDirective ? "#ffcc88" : isBridgeDirective ? "#cc99ff" : "#ff9900", fontSize: "0.95rem" }}>
                       {thread.title}
                     </span>
                   </div>
@@ -436,29 +443,36 @@ const Forum: React.FC = () => {
       {selectedThread && (
         <div>
           {/* Directive banner */}
-          {selectedThread.type === "command" && (
-            <div style={{
-              backgroundColor: "#1a0d26",
-              border: "1px solid #9933cc60",
-              borderLeft: "3px solid #9933cc",
-              borderRadius: "4px",
-              padding: "0.75rem 1rem",
-              marginBottom: "1rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem",
-            }}>
-              <span style={{ color: "#9933cc", fontSize: "1rem" }}>⚡</span>
-              <div>
-                <p style={{ margin: 0, color: "#9933cc", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", fontWeight: "bold" }}>
-                  Bridge Directive
-                </p>
-                <p style={{ margin: "0.15rem 0 0", color: "#cc99ff", fontSize: "0.8rem" }}>
-                  Issued by {selectedThread.author}{selectedThread.rank ? ` · ${selectedThread.rank}` : ""}
-                </p>
+          {selectedThread.type === "command" && (() => {
+            const isFleet = selectedThread.source === "starbase";
+            const bannerColor = isFleet ? "#ff9900" : "#9933cc";
+            const bannerBg = isFleet ? "#1a1000" : "#1a0d26";
+            const bannerLabel = isFleet ? "Fleet Directive — Starbase Machida" : "Bridge Directive";
+            const textColor = isFleet ? "#ffcc88" : "#cc99ff";
+            return (
+              <div style={{
+                backgroundColor: bannerBg,
+                border: `1px solid ${bannerColor}60`,
+                borderLeft: `3px solid ${bannerColor}`,
+                borderRadius: "4px",
+                padding: "0.75rem 1rem",
+                marginBottom: "1rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+              }}>
+                <span style={{ color: bannerColor, fontSize: "1rem" }}>⚡</span>
+                <div>
+                  <p style={{ margin: 0, color: bannerColor, fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", fontWeight: "bold" }}>
+                    {bannerLabel}
+                  </p>
+                  <p style={{ margin: "0.15rem 0 0", color: textColor, fontSize: "0.8rem" }}>
+                    Issued by {selectedThread.author}{selectedThread.rank ? ` · ${selectedThread.rank}` : ""}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
           {replies.map((reply) => {
             const isComputerReply = reply.author === "STARFLEET COMPUTER";
             return isComputerReply ? (
