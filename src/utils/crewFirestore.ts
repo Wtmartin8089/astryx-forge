@@ -16,11 +16,11 @@ import type { CrewMember } from "../types/fleet";
 
 const CREW_COL = "crew";
 
-/** Subscribe to all crew members (real-time). Returns unsubscribe function. */
+/** Subscribe to all active crew members (real-time). Returns unsubscribe function. */
 export function subscribeToAllCrew(
   callback: (crew: Record<string, CrewMember>) => void,
 ): () => void {
-  const q = query(collection(db, CREW_COL));
+  const q = query(collection(db, CREW_COL), where("status", "==", "active"));
   return onSnapshot(q, (snapshot) => {
     const result: Record<string, CrewMember> = {};
     snapshot.docs.forEach((d) => {
