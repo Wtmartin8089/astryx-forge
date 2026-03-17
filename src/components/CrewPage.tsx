@@ -70,6 +70,7 @@ const CrewPage = () => {
   const [newDisadvantage, setNewDisadvantage] = useState("");
   const [newSkill, setNewSkill] = useState("");
   const [showSaved, setShowSaved] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // timer handle belongs in a ref, not state
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -266,7 +267,6 @@ const CrewPage = () => {
 
   const handleDelete = async () => {
     if (!member || !crewSlug) return;
-    if (!window.confirm(`Remove ${member.name} from the personnel database?`)) return;
 
     // Remove from ship's crewIds in localStorage
     if (member.shipId && shipsData[member.shipId]) {
@@ -303,7 +303,6 @@ const CrewPage = () => {
 
   const handleReject = async () => {
     if (!crewSlug || !member) return;
-    if (!window.confirm(`Reject and remove ${member.name} from the database?`)) return;
     try {
       await rejectCharacter(crewSlug);
     } catch (err) {
@@ -1386,31 +1385,33 @@ const CrewPage = () => {
 
       {/* Edit-mode action buttons */}
       {editMode && (
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            justifyContent: "flex-end",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <button
-            onClick={handleDelete}
-            style={{
-              backgroundColor: "#cc0000",
-              border: "none",
-              borderRadius: "4px",
-              color: "#fff",
-              cursor: "pointer",
-              fontFamily: "'Orbitron', sans-serif",
-              fontSize: "0.75rem",
-              fontWeight: "bold",
-              letterSpacing: "1px",
-              padding: "0.5rem 1.25rem",
-            }}
-          >
-            DELETE CREW MEMBER
-          </button>
+        <div style={{ display: "flex", gap: "1rem", justifyContent: "flex-end", marginBottom: "1.5rem", alignItems: "center" }}>
+          {confirmDelete ? (
+            <>
+              <span style={{ color: "#cc3333", fontSize: "0.75rem", fontFamily: "'Orbitron', sans-serif" }}>
+                Permanently delete {member?.name}?
+              </span>
+              <button
+                onClick={handleDelete}
+                style={{ backgroundColor: "#cc0000", border: "none", borderRadius: "4px", color: "#fff", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "1px", padding: "0.5rem 1.25rem" }}
+              >
+                CONFIRM DELETE
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                style={{ backgroundColor: "transparent", border: "1px solid #444", borderRadius: "4px", color: "#888", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontSize: "0.75rem", letterSpacing: "1px", padding: "0.5rem 1.25rem" }}
+              >
+                CANCEL
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{ backgroundColor: "transparent", border: "1px solid #cc0000", borderRadius: "4px", color: "#cc3333", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "1px", padding: "0.5rem 1.25rem" }}
+            >
+              DELETE CREW MEMBER
+            </button>
+          )}
         </div>
       )}
 
