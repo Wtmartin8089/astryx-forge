@@ -12,9 +12,12 @@ import {
   subscribeToThreadCounts,
   createThread,
   addReply,
+  editReply,
+  deleteReply,
   type ForumThread,
   type ForumReply,
 } from "../utils/forumFirestore";
+import { isAdmin } from "../utils/adminAuth";
 
 /* ── Starbase board constant ── */
 const STARBASE_BOARD = {
@@ -85,6 +88,22 @@ const Forum: React.FC = () => {
   const [replyText, setReplyText] = useState("");
   const [replyFile, setReplyFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  /* ── Edit/delete reply state ── */
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+
+  const handleEditReply = async (reply: ForumReply) => {
+    if (!selectedThread || !editingText.trim()) return;
+    await editReply(selectedThread.id, reply.id, editingText.trim());
+    setEditingReplyId(null);
+    setEditingText("");
+  };
+
+  const handleDeleteReply = async (reply: ForumReply) => {
+    if (!selectedThread || !confirm("Delete this reply?")) return;
+    await deleteReply(selectedThread.id, reply.id);
+  };
 
   /* ── Refresh ships when returning to board selection ── */
   useEffect(() => {
@@ -452,18 +471,45 @@ const Forum: React.FC = () => {
               </div>
             ) : (
               <div key={reply.id} style={styles.replyCard}>
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "0.5rem",
-                  fontSize: "0.8rem",
-                }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", fontSize: "0.8rem" }}>
                   <span style={{ color: "#6699cc" }}>{reply.author}</span>
-                  <span style={{ color: "#555" }}>{formatTime(reply.createdAt)}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <span style={{ color: "#555" }}>{formatTime(reply.createdAt)}</span>
+                    {(user && (reply.authorUid === user.uid || isAdmin(user.uid))) && editingReplyId !== reply.id && (
+                      <>
+                        <button
+                          onClick={() => { setEditingReplyId(reply.id); setEditingText(reply.content); }}
+                          style={styles.inlineBtn}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReply(reply)}
+                          style={{ ...styles.inlineBtn, color: "#cc3333" }}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <p style={{ margin: 0, color: "#ccc", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                  {reply.content}
-                </p>
+                {editingReplyId === reply.id ? (
+                  <div>
+                    <textarea
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      style={{ ...styles.input, minHeight: "80px", resize: "vertical", marginBottom: "0.5rem" }}
+                    />
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <button onClick={() => handleEditReply(reply)} style={styles.actionBtn}>Save</button>
+                      <button onClick={() => setEditingReplyId(null)} style={{ ...styles.actionBtn, background: "#333", color: "#ccc" }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, color: "#ccc", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                    {reply.content}
+                  </p>
+                )}
                 {reply.attachmentUrl && (
                   <a
                     href={reply.attachmentUrl}
@@ -621,6 +667,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'Orbitron', sans-serif",
     fontSize: "0.75rem",
     cursor: "pointer",
+  },
+  inlineBtn: {
+    background: "none",
+    border: "none",
+    color: "#555",
+    fontFamily: "'Orbitron', sans-serif",
+    fontSize: "0.65rem",
+    cursor: "pointer",
+    padding: 0,
+    letterSpacing: "0.5px",
   },
 };
 

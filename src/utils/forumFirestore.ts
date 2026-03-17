@@ -7,6 +7,7 @@ import {
   collection,
   addDoc,
   doc,
+  deleteDoc,
   getDocs,
   onSnapshot,
   query,
@@ -169,6 +170,27 @@ export async function addReply(
     lastReplyAt: serverTimestamp(),
     lastActivity: serverTimestamp(),
     replyCount: increment(1),
+  });
+}
+
+export async function editReply(
+  threadId: string,
+  replyId: string,
+  newContent: string,
+): Promise<void> {
+  await updateDoc(doc(db, COLLECTION, threadId, "replies", replyId), {
+    content: newContent,
+    editedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteReply(
+  threadId: string,
+  replyId: string,
+): Promise<void> {
+  await deleteDoc(doc(db, COLLECTION, threadId, "replies", replyId));
+  await updateDoc(doc(db, COLLECTION, threadId), {
+    replyCount: increment(-1),
   });
 }
 
