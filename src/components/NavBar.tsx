@@ -53,6 +53,9 @@ const NavBar = () => {
       <Link to="/missions" style={linkStyle("/missions")}>
         Missions
       </Link>
+      <Link to="/systems" style={linkStyle("/systems")}>
+        Star Systems
+      </Link>
       <Link to="/creatures" style={linkStyle("/creatures")}>
         Xenobiology
       </Link>

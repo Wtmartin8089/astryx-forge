@@ -26,6 +26,15 @@ import MissionBoard from "./components/MissionBoard";
 import CreatureDatabase from "./components/CreatureDatabase";
 import CreatureNew from "./components/CreatureNew";
 import CreatureDetail from "./components/CreatureDetail";
+import SystemsList from "./components/SystemsList";
+import SystemDashboard from "./components/SystemDashboard";
+import SystemPlanets from "./components/SystemPlanets";
+import SystemPlanetNew from "./components/SystemPlanetNew";
+import SystemPlanetDetail from "./components/SystemPlanetDetail";
+import SystemSpecies from "./components/SystemSpecies";
+import SystemSpeciesNew from "./components/SystemSpeciesNew";
+import SystemSpeciesDetail from "./components/SystemSpeciesDetail";
+import SystemCreatures from "./components/SystemCreatures";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
@@ -91,6 +100,15 @@ function App() {
         <Route path="/creatures" element={<CreatureDatabase />} />
         <Route path="/creatures/new" element={<CreatureNew />} />
         <Route path="/creatures/:id" element={<CreatureDetail />} />
+        <Route path="/systems" element={<SystemsList />} />
+        <Route path="/systems/:systemId" element={<SystemDashboard />} />
+        <Route path="/systems/:systemId/planets" element={<SystemPlanets />} />
+        <Route path="/systems/:systemId/planets/new" element={<SystemPlanetNew />} />
+        <Route path="/systems/:systemId/planets/:planetId" element={<SystemPlanetDetail />} />
+        <Route path="/systems/:systemId/species" element={<SystemSpecies />} />
+        <Route path="/systems/:systemId/species/new" element={<SystemSpeciesNew />} />
+        <Route path="/systems/:systemId/species/:speciesId" element={<SystemSpeciesDetail />} />
+        <Route path="/systems/:systemId/creatures" element={<SystemCreatures />} />
         <Route path="/auth" element={<AuthPanel />} />
       </Routes>
     </>

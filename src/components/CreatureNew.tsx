@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { createCreature } from "../utils/creaturesFirestore";
 import "../assets/lcars.css";
@@ -8,6 +8,8 @@ const auth = getAuth();
 
 const CreatureNew = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const systemId: string | undefined = (location.state as any)?.systemId;
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,9 +42,11 @@ const CreatureNew = () => {
     try {
       const id = await createCreature({
         ...form,
+        ...(systemId ? { systemId } : {}),
         createdBy: currentUser.email || currentUser.uid,
       });
-      navigate(`/creatures/${id}`);
+      // If came from a system, return there; otherwise go to creature detail
+      navigate(systemId ? `/systems/${systemId}/creatures` : `/creatures/${id}`);
     } catch (err) {
       console.error("Failed to create creature:", err);
       setSubmitting(false);
@@ -109,6 +113,15 @@ const CreatureNew = () => {
         </div>
         <div style={{ width: "80px", backgroundColor: "#9933cc", borderRadius: "0 20px 20px 0" }} />
       </div>
+
+      {/* System context banner */}
+      {systemId && (
+        <div style={{ backgroundColor: "#33cc9910", border: "1px solid #33cc9940", borderRadius: "4px", padding: "0.6rem 1rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ color: "#33cc99", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase" }}>
+            ◆ This creature will be linked to the current star system
+          </span>
+        </div>
+      )}
 
       <div
         style={{
