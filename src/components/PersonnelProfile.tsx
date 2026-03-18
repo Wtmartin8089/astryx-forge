@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../firebase/firebaseConfig";
-import { getShips } from "../utils/gameData";
+import { subscribeToShips } from "../utils/shipsFirestore";
 import type { CrewMember, ShipData, ServiceHistoryEntry } from "../types/fleet";
 import starfleetDecorations from "../data/starfleetDecorations";
 import "../assets/lcars.css";
@@ -59,7 +59,7 @@ const PersonnelProfile = () => {
 
   useEffect(() => {
     if (!crewSlug) return;
-    setShips(getShips());
+    const unsubShips = subscribeToShips(setShips);
 
     const unsub = onSnapshot(doc(db, "crew", crewSlug), (snap) => {
       setMember(snap.exists() ? (snap.data() as CrewMember) : null);
@@ -75,7 +75,7 @@ const PersonnelProfile = () => {
     });
 
     const timer = setTimeout(() => setVisible(true), 50);
-    return () => { unsub(); unsubMsg(); clearTimeout(timer); };
+    return () => { unsubShips(); unsub(); unsubMsg(); clearTimeout(timer); };
   }, [crewSlug]);
 
   const handleSendMessage = async (e: React.FormEvent) => {

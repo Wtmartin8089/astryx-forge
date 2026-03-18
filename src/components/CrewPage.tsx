@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
-import { getShips, saveShips, RANKS } from "../utils/gameData";
+import { RANKS } from "../utils/gameData";
+import { subscribeToShips } from "../utils/shipsFirestore";
 import {
   getCrewMember,
   updateCharacter,
@@ -88,7 +89,12 @@ const CrewPage = () => {
     };
   }, []);
 
-  // Load Firestore crew member and localStorage ships on mount / when slug changes
+  // Subscribe to ships from Firestore
+  useEffect(() => {
+    return subscribeToShips(setShipsData);
+  }, []);
+
+  // Load Firestore crew member on mount / when slug changes
   useEffect(() => {
     if (!crewSlug) {
       setLoading(false);
@@ -103,7 +109,6 @@ const CrewPage = () => {
       .finally(() => {
         setLoading(false);
       });
-    setShipsData(getShips());
   }, [crewSlug]);
 
   // Fade-in animation
@@ -176,39 +181,7 @@ const CrewPage = () => {
 
   const handleShipChange = async (newShipId: string) => {
     if (!member || !crewSlug) return;
-
-    const oldShipId = member.shipId;
-
-    // Optimistically update local member state
-    const updatedMember = { ...member, shipId: newShipId };
-    setMember(updatedMember);
-
-    // Update shipsData in localStorage (ships stay local)
-    const updatedShips = { ...shipsData };
-
-    // Remove from old ship
-    if (oldShipId && updatedShips[oldShipId]) {
-      updatedShips[oldShipId] = {
-        ...updatedShips[oldShipId],
-        crewIds: updatedShips[oldShipId].crewIds.filter((id) => id !== crewSlug),
-      };
-    }
-
-    // Add to new ship (if not "unassigned")
-    if (newShipId && updatedShips[newShipId]) {
-      const existing = updatedShips[newShipId].crewIds;
-      if (!existing.includes(crewSlug)) {
-        updatedShips[newShipId] = {
-          ...updatedShips[newShipId],
-          crewIds: [...existing, crewSlug],
-        };
-      }
-    }
-
-    setShipsData(updatedShips);
-    saveShips(updatedShips);
-
-    // Persist shipId change to Firestore
+    setMember({ ...member, shipId: newShipId });
     try {
       await updateCharacter(crewSlug, { shipId: newShipId });
       flashSaved();
@@ -269,17 +242,6 @@ const CrewPage = () => {
     if (!member || !crewSlug) return;
 
     // Remove from ship's crewIds in localStorage
-    if (member.shipId && shipsData[member.shipId]) {
-      const updatedShips = {
-        ...shipsData,
-        [member.shipId]: {
-          ...shipsData[member.shipId],
-          crewIds: shipsData[member.shipId].crewIds.filter((id) => id !== crewSlug),
-        },
-      };
-      saveShips(updatedShips);
-    }
-
     try {
       await rejectCharacter(crewSlug);
     } catch (err) {

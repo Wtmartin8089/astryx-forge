@@ -4,8 +4,8 @@ import { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, where 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
-import { getShips, saveShips } from "../utils/gameData";
 import { updateCharacter } from "../utils/crewFirestore";
+import { subscribeToShips, saveShip } from "../utils/shipsFirestore";
 import { isAdmin } from "../utils/adminAuth";
 import type { ShipData, ShipWeapon, CrewMember } from "../types/fleet";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
@@ -49,7 +49,7 @@ const ShipPage = () => {
   const { shipSlug } = useParams();
   const [searchParams] = useSearchParams();
 
-  const [shipsData, setShipsData] = useState<Record<string, ShipData>>(() => getShips());
+  const [shipsData, setShipsData] = useState<Record<string, ShipData>>({});
   const [shipCrew, setShipCrew] = useState<{ slug: string; member: CrewMember }[]>([]);
   const [allFirebaseCrew, setAllFirebaseCrew] = useState<Record<string, CrewMember>>({});
   const [editMode, setEditMode] = useState<boolean>(() => searchParams.get("edit") === "true");
@@ -121,6 +121,11 @@ const ShipPage = () => {
     });
     return () => unsubscribe();
   }, [shipSlug]);
+
+  // Subscribe to ships from Firestore
+  useEffect(() => {
+    return subscribeToShips(setShipsData);
+  }, []);
 
   // Ship forum threads — subscribe + seed starter threads on first load
   useEffect(() => {
@@ -225,9 +230,9 @@ const ShipPage = () => {
 
   // Helpers for updating ship fields and auto-saving
   const updateShip = (updater: (draft: ShipData) => ShipData) => {
-    const next = { ...shipsData, [shipSlug!]: updater({ ...shipData }) };
-    setShipsData(next);
-    saveShips(next);
+    const updated = updater({ ...shipData });
+    setShipsData((prev) => ({ ...prev, [shipSlug!]: updated }));
+    saveShip(shipSlug!, updated).catch(console.error);
     flashSaved();
   };
 

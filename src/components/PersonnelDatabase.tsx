@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
-import { getShips } from "../utils/gameData";
+import { subscribeToShips } from "../utils/shipsFirestore";
 import type { CrewMember, ShipData } from "../types/fleet";
 import "../assets/lcars.css";
 
@@ -26,13 +26,13 @@ const PersonnelDatabase = () => {
   const [filterShip, setFilterShip] = useState("");
 
   useEffect(() => {
-    setShips(getShips());
+    const unsubShips = subscribeToShips(setShips);
     const q = query(collection(db, "crew"), where("status", "==", "active"));
     const unsub = onSnapshot(q, (snap) => {
       setCrew(snap.docs.map((d) => ({ slug: d.id, member: d.data() as CrewMember })));
     });
     const timer = setTimeout(() => setVisible(true), 50);
-    return () => { unsub(); clearTimeout(timer); };
+    return () => { unsubShips(); unsub(); clearTimeout(timer); };
   }, []);
 
   // Derive unique filter options from loaded data

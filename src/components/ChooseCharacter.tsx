@@ -19,7 +19,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
-import { getShips, RANKS } from "../utils/gameData";
+import { RANKS } from "../utils/gameData";
+import { subscribeToShips } from "../utils/shipsFirestore";
 import { subscribeToAllCrew, claimCharacter, createCharacter } from "../utils/crewFirestore";
 import type { ShipData, CrewMember } from "../types/fleet";
 import "../assets/lcars.css";
@@ -276,7 +277,7 @@ const ChooseCharacter = () => {
 
   // --- Load ships once ---
   useEffect(() => {
-    setShips(getShips());
+    return subscribeToShips(setShips);
   }, []);
 
   // --- Real-time crew subscription ---

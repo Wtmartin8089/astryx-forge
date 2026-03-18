@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getShips } from "../utils/gameData";
+import { subscribeToShips } from "../utils/shipsFirestore";
 import { subscribeToShipCrew, createCharacter } from "../utils/crewFirestore";
 import { isAdmin } from "../utils/adminAuth";
 import { getAuth } from "firebase/auth";
@@ -62,14 +62,14 @@ const Starbase = () => {
   const shipEntries = Object.entries(ships).map(([id, s]) => ({ id, name: s.name })).filter((s) => s.name);
 
   useEffect(() => {
-    const loadedShips = getShips();
-    setShips(loadedShips);
-    // Set default ship selection
-    const firstShipId = Object.keys(loadedShips)[0] || "";
-    setCmdShip(firstShipId);
+    const unsubShips = subscribeToShips((loadedShips) => {
+      setShips(loadedShips);
+      // Set default ship selection on first load
+      setCmdShip((prev) => prev || Object.keys(loadedShips)[0] || "");
+    });
 
     const unsubscribe = subscribeToShipCrew(STARBASE_ID, (data) => setStarbaseCrew(data));
-    return () => unsubscribe();
+    return () => { unsubShips(); unsubscribe(); };
   }, []);
 
   const starbaseCrewEntries = Object.entries(starbaseCrew);

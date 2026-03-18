@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getShips } from "../utils/gameData";
 import { subscribeToAllCrew, createCharacter } from "../utils/crewFirestore";
+import { subscribeToShips } from "../utils/shipsFirestore";
 import { isAdmin } from "../utils/adminAuth";
 import { getAuth } from "firebase/auth";
 import type { CrewMember, ShipData } from "../types/fleet";
@@ -26,11 +26,12 @@ const CrewRoster = () => {
   const userIsAdmin = currentUser ? isAdmin(currentUser.uid) : false;
 
   useEffect(() => {
-    setShips(getShips());
-    const unsubscribe = subscribeToAllCrew((data) => setCrew(data));
+    const unsubShips = subscribeToShips(setShips);
+    const unsubCrew = subscribeToAllCrew((data) => setCrew(data));
     const timer = setTimeout(() => setVisible(true), 50);
     return () => {
-      unsubscribe();
+      unsubShips();
+      unsubCrew();
       clearTimeout(timer);
     };
   }, []);

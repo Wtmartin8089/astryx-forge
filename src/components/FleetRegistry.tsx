@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
-import { getShips, saveShips } from "../utils/gameData";
+import { subscribeToShips, saveShip, migrateShipsToFirestore } from "../utils/shipsFirestore";
 import type { ShipData } from "../types/fleet";
 import FleetTransmissions from "./FleetTransmissions";
 import "../assets/lcars.css";
@@ -33,28 +33,15 @@ const FleetRegistry = () => {
     });
   }, []);
 
+  // Subscribe to ships from Firestore (migrating from localStorage on first load)
   useEffect(() => {
-    const loadShips = () => {
-      setShips(getShips());
-    };
-    const syncOnFocus = () => {
-      loadShips();
-    };
-
-    loadShips();
+    migrateShipsToFirestore().catch(console.error);
     const timer = setTimeout(() => setVisible(true), 50);
-
-    window.addEventListener("storage", loadShips);
-    window.addEventListener("focus", syncOnFocus);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("storage", loadShips);
-      window.removeEventListener("focus", syncOnFocus);
-    };
+    const unsub = subscribeToShips(setShips);
+    return () => { unsub(); clearTimeout(timer); };
   }, []);
 
-  const handleAddShip = () => {
+  const handleAddShip = async () => {
     const slug = `ship-${Date.now()}`;
     const newShip: ShipData = {
       name: "NEW VESSEL",
@@ -73,9 +60,7 @@ const FleetRegistry = () => {
       weapons: [],
       crewIds: [],
     };
-    const updated = { ...ships, [slug]: newShip };
-    saveShips(updated);
-    setShips(updated);
+    await saveShip(slug, newShip);
     navigate(`/ship/${slug}?edit=true`);
   };
 

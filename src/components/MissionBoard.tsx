@@ -10,7 +10,7 @@ import {
   deleteMission,
   seedStarterMissions,
 } from "../server/routes/missions";
-import { getShips } from "../utils/gameData";
+import { subscribeToShips } from "../utils/shipsFirestore";
 import { createMissionThread } from "../server/forum/forumService";
 import { starterMissions } from "../data/starterMissions";
 import { MISSION_TYPES } from "../data/missionTemplates";
@@ -29,9 +29,8 @@ const MissionBoard = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [filter, setFilter] = useState<MissionStatus | "all">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [shipEntries] = useState<{ id: string; name: string }[]>(() =>
-    Object.entries(getShips()).map(([id, s]) => ({ id, name: s.name })).filter((s) => s.name)
-  );
+  const [ships, setShips] = useState<Record<string, import("../types/fleet").ShipData>>({});
+  const shipEntries = Object.entries(ships).map(([id, s]) => ({ id, name: s.name })).filter((s) => s.name);
   const [generating, setGenerating] = useState(false);
   const [genType, setGenType] = useState("");
   const [genSystem, setGenSystem] = useState("");
@@ -45,9 +44,10 @@ const MissionBoard = () => {
   }, []);
 
   useEffect(() => {
+    const unsubShips = subscribeToShips(setShips);
     const unsub = subscribeMissions(setMissions);
     const timer = setTimeout(() => setVisible(true), 50);
-    return () => { unsub(); clearTimeout(timer); };
+    return () => { unsubShips(); unsub(); clearTimeout(timer); };
   }, []);
 
   const displayed = filter === "all"
@@ -220,7 +220,7 @@ const MissionBoard = () => {
                   {m.system} · <span style={{ color: sc, textTransform: "uppercase", letterSpacing: "1px" }}>{m.status}</span>
                   {(m.shipId || m.assignedShip) && (
                     <span style={{ marginLeft: "0.75rem", color: "#9933cc" }}>
-                      ⬡ {m.shipId ? (getShips()[m.shipId]?.name || m.shipId) : m.assignedShip}
+                      ⬡ {m.shipId ? (ships[m.shipId]?.name || m.shipId) : m.assignedShip}
                     </span>
                   )}
                   {m.stardate && <span style={{ marginLeft: "0.75rem", color: "#444" }}>SD {m.stardate}</span>}
