@@ -3,11 +3,12 @@ import {
   doc,
   addDoc,
   getDoc,
+  getDocs,
   onSnapshot,
   serverTimestamp,
   query,
   orderBy,
-  setDoc,
+  limit,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 
@@ -114,11 +115,12 @@ export async function createCreature(
 
 /**
  * Seed starter creatures if the collection is empty.
- * Safe to call on every mount — no-ops if data already exists.
+ * Checks the creatures collection directly — no extra meta doc needed.
+ * Safe to call on every mount.
  */
 export async function seedCreaturesIfEmpty(): Promise<void> {
-  const snap = await getDoc(doc(db, "__meta__", "creatures_seeded"));
-  if (snap.exists()) return;
+  const check = await getDocs(query(collection(db, COL), limit(1)));
+  if (!check.empty) return;
 
   for (const creature of SEED_CREATURES) {
     await addDoc(collection(db, COL), {
@@ -126,7 +128,4 @@ export async function seedCreaturesIfEmpty(): Promise<void> {
       createdAt: serverTimestamp(),
     });
   }
-
-  // Mark as seeded so we never run this twice
-  await setDoc(doc(db, "__meta__", "creatures_seeded"), { at: serverTimestamp() });
 }
