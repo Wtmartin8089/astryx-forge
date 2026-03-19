@@ -99,6 +99,14 @@ const SystemPlanetNew = () => {
       <div style={{ backgroundColor: "#111", border: "1px solid #6699cc30", borderTop: "3px solid #6699cc", borderRadius: "4px", padding: "2rem" }}>
         <form onSubmit={handleSubmit}>
 
+          {/* Star System (read-only) */}
+          <div style={{ marginBottom: "1rem" }}>
+            {lbl("Star System")}
+            <div style={{ ...inputStyle, color: "#ffcc33", border: "1px solid #ffcc3340", backgroundColor: "#0d0d0d", display: "flex", alignItems: "center" }}>
+              {system?.name || "Loading..."}
+            </div>
+          </div>
+
           {/* Row: Planet Name + Class */}
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
             <div>
