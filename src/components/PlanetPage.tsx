@@ -1,6 +1,7 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import planetsData from "../data/planetsData.json";
+import { getPlanet, deletePlanet } from "../utils/planetsFirestore";
+import type { PlanetRecord } from "../utils/planetsFirestore";
 import "../assets/lcars.css";
 
 // Import all planet images
@@ -38,23 +39,40 @@ const planetColors: Record<string, { primary: string; accent: string }> = {
   kakistos: { primary: "#4a3600", accent: "#cc9933" },
 };
 
-type PlanetData = {
-  name: string;
-  description: string;
-  resources: string[];
-  logs: string[];
-};
-
 const PlanetPage = () => {
   const { planetName } = useParams();
-  const planetData = (planetsData as Record<string, PlanetData>)[planetName!] || null;
+  const navigate = useNavigate();
+  const [planetData, setPlanetData] = useState<PlanetRecord | null>(null);
+  const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setVisible(false);
-    const timer = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(timer);
+    setLoading(true);
+    if (!planetName) return;
+    getPlanet(planetName).then((data) => {
+      setPlanetData(data);
+      setLoading(false);
+      setTimeout(() => setVisible(true), 50);
+    });
   }, [planetName]);
+
+  const handleDelete = async () => {
+    if (!planetName) return;
+    setDeleting(true);
+    await deletePlanet(planetName);
+    navigate("/");
+  };
+
+  if (loading) {
+    return (
+      <div style={{ color: "#ff9900", textAlign: "center", marginTop: "4rem", fontFamily: "'Orbitron', sans-serif" }}>
+        <p style={{ fontSize: "1.2rem" }}>Scanning sector...</p>
+      </div>
+    );
+  }
 
   if (!planetData) {
     return (
@@ -72,245 +90,112 @@ const PlanetPage = () => {
   const image = planetImages[planetName!];
 
   return (
-      <div style={{
-        maxWidth: "1000px",
-        margin: "0 auto",
-        padding: "2rem",
-        fontFamily: "'Orbitron', sans-serif",
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateX(0)" : "translateX(-30px)",
-        transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-      }}>
+    <div style={{
+      maxWidth: "1000px",
+      margin: "0 auto",
+      padding: "2rem",
+      fontFamily: "'Orbitron', sans-serif",
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateX(0)" : "translateX(-30px)",
+      transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
+    }}>
 
-        {/* LCARS Header Bar */}
-        <div style={{
-          display: "flex",
-          alignItems: "stretch",
-          marginBottom: "2rem",
-          height: "50px",
-        }}>
-          <div style={{
-            width: "20px",
-            backgroundColor: colors.accent,
-            borderRadius: "20px 0 0 0",
-          }} />
-          <div style={{
-            flex: 1,
-            backgroundColor: colors.accent,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 2rem",
-          }}>
-            <h1 style={{
-              margin: 0,
-              color: "#000",
-              fontSize: "1.8rem",
-              fontWeight: "bold",
-              letterSpacing: "3px",
-              textTransform: "uppercase",
-            }}>
-              {planetData.name}
-            </h1>
-            <span style={{ color: "#000", fontWeight: "bold", fontSize: "0.8rem" }}>
-              PLANETARY DATABASE
-            </span>
-          </div>
-          <div style={{
-            width: "80px",
-            backgroundColor: "#9933cc",
-            borderRadius: "0 20px 20px 0",
-          }} />
+      {/* LCARS Header Bar */}
+      <div style={{ display: "flex", alignItems: "stretch", marginBottom: "2rem", height: "50px" }}>
+        <div style={{ width: "20px", backgroundColor: colors.accent, borderRadius: "20px 0 0 0" }} />
+        <div style={{ flex: 1, backgroundColor: colors.accent, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2rem" }}>
+          <h1 style={{ margin: 0, color: "#000", fontSize: "1.8rem", fontWeight: "bold", letterSpacing: "3px", textTransform: "uppercase" }}>
+            {planetData.name}
+          </h1>
+          <span style={{ color: "#000", fontWeight: "bold", fontSize: "0.8rem" }}>PLANETARY DATABASE</span>
         </div>
+        <div style={{ width: "80px", backgroundColor: "#9933cc", borderRadius: "0 20px 20px 0" }} />
+      </div>
 
-        {/* Main Content Grid */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: image ? "1fr 1fr" : "1fr",
-          gap: "2rem",
-          marginBottom: "2rem",
-        }}>
+      {/* Main Content Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: image ? "1fr 1fr" : "1fr", gap: "2rem", marginBottom: "2rem" }}>
 
-          {/* Planet Image */}
-          {image && (
-            <div style={{
-              position: "relative",
-              borderRadius: "12px",
-              overflow: "hidden",
-              border: `3px solid ${colors.accent}`,
-              boxShadow: `0 0 30px ${colors.accent}40`,
-            }}>
-              <img
-                src={image}
-                alt={planetData.name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  display: "block",
-                  minHeight: "300px",
-                }}
-              />
-              <div style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                background: `linear-gradient(transparent, ${colors.primary})`,
-                padding: "2rem 1rem 1rem",
-              }}>
-                <span style={{
-                  color: colors.accent,
-                  fontSize: "0.75rem",
-                  fontWeight: "bold",
-                  letterSpacing: "2px",
-                }}>
-                  VISUAL SCAN COMPLETE
+        {/* Planet Image */}
+        {image && (
+          <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden", border: `3px solid ${colors.accent}`, boxShadow: `0 0 30px ${colors.accent}40` }}>
+            <img src={image} alt={planetData.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", minHeight: "300px" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: `linear-gradient(transparent, ${colors.primary})`, padding: "2rem 1rem 1rem" }}>
+              <span style={{ color: colors.accent, fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "2px" }}>VISUAL SCAN COMPLETE</span>
+            </div>
+          </div>
+        )}
+
+        {/* Planet Info Panel */}
+        <div>
+          {/* Description */}
+          <div style={{ backgroundColor: "#111", border: `2px solid ${colors.accent}`, borderRadius: "0 30px 0 0", padding: "1.5rem", marginBottom: "1.5rem" }}>
+            <h2 style={{ color: colors.accent, fontSize: "0.85rem", letterSpacing: "2px", marginBottom: "0.75rem", textTransform: "uppercase" }}>Survey Report</h2>
+            <p style={{ color: "#ccc", lineHeight: "1.8", fontSize: "1rem" }}>{planetData.description}</p>
+          </div>
+
+          {/* Resources */}
+          <div style={{ backgroundColor: "#111", border: "2px solid #ffcc33", borderRadius: "0 30px 0 0", padding: "1.5rem" }}>
+            <h2 style={{ color: "#ffcc33", fontSize: "0.85rem", letterSpacing: "2px", marginBottom: "0.75rem", textTransform: "uppercase" }}>Detected Resources</h2>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+              {planetData.resources?.map((res: string, idx: number) => (
+                <span key={idx} style={{ backgroundColor: "#ffcc3320", border: "1px solid #ffcc33", borderRadius: "20px", padding: "0.4rem 1rem", color: "#ffcc33", fontSize: "0.85rem", fontWeight: "bold" }}>
+                  {res}
                 </span>
-              </div>
-            </div>
-          )}
-
-          {/* Planet Info Panel */}
-          <div>
-            {/* Description */}
-            <div style={{
-              backgroundColor: "#111",
-              border: `2px solid ${colors.accent}`,
-              borderRadius: "0 30px 0 0",
-              padding: "1.5rem",
-              marginBottom: "1.5rem",
-            }}>
-              <h2 style={{
-                color: colors.accent,
-                fontSize: "0.85rem",
-                letterSpacing: "2px",
-                marginBottom: "0.75rem",
-                textTransform: "uppercase",
-              }}>
-                Survey Report
-              </h2>
-              <p style={{
-                color: "#ccc",
-                lineHeight: "1.8",
-                fontSize: "1rem",
-              }}>
-                {planetData.description}
-              </p>
-            </div>
-
-            {/* Resources */}
-            <div style={{
-              backgroundColor: "#111",
-              border: "2px solid #ffcc33",
-              borderRadius: "0 30px 0 0",
-              padding: "1.5rem",
-            }}>
-              <h2 style={{
-                color: "#ffcc33",
-                fontSize: "0.85rem",
-                letterSpacing: "2px",
-                marginBottom: "0.75rem",
-                textTransform: "uppercase",
-              }}>
-                Detected Resources
-              </h2>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                {planetData.resources?.map((res: string, idx: number) => (
-                  <span key={idx} style={{
-                    backgroundColor: "#ffcc3320",
-                    border: "1px solid #ffcc33",
-                    borderRadius: "20px",
-                    padding: "0.4rem 1rem",
-                    color: "#ffcc33",
-                    fontSize: "0.85rem",
-                    fontWeight: "bold",
-                  }}>
-                    {res}
-                  </span>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-
-        {/* Mission Logs Section */}
-        <div style={{
-          backgroundColor: "#111",
-          border: "2px solid #6699cc",
-          borderRadius: "0 30px 0 0",
-          padding: "1.5rem",
-          marginBottom: "2rem",
-        }}>
-          <h2 style={{
-            color: "#6699cc",
-            fontSize: "0.85rem",
-            letterSpacing: "2px",
-            marginBottom: "1rem",
-            textTransform: "uppercase",
-          }}>
-            Captain's Log Entries
-          </h2>
-          {planetData.logs?.map((log: string, idx: number) => (
-            <div key={idx} style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "1rem",
-              padding: "0.75rem 0",
-              borderBottom: idx < planetData.logs.length - 1 ? "1px solid #333" : "none",
-            }}>
-              <div style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                backgroundColor: "#6699cc",
-                marginTop: "0.5rem",
-                flexShrink: 0,
-              }} />
-              <p style={{
-                color: "#aaa",
-                margin: 0,
-                lineHeight: "1.6",
-                fontSize: "0.95rem",
-              }}>
-                {log}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom LCARS bar with navigation */}
-        <div style={{
-          display: "flex",
-          alignItems: "stretch",
-          height: "45px",
-        }}>
-          <div style={{
-            width: "80px",
-            backgroundColor: "#9933cc",
-            borderRadius: "20px 0 0 20px",
-          }} />
-          <Link to="/" style={{
-            flex: 1,
-            backgroundColor: colors.accent,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#000",
-            fontWeight: "bold",
-            textDecoration: "none",
-            letterSpacing: "2px",
-            fontSize: "0.9rem",
-          }}>
-            RETURN TO STAR MAP
-          </Link>
-          <div style={{
-            width: "20px",
-            backgroundColor: colors.accent,
-            borderRadius: "0 20px 20px 0",
-          }} />
         </div>
       </div>
+
+      {/* Mission Logs Section */}
+      <div style={{ backgroundColor: "#111", border: "2px solid #6699cc", borderRadius: "0 30px 0 0", padding: "1.5rem", marginBottom: "2rem" }}>
+        <h2 style={{ color: "#6699cc", fontSize: "0.85rem", letterSpacing: "2px", marginBottom: "1rem", textTransform: "uppercase" }}>Captain's Log Entries</h2>
+        {planetData.logs?.map((log: string, idx: number) => (
+          <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "1rem", padding: "0.75rem 0", borderBottom: idx < planetData.logs.length - 1 ? "1px solid #333" : "none" }}>
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#6699cc", marginTop: "0.5rem", flexShrink: 0 }} />
+            <p style={{ color: "#aaa", margin: 0, lineHeight: "1.6", fontSize: "0.95rem" }}>{log}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Delete */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
+        {confirmDelete ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span style={{ color: "#cc3333", fontSize: "0.7rem", letterSpacing: "1px", fontFamily: "'Orbitron', sans-serif" }}>CONFIRM DELETE?</span>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{ backgroundColor: "#cc3333", border: "none", borderRadius: "20px", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: "bold", letterSpacing: "1.5px", padding: "0.45rem 1.2rem", cursor: "pointer" }}
+            >
+              {deleting ? "DELETING..." : "YES, DELETE"}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              style={{ backgroundColor: "transparent", border: "1px solid #333", borderRadius: "20px", color: "#666", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.45rem 1.2rem", cursor: "pointer" }}
+            >
+              CANCEL
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            style={{ backgroundColor: "transparent", border: "1px solid #cc333360", borderRadius: "20px", color: "#cc3333", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.45rem 1.2rem", cursor: "pointer" }}
+          >
+            DELETE PLANET RECORD
+          </button>
+        )}
+      </div>
+
+      {/* Bottom LCARS bar */}
+      <div style={{ display: "flex", alignItems: "stretch", height: "45px" }}>
+        <div style={{ width: "80px", backgroundColor: "#9933cc", borderRadius: "20px 0 0 20px" }} />
+        <Link to="/" style={{ flex: 1, backgroundColor: colors.accent, display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontWeight: "bold", textDecoration: "none", letterSpacing: "2px", fontSize: "0.9rem" }}>
+          RETURN TO STAR MAP
+        </Link>
+        <div style={{ width: "20px", backgroundColor: colors.accent, borderRadius: "0 20px 20px 0" }} />
+      </div>
+    </div>
   );
 };
 
