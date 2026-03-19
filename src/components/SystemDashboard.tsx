@@ -150,6 +150,14 @@ const SystemDashboard = () => {
         </div>
       )}
 
+      {/* Known Planets */}
+      {system.knownPlanets && (
+        <div style={{ backgroundColor: "#111", border: "1px solid #6699cc20", borderLeft: "3px solid #6699cc", borderRadius: "0 8px 0 0", padding: "0.8rem 1rem", marginBottom: "1.25rem" }}>
+          <p style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.3rem" }}>Planet Names</p>
+          <p style={{ color: "#ccc", fontSize: "0.85rem", margin: 0 }}>{system.knownPlanets}</p>
+        </div>
+      )}
+
       {/* Notable Features + Hazards */}
       {(system.notableFeatures || system.hazards) && (
         <div style={{ display: "grid", gridTemplateColumns: system.notableFeatures && system.hazards ? "1fr 1fr" : "1fr", gap: "0.75rem", marginBottom: "1.25rem" }}>

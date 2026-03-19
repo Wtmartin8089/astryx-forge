@@ -17,7 +17,7 @@ const SystemsList = () => {
   const blankForm = {
     name: "", region: "", sector: "", stellarClass: "", starType: "",
     numberOfStars: "", numberOfPlanets: "", allegiance: "", explorationStatus: "",
-    hazards: "", notableFeatures: "", description: "",
+    hazards: "", notableFeatures: "", knownPlanets: "", description: "",
   };
   const [form, setForm] = useState(blankForm);
   const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }));
@@ -219,6 +219,12 @@ const SystemsList = () => {
           <div style={{ marginBottom: "1rem" }}>
             <label style={{ display: "block", color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.4rem" }}>Notable Features</label>
             <textarea value={form.notableFeatures} onChange={(e) => set("notableFeatures", e.target.value)} placeholder="Nebulae, wormholes, anomalies, asteroid fields, ancient ruins..." rows={2} style={{ ...inputStyle, resize: "vertical" }} />
+          </div>
+
+          {/* Row 5b: Known Planets */}
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.4rem" }}>Planet Names</label>
+            <textarea value={form.knownPlanets} onChange={(e) => set("knownPlanets", e.target.value)} placeholder="e.g. Machida Prime, Machida II, Larconis..." rows={2} style={{ ...inputStyle, resize: "vertical" }} />
           </div>
 
           {/* Row 6: Hazards */}

@@ -28,6 +28,7 @@ export interface StarSystem {
   explorationStatus: string;
   hazards: string;
   notableFeatures: string;
+  knownPlanets: string;
   description: string;
   createdBy: string;
   createdAt?: any;
