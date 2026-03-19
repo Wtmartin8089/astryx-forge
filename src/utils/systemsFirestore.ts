@@ -4,6 +4,7 @@ import {
   addDoc,
   getDoc,
   getDocs,
+  deleteDoc,
   onSnapshot,
   serverTimestamp,
   query,
@@ -175,4 +176,8 @@ export function subscribeToCreaturesBySystem(
 /** Patch an existing creature with systemId (for linking via CreatureNew) */
 export async function patchCreatureSystemId(creatureId: string, systemId: string): Promise<void> {
   await updateDoc(doc(db, "creatures", creatureId), { systemId });
+}
+
+export async function deleteSystemPlanet(id: string): Promise<void> {
+  await deleteDoc(doc(db, "systemPlanets", id));
 }
