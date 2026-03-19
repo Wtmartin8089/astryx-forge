@@ -24,10 +24,20 @@ const SystemPlanetDetail = () => {
   if (loading) return <p style={{ color: "#6699cc", textAlign: "center", fontFamily: "'Orbitron', sans-serif", marginTop: "4rem" }}>Accessing planetary database...</p>;
   if (!planet) return <p style={{ color: "#cc3333", textAlign: "center", fontFamily: "'Orbitron', sans-serif", marginTop: "4rem" }}>Planet record not found.</p>;
 
-  const field = (label: string, value: string | undefined) => {
+  const stat = (label: string, value: string | undefined) => {
     if (!value) return null;
     return (
-      <div style={{ marginBottom: "1.25rem", padding: "0.9rem 1.1rem", backgroundColor: "#0d0d0d", border: "1px solid #6699cc18", borderLeft: "3px solid #6699cc", borderRadius: "0 8px 0 0" }}>
+      <div style={{ backgroundColor: "#111", border: "1px solid #6699cc20", borderRadius: "4px", padding: "0.6rem 0.9rem" }}>
+        <p style={{ color: "#555", fontSize: "0.58rem", letterSpacing: "1.5px", textTransform: "uppercase", margin: "0 0 0.2rem" }}>{label}</p>
+        <p style={{ color: "#6699cc", fontSize: "0.82rem", margin: 0 }}>{value}</p>
+      </div>
+    );
+  };
+
+  const section = (label: string, value: string | undefined) => {
+    if (!value) return null;
+    return (
+      <div style={{ marginBottom: "1rem", padding: "0.9rem 1.1rem", backgroundColor: "#0d0d0d", border: "1px solid #6699cc18", borderLeft: "3px solid #6699cc", borderRadius: "0 8px 0 0" }}>
         <p style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.3rem" }}>{label}</p>
         <p style={{ color: "#ccc", fontSize: "0.88rem", lineHeight: "1.6", whiteSpace: "pre-wrap", margin: 0 }}>{value}</p>
       </div>
@@ -48,32 +58,40 @@ const SystemPlanetDetail = () => {
       </p>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "stretch", marginBottom: "2rem", height: "50px" }}>
+      <div style={{ display: "flex", alignItems: "stretch", marginBottom: "1.5rem", height: "50px" }}>
         <div style={{ width: "20px", backgroundColor: "#6699cc", borderRadius: "20px 0 0 0" }} />
         <div style={{ flex: 1, backgroundColor: "#6699cc", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2rem" }}>
           <h1 style={{ margin: 0, color: "#000", fontSize: "1.5rem", fontWeight: "bold", letterSpacing: "3px", textTransform: "uppercase" }}>{planet.name}</h1>
           {planet.classification && (
-            <span style={{ backgroundColor: "#00000020", borderRadius: "12px", color: "#000", fontSize: "0.65rem", fontWeight: "bold", padding: "0.2rem 0.75rem", letterSpacing: "1px" }}>
-              {planet.classification}
+            <span style={{ backgroundColor: "#00000025", borderRadius: "12px", color: "#000", fontSize: "0.7rem", fontWeight: "bold", padding: "0.2rem 0.85rem", letterSpacing: "2px" }}>
+              CLASS {planet.classification.toUpperCase()}
             </span>
           )}
         </div>
         <div style={{ width: "80px", backgroundColor: "#9933cc", borderRadius: "0 20px 20px 0" }} />
       </div>
 
-      {/* Quick stats */}
-      {planet.type && (
-        <div style={{ backgroundColor: "#111", border: "1px solid #6699cc20", borderRadius: "4px", padding: "0.65rem 1rem", marginBottom: "1.5rem" }}>
-          <p style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.2rem" }}>Type</p>
-          <p style={{ color: "#6699cc", fontSize: "0.85rem", margin: 0 }}>{planet.type}</p>
-        </div>
-      )}
+      {/* Quick-stat grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.6rem", marginBottom: "1.5rem" }}>
+        {stat("System Data", planet.systemData)}
+        {stat("Gravity", planet.gravity)}
+        {stat("Year and Day", planet.yearAndDay)}
+        {stat("Hydrosphere", planet.hydrosphere)}
+        {stat("Climate", planet.climate)}
+        {stat("Tech Level", planet.techLevel)}
+        {stat("Affiliation", planet.affiliation)}
+      </div>
 
-      {field("Description", planet.description)}
-      {field("Resources", planet.resources)}
-      {field("Additional Notes", planet.notes)}
+      {section("Atmosphere", planet.atmosphere)}
+      {section("Sapient Species", planet.sapientSpecies)}
+      {section("Government", planet.government)}
+      {section("Culture", planet.culture)}
+      {section("Resources", planet.resources)}
+      {section("Places of Note", planet.placesOfNote)}
+      {section("Ship Facilities", planet.shipFacilities)}
+      {section("Other Detail", planet.otherDetail)}
 
-      <p style={{ color: "#333", fontSize: "0.6rem", letterSpacing: "1px", textAlign: "right", marginBottom: "1rem" }}>
+      <p style={{ color: "#333", fontSize: "0.6rem", letterSpacing: "1px", textAlign: "right", margin: "1rem 0" }}>
         Catalogued by: {planet.createdBy}
       </p>
 

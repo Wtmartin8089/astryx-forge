@@ -7,20 +7,19 @@ import "../assets/lcars.css";
 
 const auth = getAuth();
 
+const blank = {
+  name: "", classification: "", systemData: "", gravity: "",
+  yearAndDay: "", atmosphere: "", hydrosphere: "", climate: "",
+  sapientSpecies: "", techLevel: "", government: "", culture: "",
+  affiliation: "", resources: "", placesOfNote: "", shipFacilities: "", otherDetail: "",
+};
+
 const SystemPlanetNew = () => {
   const { systemId } = useParams<{ systemId: string }>();
   const navigate = useNavigate();
   const [system, setSystem] = useState<StarSystem | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  const [form, setForm] = useState({
-    name: "",
-    classification: "",
-    type: "",
-    description: "",
-    resources: "",
-    notes: "",
-  });
+  const [form, setForm] = useState(blank);
 
   useEffect(() => {
     if (systemId) getSystem(systemId).then(setSystem);
@@ -53,14 +52,28 @@ const SystemPlanetNew = () => {
     boxSizing: "border-box",
   };
 
-  const label = (text: string) => (
+  const lbl = (text: string) => (
     <label style={{ display: "block", color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.4rem" }}>
       {text}
     </label>
   );
 
+  const field1 = (label: string, key: string, placeholder = "") => (
+    <div style={{ marginBottom: "1rem" }}>
+      {lbl(label)}
+      <input type="text" value={(form as any)[key]} onChange={(e) => set(key, e.target.value)} placeholder={placeholder} style={inputStyle} />
+    </div>
+  );
+
+  const fieldTA = (label: string, key: string, placeholder = "", rows = 2) => (
+    <div style={{ marginBottom: "1rem" }}>
+      {lbl(label)}
+      <textarea value={(form as any)[key]} onChange={(e) => set(key, e.target.value)} placeholder={placeholder} rows={rows} style={{ ...inputStyle, resize: "vertical" }} />
+    </div>
+  );
+
   return (
-    <div style={{ maxWidth: "720px", margin: "0 auto", padding: "2rem", fontFamily: "'Orbitron', sans-serif" }}>
+    <div style={{ maxWidth: "760px", margin: "0 auto", padding: "2rem", fontFamily: "'Orbitron', sans-serif" }}>
       {/* Breadcrumb */}
       <p style={{ color: "#555", fontSize: "0.65rem", letterSpacing: "2px", marginBottom: "1rem", textTransform: "uppercase" }}>
         <Link to="/systems" style={{ color: "#ffcc3380", textDecoration: "none" }}>Star Systems</Link>
@@ -77,7 +90,7 @@ const SystemPlanetNew = () => {
         <div style={{ width: "20px", backgroundColor: "#6699cc", borderRadius: "20px 0 0 0" }} />
         <div style={{ flex: 1, backgroundColor: "#6699cc", display: "flex", alignItems: "center", padding: "0 2rem" }}>
           <h1 style={{ margin: 0, color: "#000", fontSize: "1.3rem", fontWeight: "bold", letterSpacing: "3px", textTransform: "uppercase" }}>
-            Catalog New Planet
+            Planetary Template
           </h1>
         </div>
         <div style={{ width: "80px", backgroundColor: "#9933cc", borderRadius: "0 20px 20px 0" }} />
@@ -85,38 +98,46 @@ const SystemPlanetNew = () => {
 
       <div style={{ backgroundColor: "#111", border: "1px solid #6699cc30", borderTop: "3px solid #6699cc", borderRadius: "4px", padding: "2rem" }}>
         <form onSubmit={handleSubmit}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.1rem" }}>
+
+          {/* Row: Planet Name + Class */}
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
             <div>
-              {label("Planet Name *")}
-              <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Machida Prime" style={inputStyle} required />
+              {lbl("Planet Name *")}
+              <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Machida" style={inputStyle} required />
             </div>
             <div>
-              {label("Classification")}
-              <input type="text" value={form.classification} onChange={(e) => set("classification", e.target.value)} placeholder="e.g. Class M, Class L" style={inputStyle} />
+              {lbl("Class")}
+              <input type="text" value={form.classification} onChange={(e) => set("classification", e.target.value)} placeholder="e.g. M" style={inputStyle} />
             </div>
           </div>
 
-          <div style={{ marginBottom: "1.1rem" }}>
-            {label("Type")}
-            <input type="text" value={form.type} onChange={(e) => set("type", e.target.value)} placeholder="e.g. Terrestrial, Gas Giant, Ice World" style={inputStyle} />
+          {/* Row: System Data + Gravity */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+            <div>
+              {lbl("System Data")}
+              <input type="text" value={form.systemData} onChange={(e) => set("systemData", e.target.value)} placeholder="e.g. 2 Moons" style={inputStyle} />
+            </div>
+            <div>
+              {lbl("Gravity")}
+              <input type="text" value={form.gravity} onChange={(e) => set("gravity", e.target.value)} placeholder="e.g. 1.18 G" style={inputStyle} />
+            </div>
           </div>
 
-          <div style={{ marginBottom: "1.1rem" }}>
-            {label("Description")}
-            <textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Survey report and general overview..." rows={4} style={{ ...inputStyle, resize: "vertical" }} />
-          </div>
+          {field1("Year and Day", "yearAndDay", "e.g. 360 days / 30 hrs. / day")}
+          {field1("Atmosphere", "atmosphere", "e.g. Oxy/Nitro / High Ozone content / Earth-Norm. pressure")}
+          {field1("Hydrosphere", "hydrosphere", "e.g. 50% Water (surface)")}
+          {field1("Climate", "climate", "e.g. Sub-tropical")}
+          {fieldTA("Sapient Species", "sapientSpecies", "e.g. Human - 20 mill. / Centaur - 20 mill. / Mixed races 10 mill.", 2)}
+          {field1("Tech Level", "techLevel", "e.g. Lvl. 5-6")}
+          {fieldTA("Government", "government", "e.g. Theocracy", 2)}
+          {fieldTA("Culture", "culture", "e.g. Description of society and customs...", 3)}
+          {field1("Affiliation", "affiliation", "e.g. Independent - UFP")}
+          {fieldTA("Resources", "resources", "e.g. Dilithium (any form) / Gold & precious metals / Starship building materials", 2)}
+          {fieldTA("Places of Note", "placesOfNote", "e.g. Drake Falls - 375 ft. H / 1.5 mil. W", 2)}
+          {fieldTA("Ship Facilities", "shipFacilities", "e.g. Starship repair facilities / Starship building yards / Starbase orbiting planet", 3)}
+          {fieldTA("Other Detail", "otherDetail", "Any additional planetary information...", 3)}
 
-          <div style={{ marginBottom: "1.1rem" }}>
-            {label("Resources")}
-            <textarea value={form.resources} onChange={(e) => set("resources", e.target.value)} placeholder="Detected minerals, energy sources, biological resources..." rows={3} style={{ ...inputStyle, resize: "vertical" }} />
-          </div>
-
-          <div style={{ marginBottom: "1.5rem" }}>
-            {label("Additional Notes")}
-            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Hazards, mission logs, points of interest..." rows={3} style={{ ...inputStyle, resize: "vertical" }} />
-          </div>
-
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "0.5rem" }}>
             <Link
               to={`/systems/${systemId}/planets`}
               style={{ backgroundColor: "transparent", border: "1px solid #333", borderRadius: "20px", color: "#666", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.5rem 1.2rem", textDecoration: "none", display: "flex", alignItems: "center" }}

@@ -92,9 +92,9 @@ const SystemPlanets = () => {
                     {p.classification}
                   </span>
                 )}
-                {p.description && (
-                  <p style={{ color: "#aaa", fontSize: "0.78rem", margin: "0.5rem 0 0", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } as any}>
-                    {p.description}
+                {p.climate && (
+                  <p style={{ color: "#aaa", fontSize: "0.78rem", margin: "0.5rem 0 0" }}>
+                    {p.climate}
                   </p>
                 )}
               </div>

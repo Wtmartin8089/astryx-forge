@@ -62,10 +62,21 @@ export interface SystemPlanet {
   systemId: string;
   name: string;
   classification: string;
-  type: string;
-  description: string;
+  systemData: string;
+  gravity: string;
+  yearAndDay: string;
+  atmosphere: string;
+  hydrosphere: string;
+  climate: string;
+  sapientSpecies: string;
+  techLevel: string;
+  government: string;
+  culture: string;
+  affiliation: string;
   resources: string;
-  notes: string;
+  placesOfNote: string;
+  shipFacilities: string;
+  otherDetail: string;
   createdBy: string;
   createdAt?: any;
 }
