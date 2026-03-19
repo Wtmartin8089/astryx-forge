@@ -130,7 +130,45 @@ const SystemDashboard = () => {
         <div style={{ width: "80px", backgroundColor: "#9933cc", borderRadius: "0 20px 20px 0" }} />
       </div>
 
-      {/* System description */}
+      {/* System stats grid */}
+      {(system.stellarClass || system.starType || system.numberOfStars || system.numberOfPlanets || system.sector || system.allegiance || system.explorationStatus) && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.6rem", marginBottom: "1.25rem" }}>
+          {[
+            { label: "Stellar Class", value: system.stellarClass },
+            { label: "Star Type", value: system.starType },
+            { label: "Stars", value: system.numberOfStars },
+            { label: "Orbital Bodies", value: system.numberOfPlanets },
+            { label: "Sector", value: system.sector },
+            { label: "Allegiance", value: system.allegiance },
+            { label: "Exploration Status", value: system.explorationStatus },
+          ].filter((f) => f.value).map((f) => (
+            <div key={f.label} style={{ backgroundColor: "#111", border: "1px solid #ffcc3318", borderRadius: "4px", padding: "0.6rem 0.8rem" }}>
+              <p style={{ color: "#555", fontSize: "0.58rem", letterSpacing: "1.5px", textTransform: "uppercase", margin: "0 0 0.2rem" }}>{f.label}</p>
+              <p style={{ color: "#ffcc33", fontSize: "0.8rem", margin: 0 }}>{f.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Notable Features + Hazards */}
+      {(system.notableFeatures || system.hazards) && (
+        <div style={{ display: "grid", gridTemplateColumns: system.notableFeatures && system.hazards ? "1fr 1fr" : "1fr", gap: "0.75rem", marginBottom: "1.25rem" }}>
+          {system.notableFeatures && (
+            <div style={{ backgroundColor: "#111", border: "1px solid #9933cc20", borderLeft: "3px solid #9933cc", borderRadius: "0 8px 0 0", padding: "0.8rem 1rem" }}>
+              <p style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.3rem" }}>Notable Features</p>
+              <p style={{ color: "#ccc", fontSize: "0.82rem", lineHeight: "1.6", margin: 0 }}>{system.notableFeatures}</p>
+            </div>
+          )}
+          {system.hazards && (
+            <div style={{ backgroundColor: "#111", border: "1px solid #cc333320", borderLeft: "3px solid #cc3333", borderRadius: "0 8px 0 0", padding: "0.8rem 1rem" }}>
+              <p style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.3rem" }}>Hazards</p>
+              <p style={{ color: "#ccc", fontSize: "0.82rem", lineHeight: "1.6", margin: 0 }}>{system.hazards}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Description */}
       {system.description && (
         <div
           style={{
@@ -142,6 +180,7 @@ const SystemDashboard = () => {
             marginBottom: "2rem",
           }}
         >
+          <p style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.3rem" }}>Overview</p>
           <p style={{ color: "#aaa", fontSize: "0.88rem", lineHeight: "1.7", margin: 0 }}>{system.description}</p>
         </div>
       )}

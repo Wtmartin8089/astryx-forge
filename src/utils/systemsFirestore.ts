@@ -19,6 +19,15 @@ export interface StarSystem {
   id?: string;
   name: string;
   region: string;
+  sector: string;
+  stellarClass: string;
+  starType: string;
+  numberOfStars: string;
+  numberOfPlanets: string;
+  allegiance: string;
+  explorationStatus: string;
+  hazards: string;
+  notableFeatures: string;
   description: string;
   createdBy: string;
   createdAt?: any;
