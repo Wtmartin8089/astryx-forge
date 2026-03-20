@@ -7,6 +7,7 @@ import {
   subscribeToCreaturesBySystem,
   deleteSystem,
   updateSystem,
+  importStarMapPlanets,
 } from "../utils/systemsFirestore";
 import type { StarSystem } from "../utils/systemsFirestore";
 import "../assets/lcars.css";
@@ -25,6 +26,7 @@ const SystemDashboard = () => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [importing, setImporting] = useState(false);
 
   const openEdit = () => {
     if (!system) return;
@@ -360,6 +362,27 @@ const SystemDashboard = () => {
           </Link>
         ))}
       </div>
+
+      {/* Import star map planets */}
+      {planetCount === 0 && (
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
+          <button
+            onClick={async () => {
+              if (!systemId) return;
+              setImporting(true);
+              const { getAuth } = await import("firebase/auth");
+              const user = getAuth().currentUser;
+              const createdBy = user?.email || user?.uid || "Unknown";
+              await importStarMapPlanets(systemId, createdBy);
+              setImporting(false);
+            }}
+            disabled={importing}
+            style={{ backgroundColor: importing ? "#6699cc20" : "#6699cc15", border: "1px solid #6699cc", borderRadius: "20px", color: "#6699cc", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: "bold", letterSpacing: "1.5px", padding: "0.5rem 1.4rem", cursor: importing ? "not-allowed" : "pointer" }}
+          >
+            {importing ? "IMPORTING PLANETS..." : "↓ IMPORT STAR MAP PLANETS"}
+          </button>
+        </div>
+      )}
 
       {/* Delete system */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
