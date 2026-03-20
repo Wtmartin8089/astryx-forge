@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { getAuth } from "firebase/auth";
 import {
   getSystem,
   subscribeToSystemPlanets,
@@ -8,7 +7,6 @@ import {
   subscribeToCreaturesBySystem,
   deleteSystem,
   updateSystem,
-  importStarMapPlanets,
 } from "../utils/systemsFirestore";
 import type { StarSystem } from "../utils/systemsFirestore";
 import "../assets/lcars.css";
@@ -27,8 +25,6 @@ const SystemDashboard = () => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState("");
 
   const openEdit = () => {
     if (!system) return;
@@ -364,33 +360,6 @@ const SystemDashboard = () => {
           </Link>
         ))}
       </div>
-
-      {/* Import star map planets */}
-      {planetCount === 0 && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "1rem", gap: "0.5rem" }}>
-          <button
-            onClick={async () => {
-              if (!systemId) return;
-              setImporting(true);
-              setImportError("");
-              try {
-                const user = getAuth().currentUser;
-                const createdBy = user?.email || user?.uid || "Unknown";
-                const count = await importStarMapPlanets(systemId, createdBy);
-                if (count === 0) setImportError("No planets found in the planets collection. Run 'npm run seed' first.");
-              } catch (err: any) {
-                setImportError(err?.message || "Import failed. Check Firestore rules.");
-              }
-              setImporting(false);
-            }}
-            disabled={importing}
-            style={{ backgroundColor: importing ? "#6699cc20" : "#6699cc15", border: "1px solid #6699cc", borderRadius: "20px", color: "#6699cc", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: "bold", letterSpacing: "1.5px", padding: "0.5rem 1.4rem", cursor: importing ? "not-allowed" : "pointer" }}
-          >
-            {importing ? "IMPORTING PLANETS..." : "↓ IMPORT STAR MAP PLANETS"}
-          </button>
-          {importError && <p style={{ color: "#cc3333", fontSize: "0.7rem", fontFamily: "'Orbitron', sans-serif", margin: 0 }}>{importError}</p>}
-        </div>
-      )}
 
       {/* Delete system */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>

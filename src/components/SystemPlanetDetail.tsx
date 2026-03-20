@@ -1,18 +1,15 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { getSystem, getSystemPlanet, deleteSystemPlanet } from "../utils/systemsFirestore";
+import { useParams, Link } from "react-router-dom";
+import { getSystem, getSystemPlanet } from "../utils/systemsFirestore";
 import type { StarSystem, SystemPlanet } from "../utils/systemsFirestore";
 import "../assets/lcars.css";
 
 const SystemPlanetDetail = () => {
   const { systemId, planetId } = useParams<{ systemId: string; planetId: string }>();
-  const navigate = useNavigate();
   const [system, setSystem] = useState<StarSystem | null>(null);
   const [planet, setPlanet] = useState<SystemPlanet | null>(null);
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!systemId || !planetId) return;
@@ -23,13 +20,6 @@ const SystemPlanetDetail = () => {
       setTimeout(() => setVisible(true), 50);
     });
   }, [systemId, planetId]);
-
-  const handleDelete = async () => {
-    if (!planetId || !systemId) return;
-    setDeleting(true);
-    await deleteSystemPlanet(planetId);
-    navigate(`/systems/${systemId}/planets`);
-  };
 
   if (loading) return <p style={{ color: "#6699cc", textAlign: "center", fontFamily: "'Orbitron', sans-serif", marginTop: "4rem" }}>Accessing planetary database...</p>;
   if (!planet) return <p style={{ color: "#cc3333", textAlign: "center", fontFamily: "'Orbitron', sans-serif", marginTop: "4rem" }}>Planet record not found.</p>;
@@ -104,35 +94,6 @@ const SystemPlanetDetail = () => {
       <p style={{ color: "#333", fontSize: "0.6rem", letterSpacing: "1px", textAlign: "right", margin: "1rem 0" }}>
         Catalogued by: {planet.createdBy}
       </p>
-
-      {/* Delete */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
-        {confirmDelete ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <span style={{ color: "#cc3333", fontSize: "0.7rem", letterSpacing: "1px" }}>CONFIRM DELETE?</span>
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              style={{ backgroundColor: "#cc3333", border: "none", borderRadius: "20px", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: "bold", letterSpacing: "1.5px", padding: "0.45rem 1.2rem", cursor: "pointer" }}
-            >
-              {deleting ? "DELETING..." : "YES, DELETE"}
-            </button>
-            <button
-              onClick={() => setConfirmDelete(false)}
-              style={{ backgroundColor: "transparent", border: "1px solid #333", borderRadius: "20px", color: "#666", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.45rem 1.2rem", cursor: "pointer" }}
-            >
-              CANCEL
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setConfirmDelete(true)}
-            style={{ backgroundColor: "transparent", border: "1px solid #cc333360", borderRadius: "20px", color: "#cc3333", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.45rem 1.2rem", cursor: "pointer" }}
-          >
-            DELETE PLANET
-          </button>
-        )}
-      </div>
 
       {/* Bottom bar */}
       <div style={{ display: "flex", alignItems: "stretch", height: "45px" }}>
