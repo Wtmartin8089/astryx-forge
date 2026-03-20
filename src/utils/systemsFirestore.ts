@@ -186,6 +186,11 @@ export async function deleteSystem(id: string): Promise<void> {
   await deleteDoc(doc(db, "systems", id));
 }
 
+export async function updateSystem(id: string, data: Partial<Omit<StarSystem, "id" | "createdAt">>): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await updateDoc(doc(db, "systems", id), data as any);
+}
+
 /** Read all docs from the `planets` collection and create systemPlanet records under systemId. */
 export async function importStarMapPlanets(systemId: string, createdBy: string): Promise<number> {
   const snap = await getDocs(collection(db, "planets"));
