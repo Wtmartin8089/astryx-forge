@@ -90,10 +90,12 @@ export function subscribeToSystemPlanets(
   const q = query(
     collection(db, "systemPlanets"),
     where("systemId", "==", systemId),
-    orderBy("name"),
   );
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<SystemPlanet, "id">) })));
+    const planets = snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as Omit<SystemPlanet, "id">) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    callback(planets);
   });
 }
 
@@ -132,10 +134,12 @@ export function subscribeToSystemSpecies(
   const q = query(
     collection(db, "systemSpecies"),
     where("systemId", "==", systemId),
-    orderBy("name"),
   );
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<SystemSpecies, "id">) })));
+    const species = snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as Omit<SystemSpecies, "id">) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    callback(species);
   });
 }
 
