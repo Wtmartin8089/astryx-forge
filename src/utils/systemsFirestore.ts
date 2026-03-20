@@ -195,6 +195,36 @@ export async function updateSystem(id: string, data: Partial<Omit<StarSystem, "i
   await updateDoc(doc(db, "systems", id), data as any);
 }
 
+/** Read all docs from the `creatures` collection and create systemSpecies records under systemId. */
+export async function importCreaturesToSpecies(systemId: string, createdBy: string): Promise<number> {
+  const snap = await getDocs(collection(db, "creatures"));
+  let count = 0;
+  for (const d of snap.docs) {
+    const c = d.data() as any;
+    const statLines: string[] = [];
+    if (c.size) statLines.push(`Size: ${c.size}`);
+    if (c.form) statLines.push(`Form: ${c.form}`);
+    if (c.attributes) statLines.push(`Attributes: ${c.attributes}`);
+    if (c.baseMovement) statLines.push(`Movement: ${c.baseMovement}`);
+    if (c.resistance) statLines.push(`Resistance: ${c.resistance}`);
+    if (c.specialAbilities) statLines.push(`Special Abilities: ${c.specialAbilities}`);
+    if (c.weapons) statLines.push(`Weapons: ${c.weapons}`);
+    await addDoc(collection(db, "systemSpecies"), {
+      systemId,
+      name: c.name || d.id,
+      type: c.type || "",
+      homeworld: "",
+      biology: c.description || "",
+      culture: "",
+      notes: statLines.join("\n"),
+      createdBy,
+      createdAt: serverTimestamp(),
+    });
+    count++;
+  }
+  return count;
+}
+
 /** Read all docs from the `planets` collection and create systemPlanet records under systemId. */
 export async function importStarMapPlanets(systemId: string, createdBy: string): Promise<number> {
   const snap = await getDocs(collection(db, "planets"));

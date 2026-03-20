@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getSystem, subscribeToSystemSpecies } from "../utils/systemsFirestore";
+import { getAuth } from "firebase/auth";
+import { getSystem, subscribeToSystemSpecies, importCreaturesToSpecies } from "../utils/systemsFirestore";
 import type { StarSystem, SystemSpecies as SpeciesType } from "../utils/systemsFirestore";
 import "../assets/lcars.css";
 
@@ -9,6 +10,8 @@ const SystemSpecies = () => {
   const [system, setSystem] = useState<StarSystem | null>(null);
   const [species, setSpecies] = useState<SpeciesType[]>([]);
   const [visible, setVisible] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState("");
 
   useEffect(() => {
     if (!systemId) return;
@@ -52,7 +55,29 @@ const SystemSpecies = () => {
       </div>
 
       {/* Action */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginBottom: "1rem" }}>
+        {species.length === 0 && (
+          <button
+            onClick={async () => {
+              if (!systemId) return;
+              setImporting(true);
+              setImportError("");
+              try {
+                const user = getAuth().currentUser;
+                const createdBy = user?.email || user?.uid || "Unknown";
+                const count = await importCreaturesToSpecies(systemId, createdBy);
+                if (count === 0) setImportError("No creatures found in Xenobiology database.");
+              } catch (err: any) {
+                setImportError(err?.message || "Import failed.");
+              }
+              setImporting(false);
+            }}
+            disabled={importing}
+            style={{ backgroundColor: "#cc666615", border: "1px solid #cc6666", borderRadius: "20px", color: "#cc6666", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: "bold", letterSpacing: "1.5px", padding: "0.4rem 1.2rem", cursor: importing ? "not-allowed" : "pointer" }}
+          >
+            {importing ? "IMPORTING..." : "↓ IMPORT FROM XENOBIOLOGY"}
+          </button>
+        )}
         <Link
           to={`/systems/${systemId}/species/new`}
           style={{ backgroundColor: "#cc666620", border: "1px solid #cc6666", borderRadius: "20px", color: "#cc6666", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.4rem 1.2rem", textDecoration: "none", fontWeight: "bold" }}
@@ -60,6 +85,7 @@ const SystemSpecies = () => {
           + CATALOG NEW SPECIES
         </Link>
       </div>
+      {importError && <p style={{ color: "#cc3333", fontSize: "0.7rem", fontFamily: "'Orbitron', sans-serif", textAlign: "right", marginBottom: "1rem" }}>{importError}</p>}
 
       {/* Grid */}
       {species.length === 0 ? (
