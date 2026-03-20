@@ -182,6 +182,10 @@ export async function deleteSystemPlanet(id: string): Promise<void> {
   await deleteDoc(doc(db, "systemPlanets", id));
 }
 
+export async function deleteSystem(id: string): Promise<void> {
+  await deleteDoc(doc(db, "systems", id));
+}
+
 /** Read all docs from the `planets` collection and create systemPlanet records under systemId. */
 export async function importStarMapPlanets(systemId: string, createdBy: string): Promise<number> {
   const snap = await getDocs(collection(db, "planets"));

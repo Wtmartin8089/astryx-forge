@@ -1,22 +1,26 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   getSystem,
   subscribeToSystemPlanets,
   subscribeToSystemSpecies,
   subscribeToCreaturesBySystem,
+  deleteSystem,
 } from "../utils/systemsFirestore";
 import type { StarSystem } from "../utils/systemsFirestore";
 import "../assets/lcars.css";
 
 const SystemDashboard = () => {
   const { systemId } = useParams<{ systemId: string }>();
+  const navigate = useNavigate();
   const [system, setSystem] = useState<StarSystem | null>(null);
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(false);
   const [planetCount, setPlanetCount] = useState(0);
   const [speciesCount, setSpeciesCount] = useState(0);
   const [creatureCount, setCreatureCount] = useState(0);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!systemId) return;
@@ -251,6 +255,35 @@ const SystemDashboard = () => {
             </div>
           </Link>
         ))}
+      </div>
+
+      {/* Delete system */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
+        {confirmDelete ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span style={{ color: "#cc3333", fontSize: "0.7rem", letterSpacing: "1px" }}>DELETE THIS SYSTEM?</span>
+            <button
+              onClick={async () => { setDeleting(true); await deleteSystem(systemId!); navigate("/systems"); }}
+              disabled={deleting}
+              style={{ backgroundColor: "#cc3333", border: "none", borderRadius: "20px", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: "bold", letterSpacing: "1.5px", padding: "0.45rem 1.2rem", cursor: "pointer" }}
+            >
+              {deleting ? "DELETING..." : "YES, DELETE"}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              style={{ backgroundColor: "transparent", border: "1px solid #333", borderRadius: "20px", color: "#666", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.45rem 1.2rem", cursor: "pointer" }}
+            >
+              CANCEL
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            style={{ backgroundColor: "transparent", border: "1px solid #cc333360", borderRadius: "20px", color: "#cc3333", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.45rem 1.2rem", cursor: "pointer" }}
+          >
+            DELETE SYSTEM
+          </button>
+        )}
       </div>
 
       {/* Bottom bar */}
