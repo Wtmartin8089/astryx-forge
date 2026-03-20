@@ -23,7 +23,6 @@ import PersonnelProfile from "./components/PersonnelProfile";
 import AwardsConsole from "./components/admin/AwardsConsole";
 import TransmissionsConsole from "./components/admin/TransmissionsConsole";
 import MissionBoard from "./components/MissionBoard";
-import CreatureDatabase from "./components/CreatureDatabase";
 import CreatureNew from "./components/CreatureNew";
 import CreatureDetail from "./components/CreatureDetail";
 import SystemsList from "./components/SystemsList";
@@ -97,7 +96,6 @@ function App() {
         <Route path="/create-campaign" element={<CreateCampaign />} />
         <Route path="/map/:campaignId" element={<CampaignMap />} />
         <Route path="/sector/:sectorId" element={<SectorMap />} />
-        <Route path="/creatures" element={<CreatureDatabase />} />
         <Route path="/creatures/new" element={<CreatureNew />} />
         <Route path="/creatures/:id" element={<CreatureDetail />} />
         <Route path="/systems" element={<SystemsList />} />
