@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getAuth } from "firebase/auth";
-import { subscribeToSystems, createSystem } from "../utils/systemsFirestore";
+import { subscribeToSystems, createSystem, importStarMapPlanets } from "../utils/systemsFirestore";
 import type { StarSystem } from "../utils/systemsFirestore";
 import "../assets/lcars.css";
 
@@ -12,6 +12,9 @@ const SystemsList = () => {
   const [visible, setVisible] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importName, setImportName] = useState("Machida Star System");
+  const [importing, setImporting] = useState(false);
   const navigate = useNavigate();
 
   const blankForm = {
@@ -40,6 +43,25 @@ const SystemsList = () => {
     });
     setSaving(false);
     setForm(blankForm);
+    navigate(`/systems/${id}`);
+  };
+
+  const handleImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importName.trim()) return;
+    setImporting(true);
+    const currentUser = auth.currentUser;
+    const createdBy = currentUser?.email || currentUser?.uid || "Unknown";
+    const id = await createSystem({
+      name: importName.trim(),
+      region: "", sector: "", stellarClass: "", starType: "",
+      numberOfStars: "", numberOfPlanets: "", allegiance: "",
+      explorationStatus: "Partially Surveyed", hazards: "",
+      notableFeatures: "", knownPlanets: "", description: "",
+      createdBy,
+    });
+    await importStarMapPlanets(id, createdBy);
+    setImporting(false);
     navigate(`/systems/${id}`);
   };
 
@@ -91,9 +113,26 @@ const SystemsList = () => {
       </div>
 
       {/* Action bar */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginBottom: "1.5rem" }}>
         <button
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => { setShowImport((v) => !v); setShowForm(false); }}
+          style={{
+            backgroundColor: showImport ? "#33cc9920" : "transparent",
+            border: "1px solid #33cc99",
+            borderRadius: "20px",
+            color: "#33cc99",
+            fontFamily: "'Orbitron', sans-serif",
+            fontSize: "0.65rem",
+            letterSpacing: "1.5px",
+            padding: "0.4rem 1.2rem",
+            cursor: "pointer",
+            fontWeight: "bold",
+          }}
+        >
+          {showImport ? "CANCEL" : "↓ IMPORT STAR MAP"}
+        </button>
+        <button
+          onClick={() => { setShowForm((v) => !v); setShowImport(false); }}
           style={{
             backgroundColor: showForm ? "#ffcc3340" : "#ffcc3320",
             border: "1px solid #ffcc33",
@@ -110,6 +149,33 @@ const SystemsList = () => {
           {showForm ? "CANCEL" : "+ CATALOG NEW SYSTEM"}
         </button>
       </div>
+
+      {/* Import form */}
+      {showImport && (
+        <form onSubmit={handleImport} style={{ backgroundColor: "#111", border: "1px solid #33cc9930", borderTop: "3px solid #33cc99", borderRadius: "4px", padding: "1.5rem", marginBottom: "1.5rem" }}>
+          <p style={{ color: "#33cc99", fontSize: "0.65rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "1rem" }}>
+            Import Star Map Planets as a New System
+          </p>
+          <p style={{ color: "#666", fontSize: "0.72rem", lineHeight: "1.6", marginBottom: "1.2rem" }}>
+            This will create a new star system and copy all planets from the star map (Acathla, Kralik, Machida, etc.) into it as catalogued planets. Any data you've already edited on those planet pages will carry over.
+          </p>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", color: "#555", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.4rem" }}>System Name *</label>
+            <input
+              type="text"
+              value={importName}
+              onChange={(e) => setImportName(e.target.value)}
+              style={{ width: "100%", backgroundColor: "#0a0a0a", border: "1px solid #33cc9940", borderRadius: "4px", color: "#ccc", padding: "0.5rem 0.75rem", fontFamily: "'Orbitron', sans-serif", fontSize: "0.8rem", boxSizing: "border-box" }}
+              required
+            />
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button type="submit" disabled={importing || !importName.trim()} style={{ backgroundColor: importing ? "#33cc9940" : "#33cc99", border: "none", borderRadius: "20px", color: "#000", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: "bold", letterSpacing: "1.5px", padding: "0.5rem 1.4rem", cursor: importing ? "not-allowed" : "pointer" }}>
+              {importing ? "IMPORTING..." : "IMPORT PLANETS"}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* New System Form */}
       {showForm && (

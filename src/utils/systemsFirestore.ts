@@ -181,3 +181,36 @@ export async function patchCreatureSystemId(creatureId: string, systemId: string
 export async function deleteSystemPlanet(id: string): Promise<void> {
   await deleteDoc(doc(db, "systemPlanets", id));
 }
+
+/** Read all docs from the `planets` collection and create systemPlanet records under systemId. */
+export async function importStarMapPlanets(systemId: string, createdBy: string): Promise<number> {
+  const snap = await getDocs(collection(db, "planets"));
+  let count = 0;
+  for (const d of snap.docs) {
+    const p = d.data() as any;
+    await addDoc(collection(db, "systemPlanets"), {
+      systemId,
+      name: p.name || d.id,
+      classification: p.classification || "",
+      systemData: p.systemData || "",
+      gravity: p.gravity || "",
+      yearAndDay: p.yearAndDay || "",
+      atmosphere: p.atmosphere || "",
+      hydrosphere: p.hydrosphere || "",
+      climate: p.climate || "",
+      sapientSpecies: p.sapientSpecies || "",
+      techLevel: p.techLevel || "",
+      government: p.government || "",
+      culture: p.culture || "",
+      affiliation: p.affiliation || "",
+      resources: Array.isArray(p.resources) ? p.resources.join(", ") : (p.resources || ""),
+      placesOfNote: p.placesOfNote || "",
+      shipFacilities: p.shipFacilities || "",
+      otherDetail: p.otherDetail || p.description || "",
+      createdBy,
+      createdAt: serverTimestamp(),
+    });
+    count++;
+  }
+  return count;
+}
