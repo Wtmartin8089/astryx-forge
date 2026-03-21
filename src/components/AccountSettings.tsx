@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { getAuth, deleteUser, signOut, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { isAdmin } from "../utils/adminAuth";
-import { unclaimAllByUser, migrateCrewAssignments } from "../utils/crewFirestore";
+import { unclaimAllByUser } from "../utils/crewFirestore";
 import "../assets/lcars.css";
 
 const AccountSettings = () => {
@@ -175,24 +175,6 @@ const AccountSettings = () => {
               }}
             >
               Unclaim All My Crew
-            </button>
-            <button
-              style={{
-                ...buttonStyle,
-                backgroundColor: "#6699cc",
-                color: "#000",
-                marginTop: 0,
-              }}
-              onClick={async () => {
-                try {
-                  const count = await migrateCrewAssignments();
-                  alert(`Migration complete. Updated ${count} crew record(s) with assignment data.`);
-                } catch (err: any) {
-                  alert("Migration failed: " + err.message);
-                }
-              }}
-            >
-              Migrate Personnel Assignments
             </button>
           </div>
         )}
