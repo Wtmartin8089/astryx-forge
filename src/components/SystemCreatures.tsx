@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { getSystem, subscribeToCreaturesBySystem } from "../utils/systemsFirestore";
+import { getAuth } from "firebase/auth";
+import { getSystem, subscribeToCreaturesBySystem, migrateSpeciesToCreatures } from "../utils/systemsFirestore";
 import type { StarSystem } from "../utils/systemsFirestore";
 import type { Creature } from "../utils/creaturesFirestore";
 import "../assets/lcars.css";
@@ -11,6 +12,8 @@ const SystemCreatures = () => {
   const [system, setSystem] = useState<StarSystem | null>(null);
   const [creatures, setCreatures] = useState<Creature[]>([]);
   const [visible, setVisible] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrateError, setMigrateError] = useState("");
 
   useEffect(() => {
     if (!systemId) return;
@@ -59,20 +62,35 @@ const SystemCreatures = () => {
       </div>
 
       {/* Action */}
-      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginBottom: migrateError ? "0.5rem" : "1.5rem", flexWrap: "wrap" }}>
+        <button
+          onClick={async () => {
+            if (!systemId) return;
+            setMigrating(true);
+            setMigrateError("");
+            try {
+              const user = getAuth().currentUser;
+              const createdBy = user?.email || user?.uid || "Unknown";
+              const count = await migrateSpeciesToCreatures(systemId, createdBy);
+              if (count === 0) setMigrateError("No creatures found in Species section to move.");
+            } catch (err: any) {
+              setMigrateError(err?.message || "Migration failed.");
+            }
+            setMigrating(false);
+          }}
+          disabled={migrating}
+          style={{ backgroundColor: "#33cc9915", border: "1px solid #33cc9960", borderRadius: "20px", color: "#33cc99", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: "bold", letterSpacing: "1.5px", padding: "0.4rem 1.2rem", cursor: migrating ? "not-allowed" : "pointer" }}
+        >
+          {migrating ? "MOVING..." : "↓ MOVE FROM SPECIES SECTION"}
+        </button>
         <button
           onClick={handleAddCreature}
           style={{ backgroundColor: "#33cc9920", border: "1px solid #33cc99", borderRadius: "20px", color: "#33cc99", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.4rem 1.2rem", cursor: "pointer", fontWeight: "bold" }}
         >
           + CATALOG NEW CREATURE HERE
         </button>
-        <Link
-          to="/creatures"
-          style={{ backgroundColor: "transparent", border: "1px solid #33cc9940", borderRadius: "20px", color: "#33cc9980", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "1.5px", padding: "0.4rem 1.2rem", textDecoration: "none" }}
-        >
-          VIEW ALL CREATURES
-        </Link>
       </div>
+      {migrateError && <p style={{ color: "#cc3333", fontSize: "0.7rem", fontFamily: "'Orbitron', sans-serif", textAlign: "right", marginBottom: "1rem" }}>{migrateError}</p>}
 
       {/* Grid */}
       {creatures.length === 0 ? (

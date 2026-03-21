@@ -45,6 +45,7 @@ export type CrewMember = {
   name: string;
   species: string;
   rank: string;
+  role?: string;
   position: string;
   shipId: string;
   assignmentType?: AssignmentType;

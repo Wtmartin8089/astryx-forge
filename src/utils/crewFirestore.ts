@@ -114,6 +114,23 @@ export async function unclaimAllByUser(userId: string): Promise<number> {
   return promises.length;
 }
 
+/**
+ * Get the command role for the currently logged-in user.
+ * Resolves crew.role first, falls back to crew.rank.
+ * Returns null if the user has no claimed, active crew member.
+ */
+export async function getUserCrewRole(userId: string): Promise<string | null> {
+  const q = query(
+    collection(db, CREW_COL),
+    where("ownerId", "==", userId),
+    where("status", "==", "active"),
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const data = snap.docs[0].data() as CrewMember;
+  return data.role || data.rank || null;
+}
+
 /** Seed Firestore from a crew data record. Used for initial data load. */
 export async function seedCrewData(
   crewData: Record<string, CrewMember>,

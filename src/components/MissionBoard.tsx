@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { isAdmin } from "../utils/adminAuth";
+import { getUserCrewRole } from "../utils/crewFirestore";
+import { canCreateMission, getAuthorizationLabel } from "../utils/permissions";
 import {
   subscribeMissions,
   generateAndStoreMission,
@@ -36,12 +38,22 @@ const MissionBoard = () => {
   const [genSystem, setGenSystem] = useState("");
 
   const [userIsAdmin, setUserIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const auth = getAuth();
-    // onAuthStateChanged so admin status is reactive, not a stale snapshot
-    return auth.onAuthStateChanged((u) => setUserIsAdmin(u ? isAdmin(u.uid) : false));
+    return auth.onAuthStateChanged(async (u) => {
+      setUserIsAdmin(u ? isAdmin(u.uid) : false);
+      if (u) {
+        const role = await getUserCrewRole(u.uid);
+        setUserRole(role);
+      } else {
+        setUserRole(null);
+      }
+    });
   }, []);
+
+  const canGenerate = userIsAdmin || canCreateMission(userRole);
 
   useEffect(() => {
     const unsubShips = subscribeToShips(setShips);
@@ -106,9 +118,14 @@ const MissionBoard = () => {
           <h1 style={{ margin: 0, color: "#000", fontSize: "1.3rem", fontWeight: "bold", letterSpacing: "3px" }}>
             MISSION OPERATIONS BOARD
           </h1>
-          <span style={{ color: "#00000070", fontSize: "0.7rem", letterSpacing: "1px" }}>
-            {missions.length} MISSION{missions.length !== 1 ? "S" : ""} ON RECORD
-          </span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.15rem" }}>
+            <span style={{ color: "#00000070", fontSize: "0.7rem", letterSpacing: "1px" }}>
+              {missions.length} MISSION{missions.length !== 1 ? "S" : ""} ON RECORD
+            </span>
+            <span style={{ color: canCreateMission(userRole) ? "#00000080" : "#7a3300", fontSize: "0.6rem", letterSpacing: "1px" }}>
+              {getAuthorizationLabel(userRole)}
+            </span>
+          </div>
         </div>
         <div style={{ width: "80px", backgroundColor: "#9933cc", borderRadius: "0 20px 20px 0" }} />
       </div>
@@ -138,7 +155,7 @@ const MissionBoard = () => {
           ))}
         </div>
 
-        {userIsAdmin && (
+        {canGenerate && (
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
             <select value={genType} onChange={(e) => setGenType(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
               <option value="">Random type</option>

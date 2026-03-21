@@ -1,5 +1,8 @@
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { getAuth } from "firebase/auth";
 import styles from "../../styles/lcars.module.css";
+import { getUserCrewRole } from "../utils/crewFirestore";
+import { canIssueDirective, getAuthorizationLabel } from "../utils/permissions";
 
 type ConsoleEntry = {
   role: "user" | "computer";
@@ -23,6 +26,22 @@ export default function ComputerCore() {
     },
   ]);
 
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const auth = getAuth();
+    return auth.onAuthStateChanged(async (u) => {
+      if (u) {
+        const role = await getUserCrewRole(u.uid);
+        setUserRole(role);
+      } else {
+        setUserRole(null);
+      }
+    });
+  }, []);
+
+  const authorized = canIssueDirective(userRole);
+
   const defaultShip = useMemo(() => {
     return localStorage.getItem("currentShip") || "starbase";
   }, []);
@@ -32,6 +51,16 @@ export default function ComputerCore() {
     e.preventDefault();
     const cmd = input.trim();
     if (!cmd || busy) return;
+
+    if (!authorized) {
+      setEntries((prev) => [
+        ...prev,
+        { role: "user", text: cmd, at: nowTime() },
+        { role: "computer", text: "ACCESS DENIED: Insufficient authorization to transmit directives.", at: nowTime() },
+      ]);
+      setInput("");
+      return;
+    }
 
     setEntries((prev) => [...prev, { role: "user", text: cmd, at: nowTime() }]);
     setInput("");
@@ -117,7 +146,9 @@ export default function ComputerCore() {
             }}
           >
             <span>Starfleet Computer Terminal</span>
-            <span style={{ fontSize: 11 }}>Context Memory: Active</span>
+            <span style={{ fontSize: 10, color: authorized ? "#111" : "#7a3300", backgroundColor: authorized ? "transparent" : "rgba(255,100,0,0.18)", padding: authorized ? 0 : "2px 6px", borderRadius: 4 }}>
+              {getAuthorizationLabel(userRole)}
+            </span>
           </div>
 
           <div
@@ -212,21 +243,24 @@ export default function ComputerCore() {
             />
             <button
               type="submit"
-              disabled={busy}
+              disabled={busy || !authorized}
+              title={!authorized ? "Insufficient authorization" : undefined}
               style={{
-                background: "linear-gradient(135deg,#f5b942,#ff6a2b)",
-                color: "#111",
-                border: "none",
+                background: authorized
+                  ? "linear-gradient(135deg,#f5b942,#ff6a2b)"
+                  : "#2a1a1a",
+                color: authorized ? "#111" : "#cc6644",
+                border: authorized ? "none" : "1px solid #cc664440",
                 borderRadius: 6,
                 padding: "8px 12px",
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: 1,
-                cursor: busy ? "wait" : "pointer",
+                cursor: busy ? "wait" : authorized ? "pointer" : "not-allowed",
                 opacity: busy ? 0.7 : 1,
               }}
             >
-              {busy ? "Running" : "Send"}
+              {busy ? "Running" : authorized ? "Send" : "Locked"}
             </button>
           </form>
         </div>

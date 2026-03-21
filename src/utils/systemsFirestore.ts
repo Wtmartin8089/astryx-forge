@@ -225,6 +225,53 @@ export async function importCreaturesToSpecies(systemId: string, createdBy: stri
   return count;
 }
 
+/**
+ * Migrate systemSpecies records (for a given system) into the `creatures` collection.
+ * Field mapping reverses what importCreaturesToSpecies() did:
+ *   biology  → description
+ *   notes    → parsed back into size/form/attributes/etc.
+ * Deletes each systemSpecies doc after migrating it.
+ * Returns the number of creatures created.
+ */
+export async function migrateSpeciesToCreatures(systemId: string, createdBy: string): Promise<number> {
+  const q = query(collection(db, "systemSpecies"), where("systemId", "==", systemId));
+  const snap = await getDocs(q);
+  if (snap.empty) return 0;
+
+  function extractLine(notes: string, label: string): string {
+    const match = notes.match(new RegExp(`^${label}:\\s*(.*)$`, "m"));
+    return match ? match[1].trim() : "";
+  }
+
+  let count = 0;
+  for (const d of snap.docs) {
+    const s = d.data() as SystemSpecies;
+    const notes = s.notes || "";
+
+    await addDoc(collection(db, "creatures"), {
+      systemId,
+      name: s.name,
+      type: s.type || "",
+      description: s.biology || "",
+      size: extractLine(notes, "Size"),
+      form: extractLine(notes, "Form"),
+      attributes: extractLine(notes, "Attributes"),
+      baseMovement: extractLine(notes, "Movement"),
+      resistance: extractLine(notes, "Resistance"),
+      specialAbilities: extractLine(notes, "Special Abilities"),
+      weapons: extractLine(notes, "Weapons"),
+      isHostile: false,
+      isDomesticated: false,
+      createdBy,
+      createdAt: serverTimestamp(),
+    });
+
+    await deleteDoc(d.ref);
+    count++;
+  }
+  return count;
+}
+
 /** Read all docs from the `planets` collection and create systemPlanet records under systemId. */
 export async function importStarMapPlanets(systemId: string, createdBy: string): Promise<number> {
   const snap = await getDocs(collection(db, "planets"));
