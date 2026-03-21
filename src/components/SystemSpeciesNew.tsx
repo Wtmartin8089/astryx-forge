@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { getSystem, createSystemSpecies } from "../utils/systemsFirestore";
+import { getUserCharacterName } from "../utils/crewFirestore";
 import type { StarSystem } from "../utils/systemsFirestore";
 import "../assets/lcars.css";
 
@@ -33,10 +34,11 @@ const SystemSpeciesNew = () => {
     if (!form.name.trim() || !systemId) return;
     setSubmitting(true);
     const currentUser = auth.currentUser;
+    const characterName = currentUser ? await getUserCharacterName(currentUser.uid) : null;
     const id = await createSystemSpecies({
       systemId,
       ...form,
-      createdBy: currentUser?.email || currentUser?.uid || "Unknown",
+      createdBy: characterName || currentUser?.email || currentUser?.uid || "Unknown",
     });
     navigate(`/systems/${systemId}/species/${id}`);
   };

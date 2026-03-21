@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { getSystem, createSystemPlanet } from "../utils/systemsFirestore";
+import { getUserCharacterName } from "../utils/crewFirestore";
 import type { StarSystem } from "../utils/systemsFirestore";
 import "../assets/lcars.css";
 
@@ -32,10 +33,11 @@ const SystemPlanetNew = () => {
     if (!form.name.trim() || !systemId) return;
     setSubmitting(true);
     const currentUser = auth.currentUser;
+    const characterName = currentUser ? await getUserCharacterName(currentUser.uid) : null;
     const id = await createSystemPlanet({
       systemId,
       ...form,
-      createdBy: currentUser?.email || currentUser?.uid || "Unknown",
+      createdBy: characterName || currentUser?.email || currentUser?.uid || "Unknown",
     });
     navigate(`/systems/${systemId}/planets/${id}`);
   };

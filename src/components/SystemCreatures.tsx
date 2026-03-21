@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { getSystem, subscribeToCreaturesBySystem, migrateSpeciesToCreatures } from "../utils/systemsFirestore";
+import { getUserCharacterName } from "../utils/crewFirestore";
 import type { StarSystem } from "../utils/systemsFirestore";
 import type { Creature } from "../utils/creaturesFirestore";
 import "../assets/lcars.css";
@@ -70,7 +71,8 @@ const SystemCreatures = () => {
             setMigrateError("");
             try {
               const user = getAuth().currentUser;
-              const createdBy = user?.email || user?.uid || "Unknown";
+              const characterName = user ? await getUserCharacterName(user.uid) : null;
+              const createdBy = characterName || user?.email || user?.uid || "Unknown";
               const count = await migrateSpeciesToCreatures(systemId, createdBy);
               if (count === 0) setMigrateError("No creatures found in Species section to move.");
             } catch (err: any) {

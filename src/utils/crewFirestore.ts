@@ -115,6 +115,21 @@ export async function unclaimAllByUser(userId: string): Promise<number> {
 }
 
 /**
+ * Get the character name for the currently logged-in user.
+ * Returns null if the user has no claimed, active crew member.
+ */
+export async function getUserCharacterName(userId: string): Promise<string | null> {
+  const q = query(
+    collection(db, CREW_COL),
+    where("ownerId", "==", userId),
+    where("status", "==", "active"),
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  return (snap.docs[0].data() as CrewMember).name || null;
+}
+
+/**
  * Get the command role for the currently logged-in user.
  * Resolves crew.role first, falls back to crew.rank.
  * Returns null if the user has no claimed, active crew member.

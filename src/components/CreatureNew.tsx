@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { createCreature } from "../utils/creaturesFirestore";
+import { getUserCharacterName } from "../utils/crewFirestore";
 import "../assets/lcars.css";
 
 const auth = getAuth();
@@ -40,10 +41,11 @@ const CreatureNew = () => {
     if (!form.name.trim() || !currentUser) return;
     setSubmitting(true);
     try {
+      const characterName = await getUserCharacterName(currentUser.uid);
       const id = await createCreature({
         ...form,
         ...(systemId ? { systemId } : {}),
-        createdBy: currentUser.email || currentUser.uid,
+        createdBy: characterName || currentUser.email || currentUser.uid,
       });
       // If came from a system, return there; otherwise go to creature detail
       navigate(systemId ? `/systems/${systemId}/creatures` : `/creatures/${id}`);
