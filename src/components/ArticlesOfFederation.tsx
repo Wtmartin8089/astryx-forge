@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { CAMPAIGN_STARDATE } from "../utils/campaignStardate";
+import { getCampaignStardate } from "../utils/campaignStardate";
 import "../assets/lcars.css";
 
 interface SectionDef {
@@ -129,7 +129,7 @@ const ArticlesOfFederation = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [flavorIndex, setFlavorIndex] = useState(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const stardate = CAMPAIGN_STARDATE;
+  const stardate = getCampaignStardate();
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 50);
