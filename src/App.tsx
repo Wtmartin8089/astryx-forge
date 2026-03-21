@@ -12,8 +12,6 @@ import ComputerCore from "./components/ComputerCore";
 import AccountSettings from "./components/AccountSettings";
 import FleetRegistry from "./components/FleetRegistry";
 import ShipPage from "./components/ShipPage";
-import CrewRoster from "./components/CrewRoster";
-import CrewPage from "./components/CrewPage";
 import ChooseCharacter from "./components/ChooseCharacter";
 import CreateCampaign from "./pages/CreateCampaign";
 import CampaignMap from "./components/CampaignMap";
@@ -80,16 +78,16 @@ function App() {
         <Route path="/starbase" element={<StarbasePage />} />
         <Route path="/forum" element={<Forum />} />
         <Route path="/stardate" element={<StardateCalculator />} />
-        <Route path="/character" element={<Navigate to="/crew" replace />} />
+        <Route path="/character" element={<Navigate to="/personnel" replace />} />
         <Route path="/settings" element={<AccountSettings />} />
         <Route path="/planet/:planetName" element={<PlanetPage />} />
         <Route path="/fleet" element={<FleetRegistry />} />
         <Route path="/ship/:shipSlug" element={<ShipPage />} />
         <Route path="/choose-character" element={<ChooseCharacter />} />
-        <Route path="/crew" element={<CrewRoster />} />
-        <Route path="/crew/:crewSlug" element={<CrewPage />} />
+        <Route path="/crew" element={<Navigate to="/personnel" replace />} />
+        <Route path="/crew/:crewSlug" element={<Navigate to="/personnel" replace />} />
         <Route path="/personnel" element={<PersonnelDatabase />} />
-        <Route path="/personnel/:crewSlug" element={<PersonnelProfile />} />
+        <Route path="/personnel/:id" element={<PersonnelProfile />} />
         <Route path="/admin/awards" element={<AwardsConsole />} />
         <Route path="/admin/transmissions" element={<TransmissionsConsole />} />
         <Route path="/missions" element={<MissionBoard />} />

@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -12,7 +13,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
-import type { CrewMember } from "../types/fleet";
+import type { CrewMember, AssignmentType } from "../types/fleet";
 
 const CREW_COL = "crew";
 
@@ -127,4 +128,44 @@ export async function seedCrewData(
     }),
   );
   await Promise.all(promises);
+}
+
+/**
+ * One-time migration: populate assignmentType and assignmentId from the
+ * existing shipId field on all crew documents that lack assignmentType.
+ * Returns the number of documents updated.
+ */
+export async function migrateCrewAssignments(): Promise<number> {
+  const snapshot = await getDocs(collection(db, CREW_COL));
+  let updated = 0;
+  const promises: Promise<void>[] = [];
+
+  for (const d of snapshot.docs) {
+    const data = d.data() as CrewMember;
+    // Skip documents that already have assignmentType set
+    if (data.assignmentType) continue;
+
+    let assignmentType: AssignmentType = "unassigned";
+    let assignmentId: string | null = null;
+
+    if (data.shipId === "starbase") {
+      assignmentType = "starbase";
+      assignmentId = "starbase-machida";
+    } else if (data.shipId && data.shipId.trim() !== "") {
+      assignmentType = "ship";
+      assignmentId = data.shipId;
+    }
+
+    promises.push(
+      updateDoc(d.ref, {
+        assignmentType,
+        assignmentId,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    updated++;
+  }
+
+  await Promise.all(promises);
+  return updated;
 }

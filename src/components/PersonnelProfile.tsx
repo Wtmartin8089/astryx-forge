@@ -13,7 +13,9 @@ import {
 import { getAuth } from "firebase/auth";
 import { db } from "../firebase/firebaseConfig";
 import { subscribeToShips } from "../utils/shipsFirestore";
-import type { CrewMember, ShipData, ServiceHistoryEntry } from "../types/fleet";
+import { updateCharacter } from "../utils/crewFirestore";
+import { isAdmin } from "../utils/adminAuth";
+import type { CrewMember, ShipData, ServiceHistoryEntry, AssignmentType } from "../types/fleet";
 import starfleetDecorations from "../data/starfleetDecorations";
 import "../assets/lcars.css";
 
@@ -42,7 +44,7 @@ type Message = {
 };
 
 const PersonnelProfile = () => {
-  const { crewSlug } = useParams();
+  const { id } = useParams();
   const [visible, setVisible] = useState(false);
   const [member, setMember] = useState<CrewMember | null>(null);
   const [ships, setShips] = useState<Record<string, ShipData>>({});
@@ -54,20 +56,28 @@ const PersonnelProfile = () => {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
 
+  // Assignment editing state
+  const [editingAssignment, setEditingAssignment] = useState(false);
+  const [editAssignmentType, setEditAssignmentType] = useState<AssignmentType>("unassigned");
+  const [editAssignmentId, setEditAssignmentId] = useState<string>("");
+  const [savingAssignment, setSavingAssignment] = useState(false);
+
   const auth = getAuth();
   const user = auth.currentUser;
+  const userIsAdmin = user ? isAdmin(user.uid) : false;
+  const canEditAssignment = member !== null && user !== null && (user.uid === member.ownerId || userIsAdmin);
 
   useEffect(() => {
-    if (!crewSlug) return;
+    if (!id) return;
     const unsubShips = subscribeToShips(setShips);
 
-    const unsub = onSnapshot(doc(db, "crew", crewSlug), (snap) => {
+    const unsub = onSnapshot(doc(db, "crew", id), (snap) => {
       setMember(snap.exists() ? (snap.data() as CrewMember) : null);
     });
 
     const msgQ = query(
       collection(db, "character_messages"),
-      where("toCharacter", "==", crewSlug),
+      where("toCharacter", "==", id),
       orderBy("createdAt", "desc")
     );
     const unsubMsg = onSnapshot(msgQ, (snap) => {
@@ -76,17 +86,50 @@ const PersonnelProfile = () => {
 
     const timer = setTimeout(() => setVisible(true), 50);
     return () => { unsubShips(); unsub(); unsubMsg(); clearTimeout(timer); };
-  }, [crewSlug]);
+  }, [id]);
+
+  // Sync edit state when member loads or changes
+  useEffect(() => {
+    if (member) {
+      setEditAssignmentType(resolveAssignmentType(member));
+      setEditAssignmentId(resolveAssignmentId(member) || "");
+    }
+  }, [member]);
+
+  function resolveAssignmentType(m: CrewMember): AssignmentType {
+    if (m.assignmentType) return m.assignmentType;
+    if (m.shipId === "starbase") return "starbase";
+    if (m.shipId && m.shipId.trim() !== "") return "ship";
+    return "unassigned";
+  }
+
+  function resolveAssignmentId(m: CrewMember): string | null {
+    if (m.assignmentId !== undefined) return m.assignmentId;
+    if (m.shipId === "starbase") return "starbase-machida";
+    if (m.shipId && m.shipId.trim() !== "") return m.shipId;
+    return null;
+  }
+
+  function getAssignmentLabel(m: CrewMember): string {
+    const aType = resolveAssignmentType(m);
+    if (aType === "starbase") return "Starbase Machida";
+    if (aType === "ship") {
+      const aid = resolveAssignmentId(m);
+      if (aid && ships[aid]) return ships[aid].name;
+      return aid || "Unknown Ship";
+    }
+    return "Unassigned";
+  }
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!msgText.trim() || !crewSlug) return;
+    if (!msgText.trim() || !id) return;
     setSending(true);
     setSendError("");
     try {
       await addDoc(collection(db, "character_messages"), {
         fromCharacter: user?.email || user?.uid || "Anonymous",
-        toCharacter: crewSlug,
+        toCharacter: id,
         message: msgText.trim(),
         stardate: currentStardate(),
         createdAt: serverTimestamp(),
@@ -99,11 +142,35 @@ const PersonnelProfile = () => {
     setSending(false);
   };
 
+  const handleSaveAssignment = async () => {
+    if (!id || !member) return;
+    setSavingAssignment(true);
+    try {
+      const updates: Partial<CrewMember> = {
+        assignmentType: editAssignmentType,
+        assignmentId: editAssignmentType === "unassigned" ? null : editAssignmentId || null,
+      };
+      // Keep shipId in sync for backward compatibility
+      if (editAssignmentType === "starbase") {
+        updates.shipId = "starbase";
+      } else if (editAssignmentType === "ship") {
+        updates.shipId = editAssignmentId || "";
+      } else {
+        updates.shipId = "";
+      }
+      await updateCharacter(id, updates);
+      setEditingAssignment(false);
+    } catch (err) {
+      console.error("Failed to update assignment:", err);
+    }
+    setSavingAssignment(false);
+  };
+
   if (!member) {
     return (
       <div style={{ color: "#ff9900", textAlign: "center", marginTop: "4rem", fontFamily: "'Orbitron', sans-serif" }}>
         <p style={{ fontSize: "1.3rem" }}>Accessing personnel record...</p>
-        {member === null && crewSlug && (
+        {member === null && id && (
           <p style={{ color: "#6699cc", marginTop: "1rem" }}>Record not found in Starfleet database.</p>
         )}
         <Link to="/personnel" style={{ color: "#9933cc", marginTop: "2rem", display: "inline-block" }}>
@@ -114,11 +181,9 @@ const PersonnelProfile = () => {
   }
 
   const rankColor = rankColors[member.rank] || "#888";
-  const shipName = member.shipId === "starbase"
-    ? "Starbase Machida"
-    : (ships[member.shipId]?.name || member.shipId || "Unassigned");
+  const assignmentLabel = getAssignmentLabel(member);
 
-  const inputStyle: React.CSSProperties = {
+  const inputStyleBase: React.CSSProperties = {
     width: "100%",
     backgroundColor: "#0a0a0a",
     border: "1px solid #6699cc40",
@@ -128,6 +193,11 @@ const PersonnelProfile = () => {
     fontFamily: "'Orbitron', sans-serif",
     fontSize: "0.85rem",
     boxSizing: "border-box",
+  };
+
+  const selectEditStyle: React.CSSProperties = {
+    ...inputStyleBase,
+    cursor: "pointer",
   };
 
   return (
@@ -249,7 +319,7 @@ const PersonnelProfile = () => {
               ? "Fleet Commander"
               : member.position,
           },
-          { label: "Assignment", value: shipName },
+          { label: "Assignment", value: assignmentLabel },
         ].map(({ label, value }) => (
           <div key={label} style={{
             backgroundColor: "#111",
@@ -258,10 +328,136 @@ const PersonnelProfile = () => {
             padding: "1rem 1.25rem",
           }}>
             <span style={{ color: "#555", fontSize: "0.65rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>{label}</span>
-            <p style={{ color: "#eee", fontSize: "0.95rem", margin: "0.3rem 0 0", fontWeight: "bold" }}>{value || "—"}</p>
+            <p style={{ color: "#eee", fontSize: "0.95rem", margin: "0.3rem 0 0", fontWeight: "bold" }}>{value || "\u2014"}</p>
           </div>
         ))}
       </div>
+
+      {/* Assignment Edit Section */}
+      {canEditAssignment && (
+        <div style={{
+          backgroundColor: "#111",
+          border: "1px solid #33cc9940",
+          borderRadius: "4px",
+          padding: "1.25rem",
+          marginBottom: "1.5rem",
+        }}>
+          {!editingAssignment ? (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: "#33cc99", fontSize: "0.7rem", letterSpacing: "2px", textTransform: "uppercase" }}>
+                Assignment Management
+              </span>
+              <button
+                onClick={() => setEditingAssignment(true)}
+                style={{
+                  backgroundColor: "#33cc99",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "20px",
+                  padding: "0.4rem 1rem",
+                  fontFamily: "'Orbitron', sans-serif",
+                  fontWeight: "bold",
+                  fontSize: "0.7rem",
+                  letterSpacing: "1px",
+                  cursor: "pointer",
+                }}
+              >
+                EDIT ASSIGNMENT
+              </button>
+            </div>
+          ) : (
+            <div>
+              <span style={{ color: "#33cc99", fontSize: "0.7rem", letterSpacing: "2px", textTransform: "uppercase", display: "block", marginBottom: "1rem" }}>
+                Edit Assignment
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div>
+                  <label style={{ color: "#888", fontSize: "0.65rem", letterSpacing: "1px", textTransform: "uppercase", display: "block", marginBottom: "0.25rem" }}>
+                    Assignment Type
+                  </label>
+                  <select
+                    value={editAssignmentType}
+                    onChange={(e) => {
+                      const val = e.target.value as AssignmentType;
+                      setEditAssignmentType(val);
+                      if (val === "starbase") setEditAssignmentId("starbase-machida");
+                      else if (val === "unassigned") setEditAssignmentId("");
+                    }}
+                    style={selectEditStyle}
+                  >
+                    <option value="ship">Ship</option>
+                    <option value="starbase">Starbase</option>
+                    <option value="unassigned">Unassigned</option>
+                  </select>
+                </div>
+
+                {editAssignmentType === "ship" && (
+                  <div>
+                    <label style={{ color: "#888", fontSize: "0.65rem", letterSpacing: "1px", textTransform: "uppercase", display: "block", marginBottom: "0.25rem" }}>
+                      Ship Assignment
+                    </label>
+                    <select
+                      value={editAssignmentId}
+                      onChange={(e) => setEditAssignmentId(e.target.value)}
+                      style={selectEditStyle}
+                    >
+                      <option value="">Select a ship...</option>
+                      {Object.entries(ships).map(([slug, s]) => (
+                        <option key={slug} value={slug}>
+                          {s.name} ({s.registry})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "0.5rem" }}>
+                  <button
+                    onClick={() => {
+                      setEditingAssignment(false);
+                      if (member) {
+                        setEditAssignmentType(resolveAssignmentType(member));
+                        setEditAssignmentId(resolveAssignmentId(member) || "");
+                      }
+                    }}
+                    style={{
+                      backgroundColor: "transparent",
+                      border: "1px solid #444",
+                      borderRadius: "20px",
+                      color: "#888",
+                      padding: "0.4rem 1rem",
+                      fontFamily: "'Orbitron', sans-serif",
+                      fontSize: "0.7rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    onClick={handleSaveAssignment}
+                    disabled={savingAssignment}
+                    style={{
+                      backgroundColor: "#33cc99",
+                      color: "#000",
+                      border: "none",
+                      borderRadius: "20px",
+                      padding: "0.4rem 1rem",
+                      fontFamily: "'Orbitron', sans-serif",
+                      fontWeight: "bold",
+                      fontSize: "0.7rem",
+                      letterSpacing: "1px",
+                      cursor: savingAssignment ? "not-allowed" : "pointer",
+                      opacity: savingAssignment ? 0.5 : 1,
+                    }}
+                  >
+                    {savingAssignment ? "SAVING..." : "SAVE ASSIGNMENT"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Biography */}
       <div style={{
@@ -301,7 +497,7 @@ const PersonnelProfile = () => {
                 gap: "0.6rem",
                 alignItems: "baseline",
               }}>
-                <span style={{ color: rankColor, flexShrink: 0 }}>•</span>
+                <span style={{ color: rankColor, flexShrink: 0 }}>&bull;</span>
                 {entry}
               </li>
             ))}
@@ -432,7 +628,25 @@ const PersonnelProfile = () => {
         )}
       </div>
 
-      {/* Service History */}
+      {/* Notes */}
+      {member.notes && (
+        <div style={{
+          backgroundColor: "#111",
+          border: "1px solid #333",
+          borderRadius: "4px",
+          padding: "1.5rem",
+          marginBottom: "1.5rem",
+        }}>
+          <h3 style={{ color: rankColor, fontSize: "0.75rem", letterSpacing: "2px", textTransform: "uppercase", margin: "0 0 1rem" }}>
+            Personnel Notes
+          </h3>
+          <p style={{ color: "#aaa", fontSize: "0.9rem", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>
+            {member.notes}
+          </p>
+        </div>
+      )}
+
+      {/* Service History & Profile (skills, advantages, disadvantages) */}
       {(member.skills.length > 0 || member.advantages.length > 0 || member.disadvantages.length > 0) && (
         <div style={{
           backgroundColor: "#111",
@@ -601,7 +815,7 @@ const PersonnelProfile = () => {
                 onChange={(e) => setMsgText(e.target.value)}
                 placeholder="Enter your message..."
                 rows={5}
-                style={{ ...inputStyle, resize: "vertical", marginBottom: "1rem" }}
+                style={{ ...inputStyleBase, resize: "vertical", marginBottom: "1rem" }}
               />
               {sendError && (
                 <p style={{ color: "#cc3333", fontSize: "0.78rem", margin: "0 0 0.75rem" }}>{sendError}</p>

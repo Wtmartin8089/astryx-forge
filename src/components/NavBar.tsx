@@ -38,9 +38,6 @@ const NavBar = () => {
       <Link to="/fleet" style={linkStyle("/fleet")}>
         Fleet
       </Link>
-      <Link to="/crew" style={linkStyle("/crew")}>
-        Crew
-      </Link>
       <Link to="/personnel" style={linkStyle("/personnel")}>
         Personnel
       </Link>

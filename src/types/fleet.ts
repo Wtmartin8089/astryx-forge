@@ -39,12 +39,16 @@ export type ShipData = {
   crewIds: string[];
 };
 
+export type AssignmentType = "ship" | "starbase" | "unassigned";
+
 export type CrewMember = {
   name: string;
   species: string;
   rank: string;
   position: string;
   shipId: string;
+  assignmentType?: AssignmentType;
+  assignmentId?: string | null;
   attributes: {
     Fitness: number | null;
     Coordination: number | null;

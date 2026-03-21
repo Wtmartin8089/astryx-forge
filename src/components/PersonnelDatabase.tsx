@@ -14,7 +14,9 @@ const rankColors: Record<string, string> = {
   "Ensign": "#6699cc",
 };
 
-type CrewEntry = { slug: string; member: CrewMember };
+const rankOrder = ["Fleet Admiral", "Admiral", "Captain", "Commander", "Lt. Commander", "Full Lieutenant", "Ensign"];
+
+type CrewEntry = { id: string; member: CrewMember };
 
 const PersonnelDatabase = () => {
   const [visible, setVisible] = useState(false);
@@ -23,13 +25,13 @@ const PersonnelDatabase = () => {
 
   const [filterRank, setFilterRank] = useState("");
   const [filterSpecies, setFilterSpecies] = useState("");
-  const [filterShip, setFilterShip] = useState("");
+  const [filterAssignment, setFilterAssignment] = useState("");
 
   useEffect(() => {
     const unsubShips = subscribeToShips(setShips);
     const q = query(collection(db, "crew"), where("status", "==", "active"));
     const unsub = onSnapshot(q, (snap) => {
-      setCrew(snap.docs.map((d) => ({ slug: d.id, member: d.data() as CrewMember })));
+      setCrew(snap.docs.map((d) => ({ id: d.id, member: d.data() as CrewMember })));
     });
     const timer = setTimeout(() => setVisible(true), 50);
     return () => { unsubShips(); unsub(); clearTimeout(timer); };
@@ -46,19 +48,104 @@ const PersonnelDatabase = () => {
     return Array.from(s).sort();
   }, [crew]);
 
-  const allShips = useMemo(() => {
-    const s = new Set(crew.map((e) => e.member.shipId).filter(Boolean));
-    return Array.from(s).sort();
-  }, [crew]);
-
   const filtered = useMemo(() => {
     return crew.filter(({ member }) => {
       if (filterRank && member.rank !== filterRank) return false;
       if (filterSpecies && member.species !== filterSpecies) return false;
-      if (filterShip && member.shipId !== filterShip) return false;
+      if (filterAssignment) {
+        const aType = resolveAssignmentType(member);
+        if (filterAssignment === "starbase" && aType !== "starbase") return false;
+        if (filterAssignment === "unassigned" && aType !== "unassigned") return false;
+        if (filterAssignment !== "starbase" && filterAssignment !== "unassigned") {
+          if (aType !== "ship" || resolveAssignmentId(member) !== filterAssignment) return false;
+        }
+      }
       return true;
     });
-  }, [crew, filterRank, filterSpecies, filterShip]);
+  }, [crew, filterRank, filterSpecies, filterAssignment]);
+
+  // Helper to resolve assignment type from new or legacy fields
+  function resolveAssignmentType(m: CrewMember): "ship" | "starbase" | "unassigned" {
+    if (m.assignmentType) return m.assignmentType;
+    if (m.shipId === "starbase") return "starbase";
+    if (m.shipId && m.shipId.trim() !== "") return "ship";
+    return "unassigned";
+  }
+
+  function resolveAssignmentId(m: CrewMember): string | null {
+    if (m.assignmentId !== undefined) return m.assignmentId;
+    if (m.shipId === "starbase") return "starbase-machida";
+    if (m.shipId && m.shipId.trim() !== "") return m.shipId;
+    return null;
+  }
+
+  function getAssignmentLabel(m: CrewMember): string {
+    const aType = resolveAssignmentType(m);
+    if (aType === "starbase") return "Starbase Machida";
+    if (aType === "ship") {
+      const aid = resolveAssignmentId(m);
+      if (aid && ships[aid]) return ships[aid].name;
+      return aid || "Unknown Ship";
+    }
+    return "Unassigned";
+  }
+
+  // Group filtered results by assignment
+  const grouped = useMemo(() => {
+    const starbase: CrewEntry[] = [];
+    const shipGroups: Record<string, CrewEntry[]> = {};
+    const unassigned: CrewEntry[] = [];
+
+    const sortByRank = (a: CrewEntry, b: CrewEntry) => {
+      const ai = rankOrder.indexOf(a.member.rank);
+      const bi = rankOrder.indexOf(b.member.rank);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    };
+
+    for (const entry of filtered) {
+      const aType = resolveAssignmentType(entry.member);
+      if (aType === "starbase") {
+        starbase.push(entry);
+      } else if (aType === "ship") {
+        const aid = resolveAssignmentId(entry.member) || "unknown";
+        if (!shipGroups[aid]) shipGroups[aid] = [];
+        shipGroups[aid].push(entry);
+      } else {
+        unassigned.push(entry);
+      }
+    }
+
+    starbase.sort(sortByRank);
+    unassigned.sort(sortByRank);
+    for (const key of Object.keys(shipGroups)) {
+      shipGroups[key].sort(sortByRank);
+    }
+
+    return { starbase, shipGroups, unassigned };
+  }, [filtered, ships]);
+
+  // Unique assignment options for filter dropdown
+  const assignmentOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    const seen = new Set<string>();
+    for (const { member } of crew) {
+      const aType = resolveAssignmentType(member);
+      if (aType === "starbase" && !seen.has("starbase")) {
+        options.push({ value: "starbase", label: "Starbase Machida" });
+        seen.add("starbase");
+      } else if (aType === "ship") {
+        const aid = resolveAssignmentId(member) || "unknown";
+        if (!seen.has(aid)) {
+          options.push({ value: aid, label: ships[aid]?.name || aid });
+          seen.add(aid);
+        }
+      } else if (!seen.has("unassigned")) {
+        options.push({ value: "unassigned", label: "Unassigned" });
+        seen.add("unassigned");
+      }
+    }
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [crew, ships]);
 
   const selectStyle: React.CSSProperties = {
     backgroundColor: "#0a0a0a",
@@ -71,6 +158,116 @@ const PersonnelDatabase = () => {
     letterSpacing: "1px",
     cursor: "pointer",
     minWidth: "160px",
+  };
+
+  const renderCard = ({ id, member }: CrewEntry) => {
+    const rankColor = rankColors[member.rank] || "#888";
+    const assignmentLabel = getAssignmentLabel(member);
+
+    return (
+      <Link key={id} to={`/personnel/${id}`} style={{ textDecoration: "none" }}>
+        <div
+          style={{
+            backgroundColor: "#111",
+            border: `1px solid ${rankColor}30`,
+            borderLeft: `4px solid ${rankColor}`,
+            borderRadius: "0 12px 0 0",
+            padding: "1.1rem 1.25rem",
+            cursor: "pointer",
+            transition: "border-color 0.25s, box-shadow 0.25s",
+          }}
+          onMouseEnter={(e) => {
+            const el = e.currentTarget as HTMLDivElement;
+            el.style.borderColor = rankColor;
+            el.style.boxShadow = `0 0 15px ${rankColor}25`;
+          }}
+          onMouseLeave={(e) => {
+            const el = e.currentTarget as HTMLDivElement;
+            el.style.borderColor = `${rankColor}30`;
+            el.style.borderLeftColor = rankColor;
+            el.style.boxShadow = "none";
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
+            <div>
+              <p style={{ color: rankColor, fontSize: "0.65rem", margin: "0 0 0.2rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+                {member.rank}
+              </p>
+              <h3 style={{ color: "#fff", fontSize: "1rem", margin: "0 0 0.3rem" }}>
+                {member.name}
+              </h3>
+            </div>
+            <span style={{
+              backgroundColor: `${rankColor}15`,
+              border: `1px solid ${rankColor}40`,
+              borderRadius: "12px",
+              color: rankColor,
+              fontSize: "0.6rem",
+              padding: "0.2rem 0.6rem",
+              letterSpacing: "1px",
+              whiteSpace: "nowrap",
+            }}>
+              {member.species !== "Unknown" ? member.species : "\u2014"}
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.3rem 1rem" }}>
+            <div>
+              <span style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "1px", textTransform: "uppercase" }}>Position</span>
+              <p style={{ color: "#aaa", fontSize: "0.8rem", margin: "0.1rem 0 0" }}>{member.position || "\u2014"}</p>
+            </div>
+            <div>
+              <span style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "1px", textTransform: "uppercase" }}>Assignment</span>
+              <p style={{ color: "#aaa", fontSize: "0.8rem", margin: "0.1rem 0 0" }}>{assignmentLabel}</p>
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  };
+
+  const renderSection = (title: string, entries: CrewEntry[], color: string) => {
+    if (entries.length === 0) return null;
+    return (
+      <div style={{ marginBottom: "2rem" }}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "1rem",
+          marginBottom: "1rem",
+          padding: "0.75rem 1rem",
+          backgroundColor: "#111",
+          border: `1px solid ${color}`,
+          borderRadius: "0 20px 0 0",
+        }}>
+          <div style={{
+            width: "6px",
+            height: "30px",
+            backgroundColor: color,
+            borderRadius: "3px",
+          }} />
+          <span style={{
+            color: color,
+            fontSize: "1rem",
+            fontWeight: "bold",
+            letterSpacing: "2px",
+            textTransform: "uppercase",
+          }}>
+            {title}
+          </span>
+          <span style={{ color: "#555", fontSize: "0.7rem", letterSpacing: "1px" }}>
+            {entries.length} PERSONNEL
+          </span>
+        </div>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: "1rem",
+        }}>
+          {entries.map(renderCard)}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -138,18 +335,16 @@ const PersonnelDatabase = () => {
           {allSpecies.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
 
-        <select value={filterShip} onChange={(e) => setFilterShip(e.target.value)} style={selectStyle}>
-          <option value="">All Ships</option>
-          {allShips.map((id) => (
-            <option key={id} value={id}>
-              {id === "starbase" ? "Starbase Machida" : (ships[id]?.name || id)}
-            </option>
+        <select value={filterAssignment} onChange={(e) => setFilterAssignment(e.target.value)} style={selectStyle}>
+          <option value="">All Assignments</option>
+          {assignmentOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
 
-        {(filterRank || filterSpecies || filterShip) && (
+        {(filterRank || filterSpecies || filterAssignment) && (
           <button
-            onClick={() => { setFilterRank(""); setFilterSpecies(""); setFilterShip(""); }}
+            onClick={() => { setFilterRank(""); setFilterSpecies(""); setFilterAssignment(""); }}
             style={{
               backgroundColor: "transparent",
               border: "1px solid #cc333360",
@@ -167,92 +362,20 @@ const PersonnelDatabase = () => {
         )}
       </div>
 
-      {/* Personnel Grid */}
+      {/* Personnel Grouped by Assignment */}
       {filtered.length === 0 ? (
         <p style={{ color: "#555", textAlign: "center", fontSize: "0.9rem", marginTop: "3rem" }}>
           No personnel records match current filters.
         </p>
       ) : (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-          gap: "1rem",
-          marginBottom: "2rem",
-        }}>
-          {filtered.map(({ slug, member }) => {
-            const rankColor = rankColors[member.rank] || "#888";
-            const shipName = member.shipId === "starbase"
-              ? "Starbase Machida"
-              : (ships[member.shipId]?.name || member.shipId || "Unassigned");
-
-            return (
-              <Link key={slug} to={`/personnel/${slug}`} style={{ textDecoration: "none" }}>
-                <div
-                  style={{
-                    backgroundColor: "#111",
-                    border: `1px solid ${rankColor}30`,
-                    borderLeft: `4px solid ${rankColor}`,
-                    borderRadius: "0 12px 0 0",
-                    padding: "1.1rem 1.25rem",
-                    cursor: "pointer",
-                    transition: "border-color 0.25s, box-shadow 0.25s",
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLDivElement;
-                    el.style.borderColor = rankColor;
-                    el.style.boxShadow = `0 0 15px ${rankColor}25`;
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLDivElement;
-                    el.style.borderColor = `${rankColor}30`;
-                    el.style.borderLeftColor = rankColor;
-                    el.style.boxShadow = "none";
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
-                    <div>
-                      <p style={{ color: rankColor, fontSize: "0.65rem", margin: "0 0 0.2rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>
-                        {member.rank}
-                      </p>
-                      <h3 style={{ color: "#fff", fontSize: "1rem", margin: "0 0 0.3rem" }}>
-                        {member.name}
-                      </h3>
-                    </div>
-                    <span style={{
-                      backgroundColor: `${rankColor}15`,
-                      border: `1px solid ${rankColor}40`,
-                      borderRadius: "12px",
-                      color: rankColor,
-                      fontSize: "0.6rem",
-                      padding: "0.2rem 0.6rem",
-                      letterSpacing: "1px",
-                      whiteSpace: "nowrap",
-                    }}>
-                      {member.species !== "Unknown" ? member.species : "—"}
-                    </span>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.3rem 1rem" }}>
-                    <div>
-                      <span style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "1px", textTransform: "uppercase" }}>Position</span>
-                      <p style={{ color: "#aaa", fontSize: "0.8rem", margin: "0.1rem 0 0" }}>{member.position || "—"}</p>
-                    </div>
-                    <div>
-                      <span style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "1px", textTransform: "uppercase" }}>Assigned Ship</span>
-                      <p style={{ color: "#aaa", fontSize: "0.8rem", margin: "0.1rem 0 0" }}>{shipName}</p>
-                    </div>
-                    <div style={{ gridColumn: "1 / -1", marginTop: "0.3rem" }}>
-                      <span style={{ color: "#555", fontSize: "0.6rem", letterSpacing: "1px", textTransform: "uppercase" }}>Player</span>
-                      <p style={{ color: "#6699cc", fontSize: "0.78rem", margin: "0.1rem 0 0" }}>
-                        {member.ownerEmail || "Unassigned"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            );
+        <>
+          {renderSection("Starbase Machida Personnel", grouped.starbase, "#9933cc")}
+          {Object.entries(grouped.shipGroups).map(([shipId, entries]) => {
+            const shipName = ships[shipId]?.name || shipId;
+            return renderSection(`${shipName} Personnel`, entries, "#ff9933");
           })}
-        </div>
+          {renderSection("Unassigned Personnel", grouped.unassigned, "#6699cc")}
+        </>
       )}
 
       {/* Bottom LCARS bar */}
