@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { CAMPAIGN_STARDATE } from "../utils/campaignStardate";
 import "../assets/lcars.css";
 
 interface SectionDef {
@@ -115,15 +116,6 @@ const ArticlePanel = ({ num, text, isFirst }: ArticlePanelProps) => (
   </div>
 );
 
-function getStardate(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const start = new Date(year, 0, 0);
-  const diff = now.getTime() - start.getTime();
-  const dayOfYear = Math.floor(diff / 86400000);
-  const sd = ((year - 1987) * 1000 + (dayOfYear / 365) * 1000).toFixed(1);
-  return sd;
-}
 
 const FLAVOR_LINES = [
   "> COMPUTER: Accessing UFP Archive Database...",
@@ -137,7 +129,7 @@ const ArticlesOfFederation = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [flavorIndex, setFlavorIndex] = useState(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const stardate = getStardate();
+  const stardate = CAMPAIGN_STARDATE;
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 50);
