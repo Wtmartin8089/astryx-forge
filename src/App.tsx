@@ -32,6 +32,8 @@ import SystemSpecies from "./components/SystemSpecies";
 import SystemSpeciesNew from "./components/SystemSpeciesNew";
 import SystemSpeciesDetail from "./components/SystemSpeciesDetail";
 import SystemCreatures from "./components/SystemCreatures";
+import ReferencePage from "./components/ReferencePage";
+import ArticlesOfFederation from "./components/ArticlesOfFederation";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
@@ -105,6 +107,8 @@ function App() {
         <Route path="/systems/:systemId/species/new" element={<SystemSpeciesNew />} />
         <Route path="/systems/:systemId/species/:speciesId" element={<SystemSpeciesDetail />} />
         <Route path="/systems/:systemId/creatures" element={<SystemCreatures />} />
+        <Route path="/reference" element={<ReferencePage />} />
+        <Route path="/reference/articles-of-federation" element={<ArticlesOfFederation />} />
         <Route path="/auth" element={<AuthPanel />} />
       </Routes>
     </>

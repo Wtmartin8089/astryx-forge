@@ -54,6 +54,9 @@ const NavBar = () => {
         Star Systems
       </Link>
 
+      <Link to="/reference" style={linkStyle("/reference")}>
+        Reference
+      </Link>
       <Link to="/forum" style={linkStyle("/forum")}>
         Forum
       </Link>
