@@ -185,7 +185,8 @@ export default function StardateCalculator({
       model === "TNG"
         ? toTNGStardate(dateObj)
         : toCustomStardate(dateObj, customParams);
-    return String(roundTo(sd, 1));
+    const [intPart, decPart] = roundTo(sd, 1).toFixed(1).split(".");
+    return `${intPart.padStart(5, "0")}.${decPart}`;
   }, [dateObj, model, customParams]);
 
   const computedDate = useMemo(() => {
@@ -306,7 +307,7 @@ export default function StardateCalculator({
                 <output className="text-3xl md:text-4xl font-semibold tabular-nums">
                   {computedSd || "—"}
                 </output>
-                <button className={`ml-auto ${lcars.btn} ${lcars.a}`} onClick={() => copy(computedSd)}>
+                <button className={`ml-auto ${lcars.btn} ${lcars.a}`} onClick={() => copy(`Stardate ${computedSd} —`)}>
                   Copy
                 </button>
               </div>

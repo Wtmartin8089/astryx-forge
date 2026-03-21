@@ -27,12 +27,8 @@ const rankColors: Record<string, string> = {
   "Ensign": "#6699cc",
 };
 
-function currentStardate(): string {
-  const base = 74000;
-  const baseTime = new Date("2026-01-01").getTime();
-  const days = (Date.now() - baseTime) / (1000 * 60 * 60 * 24);
-  return (base + (days * 1000) / 365).toFixed(1);
-}
+import { getCampaignStardate } from "../utils/campaignStardate";
+function currentStardate(): string { return getCampaignStardate(); }
 
 type Message = {
   id: string;
