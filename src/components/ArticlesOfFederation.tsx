@@ -76,14 +76,15 @@ const ChapterHeader = ({ num, title }: ChapterHeaderProps) => (
 interface ArticlePanelProps {
   num: number;
   text: string;
+  isFirst?: boolean;
 }
 
-const ArticlePanel = ({ num, text }: ArticlePanelProps) => (
+const ArticlePanel = ({ num, text, isFirst }: ArticlePanelProps) => (
   <div
     style={{
-      backgroundColor: "#111",
-      border: "1px solid #6699cc20",
-      borderLeft: "3px solid #6699cc",
+      backgroundColor: isFirst ? "#141c2a" : "#111",
+      border: `1px solid ${isFirst ? "#6699cc40" : "#6699cc20"}`,
+      borderLeft: `${isFirst ? "4px" : "3px"} solid ${isFirst ? "#FF9C00" : "#6699cc"}`,
       borderRadius: "0 8px 8px 0",
       padding: "1.25rem 1.5rem",
       marginBottom: "1rem",
@@ -91,7 +92,7 @@ const ArticlePanel = ({ num, text }: ArticlePanelProps) => (
   >
     <p
       style={{
-        color: "#6699cc",
+        color: isFirst ? "#FF9C00" : "#6699cc",
         fontSize: "0.65rem",
         letterSpacing: "2px",
         textTransform: "uppercase",
@@ -103,7 +104,7 @@ const ArticlePanel = ({ num, text }: ArticlePanelProps) => (
     </p>
     <p
       style={{
-        color: "#ccc",
+        color: isFirst ? "#e8e8e8" : "#ccc",
         fontSize: "0.9rem",
         lineHeight: "1.8",
         margin: 0,
@@ -114,16 +115,40 @@ const ArticlePanel = ({ num, text }: ArticlePanelProps) => (
   </div>
 );
 
+function getStardate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const start = new Date(year, 0, 0);
+  const diff = now.getTime() - start.getTime();
+  const dayOfYear = Math.floor(diff / 86400000);
+  const sd = ((year - 1987) * 1000 + (dayOfYear / 365) * 1000).toFixed(1);
+  return sd;
+}
+
+const FLAVOR_LINES = [
+  "> COMPUTER: Accessing UFP Archive Database...",
+  "> COMPUTER: Authorization confirmed. Federation Charter retrieved.",
+  "> COMPUTER: Displaying document. All articles loaded.",
+];
+
 const ArticlesOfFederation = () => {
   const [visible, setVisible] = useState(false);
   const [activeSection, setActiveSection] = useState("preamble");
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [flavorIndex, setFlavorIndex] = useState(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const stardate = getStardate();
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (flavorIndex >= FLAVOR_LINES.length - 1) return;
+    const t = setTimeout(() => setFlavorIndex((i) => i + 1), 900);
+    return () => clearTimeout(t);
+  }, [flavorIndex]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -172,19 +197,23 @@ const ArticlesOfFederation = () => {
         alignSelf: "flex-start",
       }}
     >
-      <p
-        style={{
-          color: "#ffcc33",
-          fontSize: "0.6rem",
-          letterSpacing: "3px",
-          textTransform: "uppercase",
-          padding: "0 1.25rem",
-          marginTop: 0,
-          marginBottom: "1rem",
-        }}
-      >
-        Contents
-      </p>
+      {/* Sidebar header */}
+      <div style={{ padding: "0 1.25rem", marginBottom: "1.25rem", borderBottom: "1px solid #ffcc3318", paddingBottom: "1rem" }}>
+        <p style={{ color: "#ffcc33", fontSize: "0.6rem", letterSpacing: "3px", textTransform: "uppercase", margin: "0 0 0.75rem" }}>
+          Archive Index
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+          <span style={{ color: "#33cc99", fontSize: "0.55rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            ● STATUS: ACTIVE
+          </span>
+          <span style={{ color: "#6699cc", fontSize: "0.55rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            ◆ ACCESS: AUTHORIZED
+          </span>
+          <span style={{ color: "#555", fontSize: "0.55rem", letterSpacing: "1px" }}>
+            SD: {stardate}
+          </span>
+        </div>
+      </div>
       {sections.map((sec) => (
         <button
           key={sec.id}
@@ -252,6 +281,24 @@ const ArticlesOfFederation = () => {
   const content = (
     <div style={{ flex: 1, minWidth: 0, padding: isMobile ? "0" : "0 0 0 2.5rem" }}>
       {isMobile && mobilePills}
+
+      {/* System status bar */}
+      <div style={{ backgroundColor: "#0a0f1a", border: "1px solid #ffcc3318", borderRadius: "6px", padding: "0.5rem 1rem", marginBottom: "1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+        <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+          <span style={{ color: "#555", fontSize: "0.55rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            <span style={{ color: "#ffcc3360" }}>NODE</span> STARBASE MACHIDA
+          </span>
+          <span style={{ color: "#555", fontSize: "0.55rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            <span style={{ color: "#ffcc3360" }}>DATABASE</span> UFP ARCHIVE — FOUNDING DOCUMENTS
+          </span>
+          <span style={{ color: "#555", fontSize: "0.55rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            <span style={{ color: "#ffcc3360" }}>STARDATE</span> {stardate}
+          </span>
+        </div>
+        <span style={{ color: "#33cc99", fontSize: "0.55rem", letterSpacing: "2px", textTransform: "uppercase" }}>
+          ● ONLINE
+        </span>
+      </div>
 
       {/* Breadcrumb */}
       <p
@@ -322,7 +369,7 @@ const ArticlesOfFederation = () => {
                 textTransform: "uppercase",
               }}
             >
-              UFP Founding Document
+              Federation Archive Access — UFP Founding Charter
             </p>
           </div>
           <span
@@ -370,6 +417,15 @@ const ArticlesOfFederation = () => {
         >
           United Federation of Planets — Office of the President — Founding Charter
         </p>
+      </div>
+
+      {/* Flavor text terminal */}
+      <div style={{ backgroundColor: "#080d18", border: "1px solid #6699cc15", borderRadius: "4px", padding: "0.75rem 1rem", marginBottom: "2rem", fontFamily: "monospace" }}>
+        {FLAVOR_LINES.slice(0, flavorIndex + 1).map((line, i) => (
+          <p key={i} style={{ color: i === flavorIndex ? "#6699cc" : "#6699cc50", fontSize: "0.72rem", margin: i === 0 ? 0 : "0.2rem 0 0", letterSpacing: "0.5px" }}>
+            {line}{i === flavorIndex ? <span style={{ animation: "none", opacity: 0.7 }}>█</span> : ""}
+          </p>
+        ))}
       </div>
 
       {/* PREAMBLE */}
@@ -426,6 +482,7 @@ const ArticlesOfFederation = () => {
         <ChapterHeader num="I" title="The United Federation of Planets" />
         <ArticlePanel
           num={1}
+          isFirst
           text="The United Federation of Planets is established as a democratic union of sovereign worlds, dedicated to the principles of universal liberty, rights, and equality, and committed to the peaceful coexistence of all sentient species."
         />
         <ArticlePanel
@@ -451,6 +508,7 @@ const ArticlesOfFederation = () => {
         <ChapterHeader num="II" title="Fundamental Rights of Citizens" />
         <ArticlePanel
           num={6}
+          isFirst
           text="All citizens of member worlds are equal before the law and are entitled, without distinction, to equal protection under Federation law."
         />
         <ArticlePanel
@@ -476,6 +534,7 @@ const ArticlesOfFederation = () => {
         <ChapterHeader num="III" title="The Federation Council" />
         <ArticlePanel
           num={11}
+          isFirst
           text="The Federation Council shall be the principal legislative body of the Federation, composed of representatives from each member world."
         />
         <ArticlePanel
@@ -501,6 +560,7 @@ const ArticlesOfFederation = () => {
         <ChapterHeader num="IV" title="The President of the Federation" />
         <ArticlePanel
           num={16}
+          isFirst
           text="The executive power of the Federation shall be vested in a President, elected by direct popular vote of all Federation citizens."
         />
         <ArticlePanel
@@ -526,6 +586,7 @@ const ArticlesOfFederation = () => {
         <ChapterHeader num="V" title="The Federation Judiciary" />
         <ArticlePanel
           num={21}
+          isFirst
           text="There shall be a Federation Supreme Court, composed of no fewer than seven justices appointed by the President and confirmed by the Federation Council."
         />
         <ArticlePanel
@@ -547,6 +608,7 @@ const ArticlesOfFederation = () => {
         <ChapterHeader num="VI" title="Starfleet Command" />
         <ArticlePanel
           num={25}
+          isFirst
           text="Starfleet shall serve as the combined defense, exploration, and humanitarian arm of the United Federation of Planets."
         />
         <ArticlePanel
@@ -572,6 +634,7 @@ const ArticlesOfFederation = () => {
         <ChapterHeader num="VII" title="Membership" />
         <ArticlePanel
           num={30}
+          isFirst
           text="Any world whose government meets the criteria established by the Council, including demonstrated peaceful intent, technological development, unified planetary government, and the free consent of the governed, may apply for membership."
         />
         <ArticlePanel
@@ -593,6 +656,7 @@ const ArticlesOfFederation = () => {
         <ChapterHeader num="VIII" title="Amendments" />
         <ArticlePanel
           num={34}
+          isFirst
           text="These Articles may be amended by a proposal receiving the support of two-thirds of the Federation Council and ratification by three-fourths of all member worlds."
         />
         <ArticlePanel
