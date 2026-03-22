@@ -44,7 +44,7 @@ type MissionLogPanelProps = {
 
 const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) => {
   const [logs, setLogs] = useState<MissionLog[]>([]);
-  const [phase, setPhase] = useState("");
+  const [heading, setHeading] = useState("");
   const [description, setDescription] = useState("");
   const [author, setAuthor] = useState("Starfleet Command");
   const [saving, setSaving] = useState(false);
@@ -59,17 +59,17 @@ const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) =>
   }, [missionId]);
 
   const handleAddLog = useCallback(async () => {
-    if (!phase.trim() || !description.trim()) return;
+    if (!heading.trim() || !description.trim()) return;
     setSaving(true);
     try {
       await addMissionLog(missionId, {
         missionId,
-        phase: phase.trim(),
+        phase: heading.trim(),
         description: description.trim(),
         stardate: getCampaignStardate(),
         author: author.trim() || "Starfleet Command",
       });
-      setPhase("");
+      setHeading("");
       setDescription("");
       setAuthor("Starfleet Command");
       setShowForm(false);
@@ -77,7 +77,7 @@ const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) =>
       console.error("Failed to add mission log:", e);
     }
     setSaving(false);
-  }, [missionId, phase, description, author]);
+  }, [missionId, heading, description, author]);
 
   const inputStyle: React.CSSProperties = {
     backgroundColor: "#0a0a0a",
@@ -133,7 +133,7 @@ const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) =>
               alignItems: "center",
             }}
           >
-            {showForm ? "CANCEL" : "+ ADD ENTRY"}
+            {showForm ? "CANCEL" : "+ APPEND ENTRY"}
           </button>
         )}
       </div>
@@ -151,9 +151,9 @@ const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) =>
           gap: "0.5rem",
         }}>
           <input
-            value={phase}
-            onChange={(e) => setPhase(e.target.value)}
-            placeholder="Phase (e.g. Initial Contact)"
+            value={heading}
+            onChange={(e) => setHeading(e.target.value)}
+            placeholder="Entry heading (e.g. Rendezvous With the Unknown)"
             style={inputStyle}
           />
           <textarea
@@ -172,7 +172,7 @@ const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) =>
           <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
             <button
               onClick={handleAddLog}
-              disabled={saving || !phase.trim() || !description.trim()}
+              disabled={saving || !heading.trim() || !description.trim()}
               style={{
                 backgroundColor: saving ? "#55441080" : "#ffcc3320",
                 border: "1px solid #ffcc33",
@@ -183,7 +183,7 @@ const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) =>
                 letterSpacing: "1.5px",
                 padding: "0.3rem 1rem",
                 cursor: saving ? "not-allowed" : "pointer",
-                opacity: (!phase.trim() || !description.trim()) ? 0.4 : 1,
+                opacity: (!heading.trim() || !description.trim()) ? 0.4 : 1,
               }}
             >
               {saving ? "SAVING..." : "ADD TO LOG"}
@@ -213,24 +213,24 @@ const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) =>
               borderRadius: "0 4px 4px 0",
               padding: "0.65rem 0.9rem",
             }}>
-              <div style={{ display: "flex", gap: "0.75rem", alignItems: "baseline", marginBottom: "0.3rem", flexWrap: "wrap" }}>
-                <span style={{
-                  color: "#6699cc",
-                  fontSize: "0.62rem",
-                  fontFamily: "'Orbitron', sans-serif",
-                  letterSpacing: "1px",
-                  whiteSpace: "nowrap",
-                }}>
-                  STARDATE {log.stardate}
-                </span>
-                <span style={{
+              <div style={{ marginBottom: "0.35rem" }}>
+                <p style={{
                   color: "#ffcc33",
-                  fontSize: "0.65rem",
+                  fontSize: "0.78rem",
                   fontFamily: "'Orbitron', sans-serif",
-                  letterSpacing: "1.5px",
-                  textTransform: "uppercase",
+                  fontWeight: "bold",
+                  letterSpacing: "0.5px",
+                  margin: "0 0 0.2rem",
                 }}>
                   {log.phase}
+                </p>
+                <span style={{
+                  color: "#4a5568",
+                  fontSize: "0.6rem",
+                  fontFamily: "'Orbitron', sans-serif",
+                  letterSpacing: "1px",
+                }}>
+                  STARDATE {log.stardate}
                 </span>
               </div>
               <p style={{
@@ -584,6 +584,39 @@ const MissionBoard = () => {
     await createMissionThread(m, shipId);
   };
 
+  const handleStatusChange = async (m: Mission, newStatus: MissionStatus) => {
+    if (m.status === newStatus) return;
+    await updateMissionStatus(m.id!, newStatus);
+    const sys = m.system || "the operational area";
+    const firstObj = m.objectives?.[0] || "primary directive";
+    const entries: Record<MissionStatus, { heading: string; body: string }> = {
+      active: {
+        heading: "Orders Received — All Hands Briefed",
+        body: `Clearance has been transmitted from Starfleet Command. All departments confirm readiness and the crew has been fully briefed on the situation in ${sys}. The ${firstObj} has been confirmed as the leading directive. Operations are authorized to commence.`,
+      },
+      pending: {
+        heading: "Operations Suspended — Standing By for Orders",
+        body: `Command has issued a temporary hold on active operations in ${sys}. All preparations remain intact. The crew stands by at heightened readiness, awaiting revised directives from Starfleet.`,
+      },
+      completed: {
+        heading: "Engagement Concluded — Final Reports Incoming",
+        body: `All directives associated with operations in ${sys} have been fulfilled. The crew performed with distinction throughout. Starfleet Command has been notified and full mission reports are being compiled for the official record.`,
+      },
+      failed: {
+        heading: "Operations Discontinued — Full Review Requested",
+        body: `Circumstances encountered in ${sys} rendered continued engagement untenable. The ${firstObj} could not be resolved under present conditions. Command has been informed and a formal debrief has been requested. All relevant records are being preserved.`,
+      },
+    };
+    const { heading, body } = entries[newStatus];
+    await addMissionLog(m.id!, {
+      missionId: m.id!,
+      phase: heading,
+      description: body,
+      stardate: getCampaignStardate(),
+      author: "Starfleet Command",
+    });
+  };
+
   const inputStyle: React.CSSProperties = {
     backgroundColor: "#0a0a0a",
     border: "1px solid #6699cc40",
@@ -810,7 +843,7 @@ const MissionBoard = () => {
                     {(["active", "pending", "completed", "failed"] as MissionStatus[]).map((s) => (
                       <button
                         key={s}
-                        onClick={() => updateMissionStatus(m.id!, s)}
+                        onClick={() => handleStatusChange(m, s)}
                         style={{
                           backgroundColor: m.status === s ? STATUS_COLOR[s] + "30" : "transparent",
                           border: `1px solid ${STATUS_COLOR[s]}60`,
