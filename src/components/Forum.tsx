@@ -38,8 +38,17 @@ function resolveLogTitle(role: string | null | undefined, category: ForumCategor
 }
 
 function buildLogTemplate(logTitle: string): string {
-  return `Stardate ${getCampaignStardate()} — ${logTitle}\n\n[Describe the current situation — location, context, ongoing events]\n\n[What has been observed or encountered]\n\n[Your assessment and intended course of action]`;
+  return `Stardate ${getCampaignStardate()} — ${logTitle}\n\nInitial report:\n\n\nObservations:\n\n\nCurrent assessment:\n\n`;
 }
+
+const CATEGORY_DEPT: Record<string, string> = {
+  bridge:     "Bridge Operations",
+  mission:    "Mission Operations",
+  engineering:"Engineering",
+  sickbay:    "Medical",
+  tenForward: "Personal Records",
+  holodeck:   "Recreation Logs",
+};
 
 /* ── Starbase board constant ── */
 const STARBASE_BOARD = {
@@ -110,6 +119,8 @@ const Forum: React.FC = () => {
   const [replyText, setReplyText] = useState("");
   const [replyFile, setReplyFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [entryConfirmed, setEntryConfirmed] = useState(false);
+  const [replyConfirmed, setReplyConfirmed] = useState(false);
 
   /* ── Edit/delete reply state ── */
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
@@ -182,6 +193,8 @@ const Forum: React.FC = () => {
       setNewTitle("");
       setNewContent("");
       setShowNewThread(false);
+      setEntryConfirmed(true);
+      setTimeout(() => setEntryConfirmed(false), 4000);
     } catch (err) {
       console.error("Error creating thread:", err);
     }
@@ -233,6 +246,8 @@ const Forum: React.FC = () => {
 
       setReplyText("");
       setReplyFile(null);
+      setReplyConfirmed(true);
+      setTimeout(() => setReplyConfirmed(false), 4000);
     } catch (err) {
       console.error("Error adding reply:", err);
     }
@@ -370,23 +385,71 @@ const Forum: React.FC = () => {
             {showNewThread ? "CANCEL" : "NEW THREAD"}
           </button>
 
+          {entryConfirmed && (
+            <div style={{
+              backgroundColor: "#001a0d",
+              border: "1px solid #33cc9960",
+              borderLeft: "4px solid #33cc99",
+              borderRadius: "4px",
+              padding: "0.65rem 1rem",
+              marginBottom: "1rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.65rem",
+            }}>
+              <span style={{ color: "#33cc99", fontSize: "0.85rem" }}>✓</span>
+              <span style={{ color: "#33cc99", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", letterSpacing: "1.5px" }}>
+                ENTRY RECORDED — Starfleet database updated successfully.
+              </span>
+            </div>
+          )}
+
           {showNewThread && (
             <form onSubmit={handleCreateThread} style={styles.formCard}>
+              {/* LCARS record-entry header */}
+              <div style={{
+                backgroundColor: "#0a0d14",
+                border: "1px solid #6699cc40",
+                borderBottom: "1px solid #6699cc60",
+                borderRadius: "4px 4px 0 0",
+                margin: "-1rem -1rem 0",
+                padding: "0.75rem 1rem",
+              }}>
+                <p style={{ margin: "0 0 0.15rem", color: "#6699cc", fontFamily: "'Orbitron', sans-serif", fontSize: "0.6rem", letterSpacing: "3px", textTransform: "uppercase" }}>
+                  Starfleet Record Entry
+                </p>
+                <p style={{ margin: "0 0 0.15rem", color: "#ffcc33", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", letterSpacing: "1px" }}>
+                  {boardName} — {CATEGORY_DEPT[selectedCategory || ""] || selectedCategory}
+                </p>
+                <p style={{ margin: 0, color: "#4a5568", fontFamily: "'Orbitron', sans-serif", fontSize: "0.62rem", letterSpacing: "1.5px" }}>
+                  STARDATE {getCampaignStardate()}
+                </p>
+              </div>
+
               <input
                 type="text"
-                placeholder="Thread title..."
+                placeholder="Entry subject..."
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                style={styles.input}
+                style={{ ...styles.input, marginTop: "0.25rem" }}
               />
               <textarea
-                placeholder="Write your first post..."
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
-                style={{ ...styles.input, minHeight: "100px", resize: "vertical" }}
+                style={{ ...styles.input, minHeight: "180px", resize: "vertical" }}
               />
+              <p style={{
+                margin: 0,
+                color: "#4a5568",
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: "0.62rem",
+                letterSpacing: "0.5px",
+                fontStyle: "italic",
+              }}>
+                All entries become part of the official Starfleet record. Maintain clarity and professionalism.
+              </p>
               <button type="submit" disabled={loading} style={styles.actionBtn}>
-                {loading ? "TRANSMITTING..." : "CREATE THREAD"}
+                {loading ? "TRANSMITTING..." : "RECORD ENTRY"}
               </button>
             </form>
           )}
@@ -585,14 +648,44 @@ const Forum: React.FC = () => {
             );
           })}
 
+          {/* Reply confirmation */}
+          {replyConfirmed && (
+            <div style={{
+              backgroundColor: "#001a0d",
+              border: "1px solid #33cc9960",
+              borderLeft: "4px solid #33cc99",
+              borderRadius: "4px",
+              padding: "0.65rem 1rem",
+              marginTop: "0.75rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.65rem",
+            }}>
+              <span style={{ color: "#33cc99", fontSize: "0.85rem" }}>✓</span>
+              <span style={{ color: "#33cc99", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", letterSpacing: "1.5px" }}>
+                ENTRY RECORDED — Starfleet database updated successfully.
+              </span>
+            </div>
+          )}
+
           {/* Reply form */}
           <form onSubmit={handleAddReply} style={{ ...styles.formCard, marginTop: "1rem" }}>
             <textarea
-              placeholder="Write a reply..."
+              placeholder="Append to the record..."
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               style={{ ...styles.input, minHeight: "80px", resize: "vertical" }}
             />
+            <p style={{
+              margin: 0,
+              color: "#4a5568",
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.62rem",
+              letterSpacing: "0.5px",
+              fontStyle: "italic",
+            }}>
+              All entries become part of the official Starfleet record. Maintain clarity and professionalism.
+            </p>
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               <label style={{ color: "#666", fontSize: "0.8rem", cursor: "pointer" }}>
                 <input
@@ -603,7 +696,7 @@ const Forum: React.FC = () => {
                 {replyFile ? replyFile.name : "Attach file..."}
               </label>
               <button type="submit" disabled={loading} style={styles.actionBtn}>
-                {loading ? "TRANSMITTING..." : "POST REPLY"}
+                {loading ? "TRANSMITTING..." : "LOG ENTRY"}
               </button>
             </div>
           </form>
