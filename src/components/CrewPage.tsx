@@ -438,6 +438,59 @@ const CrewPage = () => {
         )}
       </div>
 
+      {/* Claim banner — shown to any logged-in user who doesn't have a character yet */}
+      {canClaim && (
+        <div style={{
+          backgroundColor: "#00331a",
+          border: "2px solid #33cc99",
+          borderRadius: "8px",
+          padding: "1rem 1.5rem",
+          marginBottom: "1.5rem",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "1rem",
+          flexWrap: "wrap",
+        }}>
+          <div>
+            <p style={{ margin: "0 0 0.2rem", color: "#33cc99", fontFamily: "'Orbitron', sans-serif", fontSize: "0.7rem", letterSpacing: "2px" }}>
+              THIS CHARACTER IS AVAILABLE
+            </p>
+            <p style={{ margin: 0, color: "#aaa", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem" }}>
+              Claim this identity to begin your service record.
+            </p>
+          </div>
+          <button
+            onClick={async () => {
+              if (!crewSlug || !currentUser) return;
+              try {
+                const { claimCharacter } = await import("../utils/crewFirestore");
+                await claimCharacter(crewSlug, currentUser.uid, currentUser.email ?? "");
+                setMember((prev) => prev ? { ...prev, ownerId: currentUser.uid, ownerEmail: currentUser.email ?? "" } : prev);
+                setUserAlreadyHasCharacter(true);
+              } catch (err) {
+                console.error("Claim failed:", err);
+              }
+            }}
+            style={{
+              backgroundColor: "#33cc99",
+              border: "none",
+              borderRadius: "20px",
+              color: "#000",
+              cursor: "pointer",
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.8rem",
+              fontWeight: "bold",
+              letterSpacing: "2px",
+              padding: "0.6rem 2rem",
+              flexShrink: 0,
+            }}
+          >
+            CLAIM CHARACTER
+          </button>
+        </div>
+      )}
+
       {/* Pending status banner */}
       {member.status === "pending" && (
         <div style={{ marginBottom: "1.5rem" }}>
