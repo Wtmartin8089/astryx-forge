@@ -380,8 +380,8 @@ const Forum: React.FC = () => {
 
       {/* ── Category Selection ── */}
       {selectedBoard && !selectedCategory && (() => {
+        const missionCats = FORUM_CATEGORIES.filter((c) => c.threadType === "mission");
         const locationCats = FORUM_CATEGORIES.filter((c) => c.threadType === "location");
-        const logCats = FORUM_CATEGORIES.filter((c) => c.threadType === "log");
         const renderCat = (cat: typeof FORUM_CATEGORIES[number]) => (
           <div
             key={cat.id}
@@ -398,27 +398,27 @@ const Forum: React.FC = () => {
         );
         return (
           <div>
-            {/* Location section */}
+            {/* Mission Area section */}
+            <div style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <div style={{ width: "6px", height: "16px", backgroundColor: "#ff9900", borderRadius: "3px" }} />
+              <span style={{ color: "#ff9900", fontFamily: "'Orbitron', sans-serif", fontSize: "0.62rem", letterSpacing: "2.5px", textTransform: "uppercase" }}>
+                Mission Area
+              </span>
+              <span style={{ color: "#333", fontSize: "0.62rem", fontFamily: "'Orbitron', sans-serif" }}>— Active mission briefings &amp; interaction</span>
+            </div>
+            <div style={{ ...styles.grid, marginBottom: "2rem" }}>
+              {missionCats.map(renderCat)}
+            </div>
+            {/* Shipboard Roleplay section */}
             <div style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <div style={{ width: "6px", height: "16px", backgroundColor: "#6699cc", borderRadius: "3px" }} />
               <span style={{ color: "#6699cc", fontFamily: "'Orbitron', sans-serif", fontSize: "0.62rem", letterSpacing: "2.5px", textTransform: "uppercase" }}>
-                Locations
+                Shipboard Roleplay
               </span>
-              <span style={{ color: "#333", fontSize: "0.62rem", fontFamily: "'Orbitron', sans-serif" }}>— In-character roleplay scenes</span>
-            </div>
-            <div style={{ ...styles.grid, marginBottom: "2rem" }}>
-              {locationCats.map(renderCat)}
-            </div>
-            {/* Official Logs section */}
-            <div style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <div style={{ width: "6px", height: "16px", backgroundColor: "#ffcc33", borderRadius: "3px" }} />
-              <span style={{ color: "#ffcc33", fontFamily: "'Orbitron', sans-serif", fontSize: "0.62rem", letterSpacing: "2.5px", textTransform: "uppercase" }}>
-                Official Logs
-              </span>
-              <span style={{ color: "#333", fontSize: "0.62rem", fontFamily: "'Orbitron', sans-serif" }}>— Structured Starfleet records</span>
+              <span style={{ color: "#333", fontSize: "0.62rem", fontFamily: "'Orbitron', sans-serif" }}>— In-character scenes &amp; interactions</span>
             </div>
             <div style={styles.grid}>
-              {logCats.map(renderCat)}
+              {locationCats.map(renderCat)}
             </div>
           </div>
         );
