@@ -5,6 +5,16 @@ export type AwardEntry = {
   stardate: string;
 };
 
+export type CommendationEntry = {
+  id?: string;
+  type: "commendation";
+  title: string;
+  message: string;
+  awardedBy: string;
+  awardedByUid: string;
+  createdAt: unknown;
+};
+
 export type ServiceHistoryEntry = {
   year: number;
   event: string;

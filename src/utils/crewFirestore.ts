@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  addDoc,
   getDoc,
   getDocs,
   setDoc,
@@ -13,7 +14,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
-import type { CrewMember, AssignmentType } from "../types/fleet";
+import type { CrewMember, AssignmentType, CommendationEntry } from "../types/fleet";
 
 const CREW_COL = "crew";
 
@@ -161,6 +162,39 @@ export async function seedCrewData(
     }),
   );
   await Promise.all(promises);
+}
+
+/** Write a commendation to crew/{id}/history subcollection. Returns the new doc ID. */
+export async function addCommendation(
+  crewId: string,
+  entry: Omit<CommendationEntry, "id" | "createdAt">,
+): Promise<string> {
+  const ref = await addDoc(collection(db, CREW_COL, crewId, "history"), {
+    ...entry,
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+/** Subscribe to commendation history for a crew member (real-time). */
+export function subscribeToCommendations(
+  crewId: string,
+  callback: (entries: CommendationEntry[]) => void,
+): () => void {
+  const q = query(
+    collection(db, CREW_COL, crewId, "history"),
+    where("type", "==", "commendation"),
+  );
+  return onSnapshot(q, (snap) => {
+    const entries = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as CommendationEntry);
+    // Sort newest first client-side (avoids needing a composite index)
+    entries.sort((a, b) => {
+      const at = (a.createdAt as any)?.toMillis?.() ?? 0;
+      const bt = (b.createdAt as any)?.toMillis?.() ?? 0;
+      return bt - at;
+    });
+    callback(entries);
+  });
 }
 
 /**

@@ -199,6 +199,59 @@ export async function deleteReply(
   });
 }
 
+// ── Commendation announcement ─────────────────────────────────────────────────
+
+/**
+ * Post a commendation announcement for a crew member.
+ * Replies to the most-recently-active mission thread for their ship if one
+ * exists; otherwise opens a new thread in the Bridge category.
+ */
+export async function postCommendationAnnouncement(
+  shipId: string,
+  commendedName: string,
+  title: string,
+  message: string,
+  awarder: { uid: string; displayName: string },
+): Promise<void> {
+  const content =
+    `**COMMENDATION — ${title}**\n\n` +
+    `${awarder.displayName} has awarded ${commendedName} the following commendation:\n\n` +
+    message;
+
+  // Look for active mission threads on this ship
+  const missionSnap = await getDocs(
+    query(
+      collection(db, COLLECTION),
+      where("shipId", "==", shipId),
+      where("category", "==", "mission"),
+    ),
+  );
+
+  if (!missionSnap.empty) {
+    // Reply to the most recently active mission thread
+    const threads = missionSnap.docs.map((d) => ({ id: d.id, ...d.data() } as ForumThread));
+    threads.sort((a, b) => {
+      const at = (a.lastReplyAt ?? a.lastActivity)?.toDate?.()?.getTime() ?? 0;
+      const bt = (b.lastReplyAt ?? b.lastActivity)?.toDate?.()?.getTime() ?? 0;
+      return bt - at;
+    });
+    await addReply(threads[0].id, content, "", {
+      email: null,
+      uid: awarder.uid,
+      displayName: awarder.displayName,
+    });
+  } else {
+    // No mission thread — open a new Bridge thread
+    await createThread(
+      shipId,
+      "bridge" as ForumCategoryId,
+      `Commendation: ${title}`,
+      content,
+      { email: null, uid: awarder.uid, displayName: awarder.displayName },
+    );
+  }
+}
+
 // ── Legacy: createMissionBriefingThread (kept for backwards compat) ───────────
 // New code should use createMissionThread() from forumService.ts instead.
 

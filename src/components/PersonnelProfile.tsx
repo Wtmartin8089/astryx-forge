@@ -14,11 +14,19 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { db } from "../firebase/firebaseConfig";
 import { subscribeToShips } from "../utils/shipsFirestore";
-import { updateCharacter } from "../utils/crewFirestore";
+import {
+  updateCharacter,
+  addCommendation,
+  subscribeToCommendations,
+  getUserCrewRole,
+} from "../utils/crewFirestore";
+import { postCommendationAnnouncement } from "../utils/forumFirestore";
 import { isAdmin } from "../utils/adminAuth";
-import type { CrewMember, ShipData, ServiceHistoryEntry, AssignmentType } from "../types/fleet";
+import type { CrewMember, ShipData, ServiceHistoryEntry, AssignmentType, CommendationEntry } from "../types/fleet";
 import starfleetDecorations from "../data/starfleetDecorations";
 import "../assets/lcars.css";
+
+const COMMAND_ROLES = ["fleet admiral", "admiral", "captain", "commander", "first officer", "executive officer"];
 
 const rankColors: Record<string, string> = {
   "Captain": "#ff9900",
@@ -46,6 +54,16 @@ const PersonnelProfile = () => {
   const [member, setMember] = useState<CrewMember | null>(null);
   const [ships, setShips] = useState<Record<string, ShipData>>({});
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // Commendations state
+  const [commendations, setCommendations] = useState<CommendationEntry[]>([]);
+  const [userCrewRole, setUserCrewRole] = useState<string | null>(null);
+  const [showAwardForm, setShowAwardForm] = useState(false);
+  const [awardTitle, setAwardTitle] = useState("");
+  const [awardMessage, setAwardMessage] = useState("");
+  const [awardSubmitting, setAwardSubmitting] = useState(false);
+  const [awardError, setAwardError] = useState<string | null>(null);
+  const [awardSubmitted, setAwardSubmitted] = useState(false);
 
   // Send message modal state
   const [showModal, setShowModal] = useState(false);
@@ -87,9 +105,17 @@ const PersonnelProfile = () => {
       setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Message)));
     });
 
+    const unsubCommendations = subscribeToCommendations(id, setCommendations);
+
     const timer = setTimeout(() => setVisible(true), 50);
-    return () => { unsubShips(); unsub(); unsubMsg(); clearTimeout(timer); };
+    return () => { unsubShips(); unsub(); unsubMsg(); unsubCommendations(); clearTimeout(timer); };
   }, [id]);
+
+  // Fetch the viewer's crew role for canAward check
+  useEffect(() => {
+    if (!user) { setUserCrewRole(null); return; }
+    getUserCrewRole(user.uid).then(setUserCrewRole).catch(() => setUserCrewRole(null));
+  }, [user]);
 
   // Sync edit state when member loads or changes
   useEffect(() => {
@@ -167,6 +193,42 @@ const PersonnelProfile = () => {
       console.error("Failed to update assignment:", err);
     }
     setSavingAssignment(false);
+  };
+
+  const canAward =
+    user !== null &&
+    (userIsAdmin || COMMAND_ROLES.some((cr) => (userCrewRole || "").toLowerCase().includes(cr)));
+
+  const handleAwardSubmit = async () => {
+    if (!user || !id || !member || !awardTitle.trim() || !awardMessage.trim()) return;
+    setAwardSubmitting(true);
+    setAwardError(null);
+    try {
+      const awarderName = user.displayName || user.email || "Unknown Officer";
+      await addCommendation(id, {
+        type: "commendation",
+        title: awardTitle.trim(),
+        message: awardMessage.trim(),
+        awardedBy: awarderName,
+        awardedByUid: user.uid,
+      });
+      await postCommendationAnnouncement(
+        member.shipId,
+        member.name,
+        awardTitle.trim(),
+        awardMessage.trim(),
+        { uid: user.uid, displayName: awarderName },
+      );
+      setAwardTitle("");
+      setAwardMessage("");
+      setShowAwardForm(false);
+      setAwardSubmitted(true);
+      setTimeout(() => setAwardSubmitted(false), 3000);
+    } catch (err: any) {
+      setAwardError(err?.message || "Failed to submit commendation.");
+    } finally {
+      setAwardSubmitting(false);
+    }
   };
 
   if (!member) {
@@ -655,6 +717,140 @@ const PersonnelProfile = () => {
           </p>
         )}
       </div>
+
+      {/* Commendations Panel */}
+      {(commendations.length > 0 || canAward) && (
+        <div style={{
+          backgroundColor: "#111",
+          border: "1px solid #ffcc3360",
+          borderRadius: "4px",
+          padding: "1.5rem",
+          marginBottom: "1.5rem",
+        }}>
+          {/* Header row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+            <h3 style={{ color: "#ffcc33", fontSize: "0.75rem", letterSpacing: "2px", textTransform: "uppercase", margin: 0 }}>
+              Commendations
+            </h3>
+            {canAward && (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                {awardSubmitted && (
+                  <span style={{ color: "#33cc99", fontSize: "0.65rem", letterSpacing: "2px", fontFamily: "'Orbitron', sans-serif" }}>
+                    AWARDED
+                  </span>
+                )}
+                <button
+                  onClick={() => setShowAwardForm((v) => !v)}
+                  style={{
+                    backgroundColor: showAwardForm ? "transparent" : "#ffcc33",
+                    border: "1px solid #ffcc33",
+                    borderRadius: "20px",
+                    color: showAwardForm ? "#ffcc33" : "#000",
+                    cursor: "pointer",
+                    fontFamily: "'Orbitron', sans-serif",
+                    fontSize: "0.68rem",
+                    fontWeight: "bold",
+                    letterSpacing: "1px",
+                    padding: "0.35rem 0.9rem",
+                  }}
+                >
+                  {showAwardForm ? "CANCEL" : "AWARD"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Award form */}
+          {showAwardForm && canAward && (
+            <div style={{
+              backgroundColor: "#0a0a0a",
+              border: "1px solid #ffcc3330",
+              borderRadius: "6px",
+              padding: "1rem",
+              marginBottom: "1rem",
+            }}>
+              <div style={{ marginBottom: "0.75rem" }}>
+                <label style={{ color: "#888", display: "block", fontSize: "0.65rem", letterSpacing: "1px", marginBottom: "0.3rem", textTransform: "uppercase" }}>
+                  Award Title
+                </label>
+                <input
+                  type="text"
+                  value={awardTitle}
+                  placeholder="e.g. Medal of Valor"
+                  onChange={(e) => setAwardTitle(e.target.value)}
+                  style={inputStyleBase}
+                />
+              </div>
+              <div style={{ marginBottom: "0.75rem" }}>
+                <label style={{ color: "#888", display: "block", fontSize: "0.65rem", letterSpacing: "1px", marginBottom: "0.3rem", textTransform: "uppercase" }}>
+                  Citation
+                </label>
+                <textarea
+                  value={awardMessage}
+                  placeholder="Describe the reason for this commendation..."
+                  onChange={(e) => setAwardMessage(e.target.value)}
+                  rows={4}
+                  style={{ ...inputStyleBase, resize: "vertical", lineHeight: "1.6" }}
+                />
+              </div>
+              {awardError && (
+                <p style={{ color: "#cc3333", fontSize: "0.75rem", fontFamily: "'Orbitron', sans-serif", margin: "0 0 0.75rem" }}>
+                  {awardError}
+                </p>
+              )}
+              <button
+                onClick={handleAwardSubmit}
+                disabled={awardSubmitting || !awardTitle.trim() || !awardMessage.trim()}
+                style={{
+                  backgroundColor: awardSubmitting || !awardTitle.trim() || !awardMessage.trim() ? "#333" : rankColor,
+                  border: "none",
+                  borderRadius: "20px",
+                  color: "#000",
+                  cursor: awardSubmitting || !awardTitle.trim() || !awardMessage.trim() ? "not-allowed" : "pointer",
+                  fontFamily: "'Orbitron', sans-serif",
+                  fontSize: "0.72rem",
+                  fontWeight: "bold",
+                  letterSpacing: "1px",
+                  padding: "0.5rem 1.25rem",
+                }}
+              >
+                {awardSubmitting ? "SUBMITTING..." : "SUBMIT COMMENDATION"}
+              </button>
+            </div>
+          )}
+
+          {/* Commendation list */}
+          {commendations.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {commendations.map((c) => {
+                let dateStr = "";
+                try {
+                  const ts = c.createdAt as any;
+                  const d: Date = typeof ts?.toDate === "function" ? ts.toDate() : new Date(ts);
+                  dateStr = d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+                } catch { /* ignore */ }
+                return (
+                  <div key={c.id} style={{ borderLeft: "3px solid #ffcc33", paddingLeft: "0.75rem" }}>
+                    <p style={{ color: "#ffcc33", fontSize: "0.82rem", fontWeight: "bold", margin: "0 0 0.25rem", letterSpacing: "0.5px" }}>
+                      {c.title}
+                    </p>
+                    <p style={{ color: "#aaa", fontSize: "0.85rem", lineHeight: 1.6, margin: "0 0 0.3rem", whiteSpace: "pre-wrap" }}>
+                      {c.message}
+                    </p>
+                    <span style={{ color: "#555", fontSize: "0.65rem", letterSpacing: "1px" }}>
+                      — {c.awardedBy}{dateStr ? `, ${dateStr}` : ""}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p style={{ color: "#aaa", fontSize: "0.9rem", margin: 0 }}>
+              No commendations on file.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Notes */}
       {member.notes && (
