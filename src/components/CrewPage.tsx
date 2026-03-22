@@ -8,6 +8,7 @@ import {
   updateCharacter,
   approveCharacter,
   rejectCharacter,
+  getUserCharacterName,
 } from "../utils/crewFirestore";
 import { isAdmin } from "../utils/adminAuth";
 import type { CrewMember, ShipData } from "../types/fleet";
@@ -132,6 +133,19 @@ const CrewPage = () => {
     (currentUid === member.ownerId || isAdmin(currentUid));
 
   const userIsAdmin = currentUid !== null && isAdmin(currentUid);
+
+  // Any logged-in user who doesn't already own a character can claim an unclaimed one
+  const [userAlreadyHasCharacter, setUserAlreadyHasCharacter] = useState(false);
+  useEffect(() => {
+    if (!currentUid) { setUserAlreadyHasCharacter(false); return; }
+    getUserCharacterName(currentUid).then((name) => setUserAlreadyHasCharacter(!!name));
+  }, [currentUid]);
+
+  const canClaim =
+    member !== null &&
+    !member.ownerId &&
+    currentUid !== null &&
+    !userAlreadyHasCharacter;
 
   const accentColor = member ? rankColors[member.rank] || "#ff9900" : "#ff9900";
   const ship = member ? shipsData[member.shipId] ?? null : null;
@@ -763,7 +777,7 @@ const CrewPage = () => {
                 ) : (
                   <span style={{ color: "#fff", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     Unclaimed
-                    {userIsAdmin && currentUser && (
+                    {canClaim && currentUser && (
                       <button
                         onClick={async () => {
                           if (!crewSlug || !currentUser) return;
@@ -771,6 +785,7 @@ const CrewPage = () => {
                             const { claimCharacter } = await import("../utils/crewFirestore");
                             await claimCharacter(crewSlug, currentUser.uid, currentUser.email ?? "");
                             setMember((prev) => prev ? { ...prev, ownerId: currentUser.uid, ownerEmail: currentUser.email ?? "" } : prev);
+                            setUserAlreadyHasCharacter(true);
                           } catch (err) {
                             console.error("Claim failed:", err);
                           }
