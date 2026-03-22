@@ -380,7 +380,10 @@ const Forum: React.FC = () => {
       {/* ── Category Selection ── */}
       {selectedBoard && !selectedCategory && (() => {
         const missionCats = FORUM_CATEGORIES.filter((c) => c.threadType === "mission");
-        const locationCats = FORUM_CATEGORIES.filter((c) => c.threadType === "location");
+        const locationCats = FORUM_CATEGORIES.filter((c) =>
+          c.threadType === "location" &&
+          !(selectedBoard === "starbase" && c.id === "bridge")
+        );
         const renderCat = (cat: typeof FORUM_CATEGORIES[number]) => (
           <div
             key={cat.id}
