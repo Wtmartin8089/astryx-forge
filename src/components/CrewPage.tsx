@@ -147,15 +147,6 @@ const CrewPage = () => {
     currentUid !== null &&
     !userAlreadyHasCharacter;
 
-  // Temporary debug — remove after diagnosis
-  console.log("[canClaim debug]", {
-    memberLoaded: member !== null,
-    ownerId: member?.ownerId,
-    ownerIdFalsy: !member?.ownerId,
-    currentUid,
-    userAlreadyHasCharacter,
-    canClaim,
-  });
 
   const accentColor = member ? rankColors[member.rank] || "#ff9900" : "#ff9900";
   const ship = member ? shipsData[member.shipId] ?? null : null;
