@@ -14,6 +14,12 @@ import {
   addMissionLog,
   subscribeMissionLogs,
 } from "../server/routes/missions";
+import {
+  subscribeToTransmissions,
+  createTransmission,
+  deleteTransmission,
+  type Transmission,
+} from "../server/fleet/transmissions/transmissionService";
 import { subscribeToShips } from "../utils/shipsFirestore";
 import { createMissionThread } from "../server/forum/forumService";
 import { starterMissions } from "../data/starterMissions";
@@ -252,6 +258,267 @@ const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) =>
   );
 };
 
+// ── Transmissions Panel ───────────────────────────────────────────────────────
+
+const PRIORITY_META: Record<string, { label: string; color: string; icon: string }> = {
+  urgent:   { label: "PRIORITY ALERT",       color: "#cc3333", icon: "⚠" },
+  command:  { label: "BRIDGE TRANSMISSION",  color: "#F5B942", icon: "⚡" },
+  standard: { label: "FLEET DISPATCH",       color: "#6699cc", icon: "◈" },
+};
+
+type TransmissionsPanelProps = {
+  isAdmin: boolean;
+};
+
+const TransmissionsPanel = ({ isAdmin: admin }: TransmissionsPanelProps) => {
+  const [transmissions, setTransmissions] = useState<Transmission[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [priority, setPriority] = useState<"urgent" | "command" | "standard">("command");
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [author, setAuthor] = useState("");
+  const [rank, setRank] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    return subscribeToTransmissions(setTransmissions);
+  }, []);
+
+  const handleSend = useCallback(async () => {
+    if (!message.trim()) return;
+    setSaving(true);
+    try {
+      await createTransmission({
+        title: title.trim() || PRIORITY_META[priority].label,
+        message: message.trim(),
+        author: author.trim() || "Starfleet Command",
+        rank: rank.trim() || "",
+        location: "Starfleet Headquarters",
+        priority,
+      });
+      setTitle("");
+      setMessage("");
+      setAuthor("");
+      setRank("");
+      setShowForm(false);
+    } catch (e) {
+      console.error("Failed to send transmission:", e);
+    }
+    setSaving(false);
+  }, [priority, title, message, author, rank]);
+
+  const inputStyle: React.CSSProperties = {
+    backgroundColor: "#0a0a0a",
+    border: "1px solid #cc333340",
+    borderRadius: "4px",
+    color: "#ccc",
+    padding: "0.4rem 0.65rem",
+    fontFamily: "'Orbitron', sans-serif",
+    fontSize: "0.75rem",
+    width: "100%",
+    boxSizing: "border-box",
+  };
+
+  if (transmissions.length === 0 && !admin) return null;
+
+  return (
+    <div style={{ marginBottom: "2rem" }}>
+      {/* Section header */}
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem", gap: "0" }}>
+        <div style={{ width: "8px", height: "22px", backgroundColor: "#cc3333", borderRadius: "4px 0 0 4px" }} />
+        <div style={{
+          backgroundColor: "#cc333315",
+          border: "1px solid #cc333340",
+          borderLeft: "none",
+          padding: "0.2rem 0.75rem",
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          gap: "0.65rem",
+        }}>
+          <span style={{ color: "#cc3333", fontSize: "0.62rem", fontFamily: "'Orbitron', sans-serif", letterSpacing: "2.5px", textTransform: "uppercase" }}>
+            Incoming Transmissions
+          </span>
+          {transmissions.length > 0 && (
+            <span style={{
+              backgroundColor: "#cc333330",
+              border: "1px solid #cc333360",
+              borderRadius: "10px",
+              color: "#cc3333",
+              fontSize: "0.55rem",
+              letterSpacing: "1px",
+              padding: "0.1rem 0.45rem",
+            }}>
+              {transmissions.length}
+            </span>
+          )}
+        </div>
+        {admin && (
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            style={{
+              backgroundColor: showForm ? "#cc333320" : "transparent",
+              border: "1px solid #cc333360",
+              borderLeft: "none",
+              borderRadius: "0 4px 4px 0",
+              color: "#cc3333",
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.58rem",
+              letterSpacing: "1.5px",
+              padding: "0.25rem 0.65rem",
+              cursor: "pointer",
+              height: "22px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            {showForm ? "CANCEL" : "+ TRANSMIT"}
+          </button>
+        )}
+      </div>
+
+      {/* Compose form */}
+      {admin && showForm && (
+        <div style={{
+          backgroundColor: "#0f0808",
+          border: "1px solid #cc333330",
+          borderRadius: "4px",
+          padding: "0.9rem 1rem",
+          marginBottom: "0.75rem",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.5rem",
+        }}>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {(["command", "urgent", "standard"] as const).map((p) => {
+              const m = PRIORITY_META[p];
+              return (
+                <button
+                  key={p}
+                  onClick={() => setPriority(p)}
+                  style={{
+                    backgroundColor: priority === p ? m.color + "25" : "transparent",
+                    border: `1px solid ${priority === p ? m.color : m.color + "40"}`,
+                    borderRadius: "20px",
+                    color: priority === p ? m.color : m.color + "80",
+                    fontFamily: "'Orbitron', sans-serif",
+                    fontSize: "0.6rem",
+                    letterSpacing: "1.5px",
+                    padding: "0.25rem 0.75rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  {m.icon} {m.label}
+                </button>
+              );
+            })}
+          </div>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Custom title (optional)" style={inputStyle} />
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Transmission text..."
+            rows={3}
+            style={{ ...inputStyle, resize: "vertical" }}
+          />
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <input value={rank} onChange={(e) => setRank(e.target.value)} placeholder="Rank" style={{ ...inputStyle, flex: "0 0 140px", width: "auto" }} />
+            <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Author name" style={inputStyle} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={handleSend}
+              disabled={saving || !message.trim()}
+              style={{
+                backgroundColor: saving ? "#55150080" : "#cc333320",
+                border: "1px solid #cc3333",
+                borderRadius: "20px",
+                color: "#cc3333",
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: "0.65rem",
+                letterSpacing: "1.5px",
+                padding: "0.3rem 1rem",
+                cursor: saving ? "not-allowed" : "pointer",
+                opacity: !message.trim() ? 0.4 : 1,
+              }}
+            >
+              {saving ? "TRANSMITTING..." : "SEND TRANSMISSION"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Transmission cards */}
+      {transmissions.length === 0 && admin && (
+        <p style={{ color: "#333", fontSize: "0.72rem", fontFamily: "'Orbitron', sans-serif", fontStyle: "italic", margin: "0.5rem 0 0" }}>
+          No transmissions on record.
+        </p>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        {transmissions.map((t) => {
+          const meta = PRIORITY_META[t.priority || "standard"];
+          return (
+            <div key={t.id} style={{
+              backgroundColor: "#0f0808",
+              border: `1px solid ${meta.color}30`,
+              borderLeft: `4px solid ${meta.color}`,
+              borderRadius: "0 4px 4px 0",
+              padding: "0.75rem 1rem",
+              position: "relative",
+            }}>
+              {/* Alert label */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.4rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                <span style={{
+                  backgroundColor: meta.color + "20",
+                  border: `1px solid ${meta.color}50`,
+                  borderRadius: "10px",
+                  color: meta.color,
+                  fontFamily: "'Orbitron', sans-serif",
+                  fontSize: "0.6rem",
+                  letterSpacing: "2px",
+                  padding: "0.15rem 0.6rem",
+                  textTransform: "uppercase",
+                }}>
+                  {meta.icon} {t.title || meta.label}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <span style={{ color: "#4a5568", fontSize: "0.62rem", fontFamily: "'Orbitron', sans-serif", letterSpacing: "1px" }}>
+                    SD {t.stardate}
+                  </span>
+                  {admin && (
+                    <button
+                      onClick={() => { if (confirm("Delete this transmission?")) deleteTransmission(t.id!); }}
+                      style={{ background: "none", border: "none", color: "#cc333360", cursor: "pointer", fontSize: "0.75rem", padding: "0" }}
+                      title="Delete"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+              {/* Message */}
+              <p style={{
+                color: "#c8b0b0",
+                fontSize: "0.82rem",
+                fontFamily: "'Orbitron', sans-serif",
+                fontStyle: "italic",
+                lineHeight: 1.7,
+                margin: "0 0 0.4rem",
+              }}>
+                {t.message}
+              </p>
+              {/* Attribution */}
+              <span style={{ color: "#4a5568", fontSize: "0.65rem", fontFamily: "'Orbitron', sans-serif" }}>
+                — {t.rank ? `${t.rank} ` : ""}{t.author}{t.location ? `, ${t.location}` : ""}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // ── MissionBoard ─────────────────────────────────────────────────────────────
 
 const MissionBoard = () => {
@@ -431,6 +698,9 @@ const MissionBoard = () => {
           </div>
         )}
       </div>
+
+      {/* Transmissions feed */}
+      <TransmissionsPanel isAdmin={userIsAdmin} />
 
       {/* Mission list */}
       {displayed.length === 0 && (
