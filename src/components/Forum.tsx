@@ -42,13 +42,40 @@ function buildLogTemplate(logTitle: string): string {
 }
 
 const CATEGORY_DEPT: Record<string, string> = {
-  bridge:     "Bridge Operations",
-  mission:    "Mission Operations",
-  engineering:"Engineering",
-  sickbay:    "Medical",
-  tenForward: "Personal Records",
-  holodeck:   "Recreation Logs",
+  bridge:        "Bridge Operations",
+  mission:       "Mission Operations",
+  engineering:   "Engineering",
+  sickbay:       "Medical",
+  tenForward:    "Personal Records",
+  holodeck:      "Recreation Logs",
+  missionLog:    "Mission Operations",
+  personalLog:   "Personal Records",
+  departmentLog: "Department Records",
+  crewQuarters:  "Crew Quarters",
+  hallways:      "Ship Interior",
 };
+
+const CLASSIFICATION_META = {
+  open:       { label: "OPEN",       color: "#33cc99", icon: "◎" },
+  restricted: { label: "RESTRICTED", color: "#F5B942", icon: "🔒" },
+  classified: { label: "CLASSIFIED", color: "#cc3333", icon: "🔐" },
+};
+
+const COMMAND_ROLES = ["fleet admiral","admiral","captain","commander","first officer","executive officer"];
+const DEPT_HEAD_ROLES = ["chief engineer","chief medical","chief science","chief security","chief tactical","chief operations"];
+
+function canViewLog(
+  classification: string | undefined,
+  userRole: string | null,
+): boolean {
+  if (!classification || classification === "open") return true;
+  if (!userRole) return false;
+  const r = userRole.toLowerCase();
+  const isCommand = COMMAND_ROLES.some((cr) => r.includes(cr));
+  if (classification === "classified") return isCommand;
+  const isDeptHead = DEPT_HEAD_ROLES.some((dr) => r.includes(dr));
+  return isCommand || isDeptHead;
+}
 
 /* ── Starbase board constant ── */
 const STARBASE_BOARD = {
@@ -116,6 +143,8 @@ const Forum: React.FC = () => {
   const [showNewThread, setShowNewThread] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
+  const [newClassification, setNewClassification] = useState<"open" | "restricted" | "classified">("open");
+  const [newRelatedLocation, setNewRelatedLocation] = useState("");
   const [replyText, setReplyText] = useState("");
   const [replyFile, setReplyFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -183,15 +212,24 @@ const Forum: React.FC = () => {
     ? STARBASE_BOARD.name
     : ships[selectedBoard || ""]?.name || selectedBoard || "";
 
+  const selectedCategoryDef = FORUM_CATEGORIES.find((c) => c.id === selectedCategory);
+  const isLogCategory = selectedCategoryDef?.threadType === "log";
+  const userIsCommand = COMMAND_ROLES.some((cr) => (userCrewRole || "").toLowerCase().includes(cr));
+
   /* ── Create thread ── */
   const handleCreateThread = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim() || !userWithName || !selectedBoard || !selectedCategory) return;
     setLoading(true);
     try {
-      await createThread(selectedBoard, selectedCategory, newTitle.trim(), newContent.trim(), userWithName);
+      await createThread(selectedBoard, selectedCategory, newTitle.trim(), newContent.trim(), userWithName, {
+        classification: newClassification,
+        relatedLocation: newRelatedLocation.trim() || undefined,
+      });
       setNewTitle("");
       setNewContent("");
+      setNewClassification("open");
+      setNewRelatedLocation("");
       setShowNewThread(false);
       setEntryConfirmed(true);
       setTimeout(() => setEntryConfirmed(false), 4000);
@@ -341,42 +379,61 @@ const Forum: React.FC = () => {
       )}
 
       {/* ── Category Selection ── */}
-      {selectedBoard && !selectedCategory && (
-        <div style={styles.grid}>
-          {FORUM_CATEGORIES.map((cat) => (
-            <div
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              style={{
-                ...styles.categoryCard,
-                borderLeft: `4px solid ${cat.color}`,
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLDivElement).style.background = "#1a1a2e";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLDivElement).style.background = "#111";
-              }}
-            >
-              <h3 style={{ margin: "0 0 0.25rem", color: cat.color, fontSize: "1rem" }}>
-                {cat.label}
-              </h3>
-              <p style={{ margin: 0, fontSize: "0.8rem", color: "#888" }}>
-                {threadCounts[cat.id] || 0} thread{(threadCounts[cat.id] || 0) !== 1 ? "s" : ""}
-              </p>
+      {selectedBoard && !selectedCategory && (() => {
+        const locationCats = FORUM_CATEGORIES.filter((c) => c.threadType === "location");
+        const logCats = FORUM_CATEGORIES.filter((c) => c.threadType === "log" && !["mission","engineering"].includes(c.id));
+        const renderCat = (cat: typeof FORUM_CATEGORIES[number]) => (
+          <div
+            key={cat.id}
+            onClick={() => setSelectedCategory(cat.id)}
+            style={{ ...styles.categoryCard, borderLeft: `4px solid ${cat.color}` }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#1a1a2e"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#111"; }}
+          >
+            <h3 style={{ margin: "0 0 0.25rem", color: cat.color, fontSize: "1rem" }}>{cat.label}</h3>
+            <p style={{ margin: 0, fontSize: "0.8rem", color: "#888" }}>
+              {threadCounts[cat.id] || 0} thread{(threadCounts[cat.id] || 0) !== 1 ? "s" : ""}
+            </p>
+          </div>
+        );
+        return (
+          <div>
+            {/* Location section */}
+            <div style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <div style={{ width: "6px", height: "16px", backgroundColor: "#6699cc", borderRadius: "3px" }} />
+              <span style={{ color: "#6699cc", fontFamily: "'Orbitron', sans-serif", fontSize: "0.62rem", letterSpacing: "2.5px", textTransform: "uppercase" }}>
+                Locations
+              </span>
+              <span style={{ color: "#333", fontSize: "0.62rem", fontFamily: "'Orbitron', sans-serif" }}>— In-character roleplay scenes</span>
             </div>
-          ))}
-        </div>
-      )}
+            <div style={{ ...styles.grid, marginBottom: "2rem" }}>
+              {locationCats.map(renderCat)}
+            </div>
+            {/* Official Logs section */}
+            <div style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <div style={{ width: "6px", height: "16px", backgroundColor: "#ffcc33", borderRadius: "3px" }} />
+              <span style={{ color: "#ffcc33", fontFamily: "'Orbitron', sans-serif", fontSize: "0.62rem", letterSpacing: "2.5px", textTransform: "uppercase" }}>
+                Official Logs
+              </span>
+              <span style={{ color: "#333", fontSize: "0.62rem", fontFamily: "'Orbitron', sans-serif" }}>— Structured Starfleet records</span>
+            </div>
+            <div style={styles.grid}>
+              {logCats.map(renderCat)}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Thread List ── */}
       {selectedBoard && selectedCategory && !selectedThread && (
         <div>
           <button
             onClick={() => {
-              if (!showNewThread) {
+              if (!showNewThread && isLogCategory) {
                 const title = resolveLogTitle(userCrewRole, selectedCategory);
                 setNewContent(buildLogTemplate(title));
+              } else if (!showNewThread) {
+                setNewContent("");
               }
               setShowNewThread((v) => !v);
             }}
@@ -436,8 +493,56 @@ const Forum: React.FC = () => {
               <textarea
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
-                style={{ ...styles.input, minHeight: "180px", resize: "vertical" }}
+                placeholder={isLogCategory ? undefined : "Describe the scene..."}
+                style={{ ...styles.input, minHeight: isLogCategory ? "180px" : "120px", resize: "vertical" }}
               />
+
+              {/* Classification selector — logs only */}
+              {isLogCategory && (
+                <div>
+                  <p style={{ margin: "0 0 0.4rem", color: "#555", fontFamily: "'Orbitron', sans-serif", fontSize: "0.6rem", letterSpacing: "2px" }}>
+                    CLASSIFICATION
+                  </p>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    {(["open", "restricted", "classified"] as const).map((level) => {
+                      const m = CLASSIFICATION_META[level];
+                      const selected = newClassification === level;
+                      return (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => setNewClassification(level)}
+                          style={{
+                            backgroundColor: selected ? m.color + "25" : "transparent",
+                            border: `1px solid ${selected ? m.color : m.color + "40"}`,
+                            borderRadius: "20px",
+                            color: selected ? m.color : m.color + "70",
+                            fontFamily: "'Orbitron', sans-serif",
+                            fontSize: "0.6rem",
+                            letterSpacing: "1.5px",
+                            padding: "0.25rem 0.75rem",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {m.icon} {m.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Related location — logs only */}
+              {isLogCategory && (
+                <input
+                  type="text"
+                  placeholder="Related location (optional — e.g. Bridge, Ten Forward)"
+                  value={newRelatedLocation}
+                  onChange={(e) => setNewRelatedLocation(e.target.value)}
+                  style={styles.input}
+                />
+              )}
+
               <p style={{
                 margin: 0,
                 color: "#4a5568",
@@ -469,19 +574,21 @@ const Forum: React.FC = () => {
             const directiveLabel = isFleetDirective
               ? "⚡ FLEET DIRECTIVE — STARBASE MACHIDA"
               : "⚡ BRIDGE DIRECTIVE";
+            const clf = thread.classification || "open";
+            const clfMeta = CLASSIFICATION_META[clf as keyof typeof CLASSIFICATION_META];
+            const canRead = userIsCommand || canViewLog(clf, userCrewRole);
             return (
               <div
                 key={thread.id}
-                onClick={() => setSelectedThread(thread)}
+                onClick={() => canRead && setSelectedThread(thread)}
                 style={{
                   ...styles.threadRow,
-                  ...(isDirective ? {
-                    borderLeft: `3px solid ${directiveColor}`,
-                    background: directiveBg,
-                  } : {}),
+                  ...(isDirective ? { borderLeft: `3px solid ${directiveColor}`, background: directiveBg } : {}),
+                  cursor: canRead ? "pointer" : "not-allowed",
+                  opacity: canRead ? 1 : 0.5,
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = isDirective ? directiveColor : "#ff9900";
+                  if (canRead) (e.currentTarget as HTMLDivElement).style.borderColor = isDirective ? directiveColor : "#ff9900";
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLDivElement).style.borderColor = "#333";
@@ -508,12 +615,29 @@ const Forum: React.FC = () => {
                     {thread.pinned && (
                       <span style={{ color: "#ffcc33", fontSize: "0.7rem" }}>PINNED</span>
                     )}
+                    {clf !== "open" && (
+                      <span style={{
+                        backgroundColor: clfMeta.color + "20",
+                        border: `1px solid ${clfMeta.color}50`,
+                        borderRadius: "3px",
+                        color: clfMeta.color,
+                        fontFamily: "'Orbitron', sans-serif",
+                        fontSize: "0.55rem",
+                        letterSpacing: "1.5px",
+                        padding: "0.1rem 0.4rem",
+                      }}>
+                        {clfMeta.icon} {clfMeta.label}
+                      </span>
+                    )}
                     <span style={{ color: isFleetDirective ? "#ffcc88" : isBridgeDirective ? "#cc99ff" : "#ff9900", fontSize: "0.95rem" }}>
-                      {thread.title}
+                      {canRead ? thread.title : `${clfMeta.icon} ACCESS RESTRICTED`}
                     </span>
                   </div>
                   <span style={{ color: "#666", fontSize: "0.75rem" }}>
-                    by {thread.author}{thread.rank ? ` · ${thread.rank}` : ""} &middot; {formatTime(thread.createdAt)}
+                    {canRead
+                      ? <>by {thread.author}{thread.rank ? ` · ${thread.rank}` : ""} &middot; {formatTime(thread.createdAt)}</>
+                      : <span style={{ color: "#4a5568", fontStyle: "italic" }}>Insufficient clearance to view this record.</span>
+                    }
                   </span>
                 </div>
                 <div style={{ textAlign: "right", minWidth: "80px" }}>
@@ -531,7 +655,30 @@ const Forum: React.FC = () => {
       )}
 
       {/* ── Thread View (replies) ── */}
-      {selectedThread && (
+      {selectedThread && (() => {
+        const threadClf = selectedThread.classification || "open";
+        const canReadThread = userIsCommand || canViewLog(threadClf, userCrewRole);
+        if (!canReadThread) {
+          const m = CLASSIFICATION_META[threadClf as keyof typeof CLASSIFICATION_META];
+          return (
+            <div style={{
+              backgroundColor: "#0f0808",
+              border: `1px solid ${m.color}40`,
+              borderLeft: `4px solid ${m.color}`,
+              borderRadius: "4px",
+              padding: "2rem",
+              textAlign: "center",
+            }}>
+              <p style={{ color: m.color, fontFamily: "'Orbitron', sans-serif", fontSize: "1.1rem", letterSpacing: "3px", margin: "0 0 0.5rem" }}>
+                {m.icon} {m.label}
+              </p>
+              <p style={{ color: "#4a5568", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", letterSpacing: "1px", margin: 0 }}>
+                You do not have the required clearance to access this record.
+              </p>
+            </div>
+          );
+        }
+        return (
         <div>
           {/* Directive banner */}
           {selectedThread.type === "command" && (() => {
@@ -701,7 +848,8 @@ const Forum: React.FC = () => {
             </div>
           </form>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

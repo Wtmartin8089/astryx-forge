@@ -41,6 +41,8 @@ export interface ForumThread {
   type?: string;
   rank?: string;
   source?: string;
+  classification?: "open" | "restricted" | "classified";
+  relatedLocation?: string;
 }
 
 export interface ForumReply {
@@ -104,6 +106,7 @@ export async function createThread(
   title: string,
   firstReplyContent: string,
   user: { email: string | null; uid: string; displayName?: string | null },
+  options?: { classification?: "open" | "restricted" | "classified"; relatedLocation?: string },
 ): Promise<string> {
   const now = serverTimestamp();
   const authorName = user.displayName || user.email || "Anonymous";
@@ -120,6 +123,8 @@ export async function createThread(
     lastActivity: now,
     replyCount: 1,
     pinned: false,
+    classification: options?.classification || "open",
+    ...(options?.relatedLocation ? { relatedLocation: options.relatedLocation } : {}),
   });
 
   await addDoc(collection(db, COLLECTION, threadRef.id, "replies"), {
