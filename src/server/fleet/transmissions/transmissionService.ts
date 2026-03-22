@@ -11,6 +11,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../../../firebase/firebaseConfig";
+import { getCampaignStardate } from "../../../utils/campaignStardate";
 
 export type Transmission = {
   id?: string;
@@ -30,13 +31,6 @@ export type Transmission = {
 
 const COLLECTION = "fleet_transmissions";
 
-function currentStardate(): number {
-  const base = 74000;
-  const baseTime = new Date("2026-01-01").getTime();
-  const days = (Date.now() - baseTime) / (1000 * 60 * 60 * 24);
-  return parseFloat((base + (days * 1000) / 365).toFixed(1));
-}
-
 export async function createTransmission(
   data: Omit<Transmission, "id" | "stardate" | "timestamp" | "targetShip"> & {
     targetShip?: string;
@@ -46,7 +40,7 @@ export async function createTransmission(
   const ref = await addDoc(collection(db, COLLECTION), {
     ...data,
     targetShip: data.targetShip || "*",
-    stardate: currentStardate(),
+    stardate: getCampaignStardate(),
     timestamp: Date.now(),
     createdAt: serverTimestamp(),
   });

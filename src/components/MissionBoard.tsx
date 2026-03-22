@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { isAdmin } from "../utils/adminAuth";
@@ -11,12 +11,15 @@ import {
   assignMissionToShip,
   deleteMission,
   seedStarterMissions,
+  addMissionLog,
+  subscribeMissionLogs,
 } from "../server/routes/missions";
 import { subscribeToShips } from "../utils/shipsFirestore";
 import { createMissionThread } from "../server/forum/forumService";
 import { starterMissions } from "../data/starterMissions";
 import { MISSION_TYPES } from "../data/missionTemplates";
-import type { Mission, MissionStatus } from "../types/mission";
+import { getCampaignStardate } from "../utils/campaignStardate";
+import type { Mission, MissionLog, MissionStatus } from "../types/mission";
 import "../assets/lcars.css";
 
 const STATUS_COLOR: Record<MissionStatus, string> = {
@@ -25,6 +28,231 @@ const STATUS_COLOR: Record<MissionStatus, string> = {
   completed: "#6699cc",
   failed:    "#cc3333",
 };
+
+// ── Mission Log Panel ────────────────────────────────────────────────────────
+
+type MissionLogPanelProps = {
+  missionId: string;
+  isAdmin: boolean;
+};
+
+const MissionLogPanel = ({ missionId, isAdmin: admin }: MissionLogPanelProps) => {
+  const [logs, setLogs] = useState<MissionLog[]>([]);
+  const [phase, setPhase] = useState("");
+  const [description, setDescription] = useState("");
+  const [author, setAuthor] = useState("Starfleet Command");
+  const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    const unsub = subscribeMissionLogs(missionId, (entries) => {
+      // display newest first
+      setLogs([...entries].reverse());
+    });
+    return () => unsub();
+  }, [missionId]);
+
+  const handleAddLog = useCallback(async () => {
+    if (!phase.trim() || !description.trim()) return;
+    setSaving(true);
+    try {
+      await addMissionLog(missionId, {
+        missionId,
+        phase: phase.trim(),
+        description: description.trim(),
+        stardate: getCampaignStardate(),
+        author: author.trim() || "Starfleet Command",
+      });
+      setPhase("");
+      setDescription("");
+      setAuthor("Starfleet Command");
+      setShowForm(false);
+    } catch (e) {
+      console.error("Failed to add mission log:", e);
+    }
+    setSaving(false);
+  }, [missionId, phase, description, author]);
+
+  const inputStyle: React.CSSProperties = {
+    backgroundColor: "#0a0a0a",
+    border: "1px solid #6699cc40",
+    borderRadius: "4px",
+    color: "#ccc",
+    padding: "0.4rem 0.65rem",
+    fontFamily: "'Orbitron', sans-serif",
+    fontSize: "0.75rem",
+    width: "100%",
+    boxSizing: "border-box",
+  };
+
+  return (
+    <div style={{ marginTop: "1.25rem" }}>
+      {/* Section header bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0", marginBottom: "0.75rem" }}>
+        <div style={{ width: "8px", height: "22px", backgroundColor: "#6699cc", borderRadius: "4px 0 0 4px" }} />
+        <div style={{
+          backgroundColor: "#6699cc20",
+          border: "1px solid #6699cc40",
+          borderLeft: "none",
+          padding: "0.2rem 0.75rem",
+          flex: 1,
+        }}>
+          <span style={{
+            color: "#6699cc",
+            fontSize: "0.62rem",
+            fontFamily: "'Orbitron', sans-serif",
+            letterSpacing: "2.5px",
+            textTransform: "uppercase",
+          }}>
+            Mission Log
+          </span>
+        </div>
+        {admin && (
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            style={{
+              backgroundColor: showForm ? "#ffcc3320" : "transparent",
+              border: "1px solid #ffcc3360",
+              borderLeft: "none",
+              borderRadius: "0 4px 4px 0",
+              color: "#ffcc33",
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.58rem",
+              letterSpacing: "1.5px",
+              padding: "0.25rem 0.65rem",
+              cursor: "pointer",
+              height: "22px",
+              alignSelf: "stretch",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            {showForm ? "CANCEL" : "+ ADD ENTRY"}
+          </button>
+        )}
+      </div>
+
+      {/* Admin add-log form */}
+      {admin && showForm && (
+        <div style={{
+          backgroundColor: "#0a0f18",
+          border: "1px solid #6699cc30",
+          borderRadius: "4px",
+          padding: "0.9rem 1rem",
+          marginBottom: "0.75rem",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.5rem",
+        }}>
+          <input
+            value={phase}
+            onChange={(e) => setPhase(e.target.value)}
+            placeholder="Phase (e.g. Initial Contact)"
+            style={inputStyle}
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Log entry description..."
+            rows={3}
+            style={{ ...inputStyle, resize: "vertical" }}
+          />
+          <input
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder="Author"
+            style={inputStyle}
+          />
+          <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+            <button
+              onClick={handleAddLog}
+              disabled={saving || !phase.trim() || !description.trim()}
+              style={{
+                backgroundColor: saving ? "#55441080" : "#ffcc3320",
+                border: "1px solid #ffcc33",
+                borderRadius: "20px",
+                color: "#ffcc33",
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: "0.65rem",
+                letterSpacing: "1.5px",
+                padding: "0.3rem 1rem",
+                cursor: saving ? "not-allowed" : "pointer",
+                opacity: (!phase.trim() || !description.trim()) ? 0.4 : 1,
+              }}
+            >
+              {saving ? "SAVING..." : "ADD TO LOG"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Log entries — visible to all */}
+      {logs.length === 0 ? (
+        <p style={{
+          color: "#333",
+          fontSize: "0.72rem",
+          fontFamily: "'Orbitron', sans-serif",
+          fontStyle: "italic",
+          margin: "0.5rem 0",
+          letterSpacing: "0.5px",
+        }}>
+          No log entries on record.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          {logs.map((log) => (
+            <div key={log.id} style={{
+              backgroundColor: "#0a0f18",
+              borderLeft: "3px solid #ffcc3360",
+              borderRadius: "0 4px 4px 0",
+              padding: "0.65rem 0.9rem",
+            }}>
+              <div style={{ display: "flex", gap: "0.75rem", alignItems: "baseline", marginBottom: "0.3rem", flexWrap: "wrap" }}>
+                <span style={{
+                  color: "#6699cc",
+                  fontSize: "0.62rem",
+                  fontFamily: "'Orbitron', sans-serif",
+                  letterSpacing: "1px",
+                  whiteSpace: "nowrap",
+                }}>
+                  STARDATE {log.stardate}
+                </span>
+                <span style={{
+                  color: "#ffcc33",
+                  fontSize: "0.65rem",
+                  fontFamily: "'Orbitron', sans-serif",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                }}>
+                  {log.phase}
+                </span>
+              </div>
+              <p style={{
+                color: "#9ab0c8",
+                fontSize: "0.8rem",
+                fontFamily: "'Orbitron', sans-serif",
+                fontStyle: "italic",
+                margin: "0 0 0.3rem",
+                lineHeight: 1.65,
+              }}>
+                {log.description}
+              </p>
+              <span style={{
+                color: "#4a5568",
+                fontSize: "0.65rem",
+                fontFamily: "'Orbitron', sans-serif",
+              }}>
+                — {log.author}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── MissionBoard ─────────────────────────────────────────────────────────────
 
 const MissionBoard = () => {
   const [visible, setVisible] = useState(false);
@@ -88,7 +316,6 @@ const MissionBoard = () => {
     if (!shipId) return;
     await createMissionThread(m, shipId);
   };
-
 
   const inputStyle: React.CSSProperties = {
     backgroundColor: "#0a0a0a",
@@ -338,6 +565,9 @@ const MissionBoard = () => {
                     </button>
                   </div>
                 )}
+
+                {/* Mission Log — visible to all, write access admin only */}
+                <MissionLogPanel missionId={m.id!} isAdmin={userIsAdmin} />
               </div>
             )}
           </div>

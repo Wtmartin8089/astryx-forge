@@ -9,7 +9,7 @@ type Transmission = {
   location: string;
   title: string;
   message: string;
-  stardate: number;
+  stardate: number | string;
   timestamp: number;
   targetShip: string;
   priority?: "urgent" | "command" | "standard";
@@ -25,10 +25,32 @@ type Props = {
   limit?: number;
 };
 
-const PRIORITY_COLOR: Record<string, string> = {
-  urgent:   "#FF4444",
-  command:  "#F5B942",
-  standard: "#8AAAD0",
+type PriorityStyle = {
+  borderLeft: string;
+  background: string;
+  badge: string;
+  badgeColor: string;
+};
+
+const PRIORITY_STYLES: Record<string, PriorityStyle> = {
+  urgent: {
+    borderLeft: "4px solid #cc3333",
+    background: "#1a0808",
+    badge: "⚠ PRIORITY ALERT",
+    badgeColor: "#cc3333",
+  },
+  command: {
+    borderLeft: "4px solid #ffcc33",
+    background: "#1a1500",
+    badge: "⚡ BRIDGE TRANSMISSION",
+    badgeColor: "#ffcc33",
+  },
+  standard: {
+    borderLeft: "3px solid #6699cc",
+    background: "#0D1E0D",
+    badge: "",
+    badgeColor: "#6699cc",
+  },
 };
 
 const FleetTransmissions = ({ shipName, limit }: Props) => {
@@ -77,33 +99,44 @@ const FleetTransmissions = ({ shipName, limit }: Props) => {
       </div>
 
       {transmissions.map((tx) => {
-        const priorityColor = PRIORITY_COLOR[tx.priority || "standard"];
+        const priorityKey = tx.priority || "standard";
+        const ps = PRIORITY_STYLES[priorityKey] ?? PRIORITY_STYLES.standard;
         const displayAuthor = tx.author || tx.sender || "Starfleet Command";
+        const stardateDisplay = typeof tx.stardate === "number"
+          ? tx.stardate.toFixed(1)
+          : tx.stardate;
 
         return (
           <div key={tx.id} style={{
-            backgroundColor: "#0D1E0D",
+            backgroundColor: ps.background,
             border: "1px solid #F5B94240",
-            borderLeft: `3px solid ${priorityColor}`,
+            borderLeft: ps.borderLeft,
             borderRadius: "4px",
             padding: "1rem 1.25rem",
             marginBottom: "0.75rem",
             fontFamily: "'Orbitron', sans-serif",
           }}>
+            {/* Priority badge */}
+            {ps.badge && (
+              <div style={{
+                color: ps.badgeColor,
+                fontSize: "0.6rem",
+                letterSpacing: "2px",
+                textTransform: "uppercase",
+                marginBottom: "0.4rem",
+                fontWeight: "bold",
+              }}>
+                {ps.badge}
+              </div>
+            )}
+
             {/* Header row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.3rem", flexWrap: "wrap", gap: "0.4rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
-                <span style={{ color: "#F5B942", fontSize: "0.65rem", letterSpacing: "2px", textTransform: "uppercase" }}>
-                  Starfleet Command Transmission
-                </span>
-                {tx.priority && tx.priority !== "standard" && (
-                  <span style={{ color: priorityColor, fontSize: "0.6rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>
-                    [{tx.priority}]
-                  </span>
-                )}
-              </div>
+              <span style={{ color: "#F5B942", fontSize: "0.65rem", letterSpacing: "2px", textTransform: "uppercase" }}>
+                Starfleet Command Transmission
+              </span>
               <span style={{ color: "#555", fontSize: "0.68rem", whiteSpace: "nowrap" }}>
-                SD {tx.stardate}
+                SD {stardateDisplay}
               </span>
             </div>
 
@@ -122,6 +155,11 @@ const FleetTransmissions = ({ shipName, limit }: Props) => {
               <span style={{ color: "#888", fontSize: "0.72rem", fontStyle: "italic" }}>
                 — {displayAuthor}
               </span>
+              {tx.rank && (
+                <span style={{ color: "#666", fontSize: "0.68rem", marginLeft: "0.5rem" }}>
+                  {tx.rank}
+                </span>
+              )}
               {tx.location && (
                 <span style={{ color: "#555", fontSize: "0.68rem", marginLeft: "0.5rem" }}>
                   · {tx.location}

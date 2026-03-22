@@ -19,7 +19,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
-import type { Mission, MissionStatus } from "../../types/mission";
+import type { Mission, MissionLog, MissionStatus } from "../../types/mission";
 import { generateMission } from "../missions/missionGenerator";
 
 const COLLECTION = "missions";
@@ -109,6 +109,33 @@ export async function assignMissionToShip(
 
 export async function deleteMission(id: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTION, id));
+}
+
+// ── Mission Logs (subcollection) ─────────────────────────────────────────────
+
+/** Add a log entry to the missionLogs subcollection of a mission document. */
+export async function addMissionLog(
+  missionId: string,
+  data: Omit<MissionLog, "id" | "createdAt">
+): Promise<void> {
+  await addDoc(collection(db, COLLECTION, missionId, "missionLogs"), {
+    ...data,
+    createdAt: serverTimestamp(),
+  });
+}
+
+/** Real-time subscription to a mission's log entries, ordered oldest-first so newest appear at bottom of list. */
+export function subscribeMissionLogs(
+  missionId: string,
+  callback: (logs: MissionLog[]) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, COLLECTION, missionId, "missionLogs"),
+    orderBy("createdAt", "asc")
+  );
+  return onSnapshot(q, (snap) =>
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as MissionLog)))
+  );
 }
 
 /** Seed all starter missions in one call. Skips if collection already has documents. */

@@ -16,3 +16,13 @@ export type Mission = {
   stardate?: number;
   createdAt?: number;
 };
+
+export interface MissionLog {
+  id?: string;
+  missionId: string;
+  phase: string;
+  description: string;
+  stardate: string;
+  author: string;
+  createdAt: unknown;
+}
