@@ -10,7 +10,8 @@ import {
   where,
   orderBy,
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import type { User } from "firebase/auth";
 import { db } from "../firebase/firebaseConfig";
 import { subscribeToShips } from "../utils/shipsFirestore";
 import { updateCharacter } from "../utils/crewFirestore";
@@ -58,10 +59,16 @@ const PersonnelProfile = () => {
   const [editAssignmentId, setEditAssignmentId] = useState<string>("");
   const [savingAssignment, setSavingAssignment] = useState(false);
 
-  const auth = getAuth();
-  const user = auth.currentUser;
+  const [user, setUser] = useState<User | null>(() => getAuth().currentUser);
+  useEffect(() => {
+    return onAuthStateChanged(getAuth(), (u) => setUser(u));
+  }, []);
   const userIsAdmin = user ? isAdmin(user.uid) : false;
-  const canEditAssignment = member !== null && user !== null && (user.uid === member.ownerId || userIsAdmin);
+  const canEdit =
+    member !== null &&
+    user !== null &&
+    (user.uid === member.userId || user.uid === member.ownerId || userIsAdmin);
+  const canEditAssignment = canEdit;
 
   useEffect(() => {
     if (!id) return;
@@ -225,7 +232,27 @@ const PersonnelProfile = () => {
             SD {currentStardate()}
           </span>
         </div>
-        <div style={{ width: "80px", backgroundColor: "#9933cc", borderRadius: "0 20px 20px 0" }} />
+        {canEdit && (
+          <Link
+            to={`/crew/${id}?edit=true`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              backgroundColor: "#9933cc",
+              color: "#000",
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.7rem",
+              fontWeight: "bold",
+              letterSpacing: "2px",
+              padding: "0 1.25rem",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            EDIT
+          </Link>
+        )}
+        <div style={{ width: "20px", backgroundColor: "#9933cc", borderRadius: "0 20px 20px 0" }} />
       </div>
 
       {/* Identity Block */}

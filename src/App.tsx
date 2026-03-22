@@ -32,6 +32,7 @@ import SystemSpecies from "./components/SystemSpecies";
 import SystemSpeciesNew from "./components/SystemSpeciesNew";
 import SystemSpeciesDetail from "./components/SystemSpeciesDetail";
 import SystemCreatures from "./components/SystemCreatures";
+import CrewPage from "./components/CrewPage";
 import ReferencePage from "./components/ReferencePage";
 import ArticlesOfFederation from "./components/ArticlesOfFederation";
 
@@ -87,7 +88,7 @@ function App() {
         <Route path="/ship/:shipSlug" element={<ShipPage />} />
         <Route path="/choose-character" element={<ChooseCharacter />} />
         <Route path="/crew" element={<Navigate to="/personnel" replace />} />
-        <Route path="/crew/:crewSlug" element={<Navigate to="/personnel" replace />} />
+        <Route path="/crew/:crewSlug" element={<CrewPage />} />
         <Route path="/personnel" element={<PersonnelDatabase />} />
         <Route path="/personnel/:id" element={<PersonnelProfile />} />
         <Route path="/admin/awards" element={<AwardsConsole />} />
