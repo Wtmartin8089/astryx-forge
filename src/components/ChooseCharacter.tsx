@@ -298,7 +298,7 @@ const ChooseCharacter = () => {
       Object.entries(allCrew)
         .filter(
           ([, m]) =>
-            m.shipId === shipId && m.ownerId === null && m.status === "active"
+            m.shipId === shipId && !m.ownerId && m.status === "active"
         )
         .map(([id, member]) => ({ id, member })),
     [allCrew]
