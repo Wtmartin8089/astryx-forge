@@ -67,6 +67,7 @@ export async function claimCharacter(
     transaction.update(docRef, {
       ownerId: userId,
       ownerEmail: userEmail,
+      userId: userId,
     });
   });
 }

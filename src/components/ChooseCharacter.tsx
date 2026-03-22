@@ -401,6 +401,7 @@ const ChooseCharacter = () => {
       awards: [],
       ownerId: user.uid,
       ownerEmail: user.email ?? "",
+      userId: user.uid,
       status: "pending",
     };
 

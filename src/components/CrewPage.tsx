@@ -130,7 +130,7 @@ const CrewPage = () => {
   const canEdit =
     member !== null &&
     currentUid !== null &&
-    (currentUid === member.ownerId || isAdmin(currentUid));
+    (currentUid === member.userId || currentUid === member.ownerId || isAdmin(currentUid));
 
   const userIsAdmin = currentUid !== null && isAdmin(currentUid);
 
@@ -469,7 +469,7 @@ const CrewPage = () => {
               try {
                 const { claimCharacter } = await import("../utils/crewFirestore");
                 await claimCharacter(crewSlug, currentUser.uid, currentUser.email ?? "");
-                setMember((prev) => prev ? { ...prev, ownerId: currentUser.uid, ownerEmail: currentUser.email ?? "" } : prev);
+                setMember((prev) => prev ? { ...prev, ownerId: currentUser.uid, ownerEmail: currentUser.email ?? "", userId: currentUser.uid } : prev);
                 setUserAlreadyHasCharacter(true);
               } catch (err) {
                 console.error("Claim failed:", err);
@@ -840,7 +840,7 @@ const CrewPage = () => {
                           try {
                             const { claimCharacter } = await import("../utils/crewFirestore");
                             await claimCharacter(crewSlug, currentUser.uid, currentUser.email ?? "");
-                            setMember((prev) => prev ? { ...prev, ownerId: currentUser.uid, ownerEmail: currentUser.email ?? "" } : prev);
+                            setMember((prev) => prev ? { ...prev, ownerId: currentUser.uid, ownerEmail: currentUser.email ?? "", userId: currentUser.uid } : prev);
                             setUserAlreadyHasCharacter(true);
                           } catch (err) {
                             console.error("Claim failed:", err);

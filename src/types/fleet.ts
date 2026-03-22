@@ -68,5 +68,6 @@ export type CrewMember = {
   awards?: AwardEntry[];
   ownerId: string | null;
   ownerEmail: string | null;
+  userId?: string | null;
   status: "active" | "pending";
 };
