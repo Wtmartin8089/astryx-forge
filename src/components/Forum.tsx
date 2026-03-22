@@ -5,7 +5,8 @@ import { collection, onSnapshot, query } from "firebase/firestore";
 import { storage, db } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { FORUM_CATEGORIES, type ForumCategoryId } from "../data/forumCategories";
-import { getShips, type Ship } from "../data/shipsData";
+import { subscribeToShips } from "../utils/shipsFirestore";
+import type { ShipData } from "../types/fleet";
 import {
   subscribeToThreads,
   subscribeToReplies,
@@ -134,7 +135,7 @@ const Forum: React.FC = () => {
   const [selectedThread, setSelectedThread] = useState<ForumThread | null>(null);
 
   /* ── Data ── */
-  const [ships, setShips] = useState<Record<string, Ship>>(getShips);
+  const [ships, setShips] = useState<Record<string, ShipData>>({});
   const [threadCounts, setThreadCounts] = useState<Record<string, number>>({});
   const [threads, setThreads] = useState<ForumThread[]>([]);
   const [replies, setReplies] = useState<ForumReply[]>([]);
@@ -169,10 +170,10 @@ const Forum: React.FC = () => {
     setConfirmDeleteId(null);
   };
 
-  /* ── Refresh ships when returning to board selection ── */
+  /* ── Subscribe to ships from Firestore ── */
   useEffect(() => {
-    if (!selectedBoard) setShips(getShips());
-  }, [selectedBoard]);
+    return subscribeToShips(setShips);
+  }, []);
 
   /* ── Subscribe to thread counts for selected board ── */
   useEffect(() => {
@@ -294,7 +295,7 @@ const Forum: React.FC = () => {
   /* ── Build all boards: starbase + ships ── */
   const allBoards = [
     STARBASE_BOARD,
-    ...Object.values(ships).map((s) => ({ id: s.id, name: s.name, registry: s.registry })),
+    ...Object.entries(ships).map(([id, s]) => ({ id, name: s.name, registry: s.registry })),
   ];
 
   /* ================================================================
