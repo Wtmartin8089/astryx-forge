@@ -18,6 +18,28 @@ import {
   type ForumReply,
 } from "../utils/forumFirestore";
 import { isAdmin } from "../utils/adminAuth";
+import { getCampaignStardate } from "../utils/campaignStardate";
+
+/* ── Log template helpers ── */
+function resolveLogTitle(role: string | null | undefined, category: ForumCategoryId | null): string {
+  if (category === "engineering") return "Chief Engineer's Log";
+  if (category === "sickbay") return "Medical Officer's Log";
+  if (!role) return "Personal Log";
+  const r = role.toLowerCase().trim();
+  if (r.includes("captain") || r.includes("commanding")) return "Captain's Log";
+  if (r.includes("commander") || r.includes("executive") || r.includes("first officer")) return "Commander's Log";
+  if (r.includes("engineer")) return "Chief Engineer's Log";
+  if (r.includes("medical") || r.includes("doctor") || r.includes("physician") || r.includes("cmo")) return "Medical Officer's Log";
+  if (r.includes("science")) return "Science Officer's Log";
+  if (r.includes("security") || r.includes("tactical")) return "Security Log";
+  if (r.includes("counselor")) return "Counselor's Log";
+  if (r.includes("operations")) return "Operations Log";
+  return `${role}'s Log`;
+}
+
+function buildLogTemplate(logTitle: string): string {
+  return `Stardate ${getCampaignStardate()} — ${logTitle}\n\n[Describe the current situation — location, context, ongoing events]\n\n[What has been observed or encountered]\n\n[Your assessment and intended course of action]`;
+}
 
 /* ── Starbase board constant ── */
 const STARBASE_BOARD = {
@@ -51,20 +73,20 @@ const Forum: React.FC = () => {
     return auth.onAuthStateChanged((u) => setUser(u));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Resolve user's crew character name ── */
-  const [allCrew, setAllCrew] = useState<Record<string, { name: string; ownerId?: string | null }>>({});
+  /* ── Resolve user's crew character name + role ── */
+  const [allCrew, setAllCrew] = useState<Record<string, { name: string; ownerId?: string | null; role?: string; rank?: string }>>({});
   useEffect(() => {
     const q = query(collection(db, "crew"));
     return onSnapshot(q, (snap) => {
-      const result: Record<string, { name: string; ownerId?: string | null }> = {};
+      const result: Record<string, { name: string; ownerId?: string | null; role?: string; rank?: string }> = {};
       snap.docs.forEach((d) => { result[d.id] = d.data() as any; });
       setAllCrew(result);
     });
   }, []);
 
-  const userCharacterName = user
-    ? Object.values(allCrew).find((m) => m.ownerId === user.uid)?.name ?? null
-    : null;
+  const userCrewEntry = user ? Object.values(allCrew).find((m) => m.ownerId === user.uid) : null;
+  const userCharacterName = userCrewEntry?.name ?? null;
+  const userCrewRole = userCrewEntry?.role || userCrewEntry?.rank || null;
 
   const userWithName = user
     ? { uid: user.uid, email: user.email, displayName: userCharacterName }
@@ -336,7 +358,13 @@ const Forum: React.FC = () => {
       {selectedBoard && selectedCategory && !selectedThread && (
         <div>
           <button
-            onClick={() => setShowNewThread((v) => !v)}
+            onClick={() => {
+              if (!showNewThread) {
+                const title = resolveLogTitle(userCrewRole, selectedCategory);
+                setNewContent(buildLogTemplate(title));
+              }
+              setShowNewThread((v) => !v);
+            }}
             style={{ ...styles.actionBtn, marginBottom: "1rem" }}
           >
             {showNewThread ? "CANCEL" : "NEW THREAD"}
