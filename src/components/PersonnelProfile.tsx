@@ -287,6 +287,11 @@ const PersonnelProfile = () => {
             }}
           />
           <div>
+            {userIsAdmin && (
+              <p style={{ color: "#555", fontSize: "0.6rem", margin: "0 0 0.4rem", fontFamily: "monospace" }}>
+                portrait: "{member.portrait ?? "(not set)"}"
+              </p>
+            )}
             <p style={{ color: rankColor, fontSize: "0.7rem", margin: "0 0 0.4rem", letterSpacing: "2px", textTransform: "uppercase" }}>
               {member.rank}
             </p>
