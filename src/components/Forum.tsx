@@ -213,7 +213,7 @@ const Forum: React.FC = () => {
     : ships[selectedBoard || ""]?.name || selectedBoard || "";
 
   const selectedCategoryDef = FORUM_CATEGORIES.find((c) => c.id === selectedCategory);
-  const isLogCategory = selectedCategoryDef?.threadType === "log";
+  const isLogCategory = false;
   const userIsCommand = COMMAND_ROLES.some((cr) => (userCrewRole || "").toLowerCase().includes(cr));
 
   /* ── Create thread ── */
