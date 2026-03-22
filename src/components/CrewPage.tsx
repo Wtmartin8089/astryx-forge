@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../firebase/firebaseConfig";
 import { RANKS } from "../utils/gameData";
 import { subscribeToShips } from "../utils/shipsFirestore";
 import {
@@ -74,6 +76,8 @@ const CrewPage = () => {
   const [showSaved, setShowSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const portraitInputRef = useRef<HTMLInputElement>(null);
 
   // timer handle belongs in a ref, not state
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -728,7 +732,7 @@ const CrewPage = () => {
                 </select>
               </div>
 
-              {/* Portrait URL */}
+              {/* Portrait Upload */}
               <div>
                 <label
                   style={{
@@ -737,34 +741,95 @@ const CrewPage = () => {
                     textTransform: "uppercase",
                     letterSpacing: "1px",
                     display: "block",
-                    marginBottom: "0.25rem",
+                    marginBottom: "0.5rem",
                   }}
                 >
-                  Portrait URL
+                  Portrait
                 </label>
-                <input
-                  type="text"
-                  name="portrait"
-                  value={member.portrait ?? ""}
-                  placeholder="/portraits/character.jpg"
-                  onChange={(e) => handleFieldChange("portrait", e.target.value)}
-                  style={inputStyle(accentColor)}
-                />
-                {member.portrait && (
-                  <img
-                    src={member.portrait}
-                    alt="Portrait preview"
-                    style={{
-                      marginTop: "0.5rem",
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  {member.portrait ? (
+                    <img
+                      src={member.portrait}
+                      alt="Portrait preview"
+                      style={{
+                        width: "80px",
+                        height: "80px",
+                        objectFit: "cover",
+                        borderRadius: "4px",
+                        border: `1px solid ${accentColor}40`,
+                        flexShrink: 0,
+                      }}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/portraits/default.svg"; }}
+                    />
+                  ) : (
+                    <div style={{
                       width: "80px",
                       height: "80px",
-                      objectFit: "cover",
                       borderRadius: "4px",
-                      border: `1px solid ${accentColor}40`,
-                    }}
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/portraits/default.svg"; }}
-                  />
-                )}
+                      border: `1px dashed ${accentColor}40`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#444",
+                      fontSize: "0.6rem",
+                      letterSpacing: "1px",
+                      flexShrink: 0,
+                    }}>
+                      NO IMAGE
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <input
+                      ref={portraitInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !crewSlug) return;
+                        setUploading(true);
+                        setSaveError(null);
+                        try {
+                          const storageRef = ref(storage, `portraits/${crewSlug}`);
+                          await uploadBytes(storageRef, file);
+                          const url = await getDownloadURL(storageRef);
+                          await updateMember({ ...member, portrait: url });
+                        } catch (err: any) {
+                          setSaveError(err?.message || "Upload failed");
+                        } finally {
+                          setUploading(false);
+                          if (portraitInputRef.current) portraitInputRef.current.value = "";
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => portraitInputRef.current?.click()}
+                      disabled={uploading}
+                      style={{
+                        backgroundColor: uploading ? "#333" : accentColor,
+                        border: "none",
+                        borderRadius: "4px",
+                        color: "#000",
+                        cursor: uploading ? "not-allowed" : "pointer",
+                        fontFamily: "'Orbitron', sans-serif",
+                        fontSize: "0.65rem",
+                        fontWeight: "bold",
+                        letterSpacing: "1px",
+                        padding: "0.4rem 0.75rem",
+                      }}
+                    >
+                      {uploading ? "UPLOADING..." : "UPLOAD IMAGE"}
+                    </button>
+                    <input
+                      type="text"
+                      name="portrait"
+                      value={member.portrait ?? ""}
+                      placeholder="or paste URL"
+                      onChange={(e) => handleFieldChange("portrait", e.target.value)}
+                      style={{ ...inputStyle(accentColor), fontSize: "0.7rem" }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
