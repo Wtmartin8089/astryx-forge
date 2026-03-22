@@ -72,6 +72,7 @@ const CrewPage = () => {
   const [newDisadvantage, setNewDisadvantage] = useState("");
   const [newSkill, setNewSkill] = useState("");
   const [showSaved, setShowSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // timer handle belongs in a ref, not state
@@ -167,9 +168,11 @@ const CrewPage = () => {
       setMember(updated);
       try {
         await updateCharacter(crewSlug, updated);
+        setSaveError(null);
         flashSaved();
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to save crew member to Firestore:", err);
+        setSaveError(err?.message || "Save failed — check Firestore rules");
       }
     },
     [crewSlug, flashSaved],
@@ -390,6 +393,23 @@ const CrewPage = () => {
                 }}
               >
                 SAVED
+              </span>
+            )}
+            {saveError && (
+              <span
+                style={{
+                  color: "#ff4444",
+                  fontSize: "0.65rem",
+                  fontWeight: "bold",
+                  letterSpacing: "1px",
+                  maxWidth: "300px",
+                  textOverflow: "ellipsis",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                }}
+                title={saveError}
+              >
+                SAVE FAILED: {saveError}
               </span>
             )}
             <span style={{ color: "#000", fontWeight: "bold", fontSize: "0.8rem" }}>
