@@ -381,7 +381,7 @@ const Forum: React.FC = () => {
       {/* ── Category Selection ── */}
       {selectedBoard && !selectedCategory && (() => {
         const locationCats = FORUM_CATEGORIES.filter((c) => c.threadType === "location");
-        const logCats = FORUM_CATEGORIES.filter((c) => c.threadType === "log" && !["mission","engineering"].includes(c.id));
+        const logCats = FORUM_CATEGORIES.filter((c) => c.threadType === "log");
         const renderCat = (cat: typeof FORUM_CATEGORIES[number]) => (
           <div
             key={cat.id}
