@@ -426,6 +426,28 @@ const Forum: React.FC = () => {
       {/* ── Thread List ── */}
       {selectedBoard && selectedCategory && !selectedThread && (
         <div>
+          {/* Bridge Protocol Banner */}
+          {selectedCategory === "bridge" && (
+            <div style={{
+              backgroundColor: "#0a0f1a",
+              border: "1px solid #6699cc40",
+              borderLeft: "4px solid #6699cc",
+              borderRadius: "4px",
+              padding: "1rem 1.25rem",
+              marginBottom: "1.25rem",
+            }}>
+              <p style={{ margin: "0 0 0.5rem", color: "#6699cc", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "3px", textTransform: "uppercase" }}>
+                Bridge Protocol
+              </p>
+              <ul style={{ margin: 0, padding: "0 0 0 1rem", color: "#888", fontSize: "0.78rem", lineHeight: 1.9 }}>
+                <li>This is a command environment.</li>
+                <li>Posts must be mission-relevant and professional.</li>
+                <li>Officers may act independently within their role.</li>
+                <li>Major decisions and outcomes are determined by Command.</li>
+              </ul>
+            </div>
+          )}
+
           <button
             onClick={() => {
               if (!showNewThread && isLogCategory) {
