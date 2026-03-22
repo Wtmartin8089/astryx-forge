@@ -389,7 +389,9 @@ const Forum: React.FC = () => {
             onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#1a1a2e"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#111"; }}
           >
-            <h3 style={{ margin: "0 0 0.25rem", color: cat.color, fontSize: "1rem" }}>{cat.label}</h3>
+            <h3 style={{ margin: "0 0 0.25rem", color: cat.color, fontSize: "1rem" }}>
+              {cat.id === "tenForward" && selectedBoard === "starbase" ? "Promenade" : cat.label}
+            </h3>
             <p style={{ margin: 0, fontSize: "0.8rem", color: "#888" }}>
               {threadCounts[cat.id] || 0} thread{(threadCounts[cat.id] || 0) !== 1 ? "s" : ""}
             </p>
@@ -426,6 +428,27 @@ const Forum: React.FC = () => {
       {/* ── Thread List ── */}
       {selectedBoard && selectedCategory && !selectedThread && (
         <div>
+          {/* Promenade Banner (Starbase only) */}
+          {selectedCategory === "tenForward" && selectedBoard === "starbase" && (
+            <div style={{
+              backgroundColor: "#0d1a14",
+              border: "1px solid #33cc9940",
+              borderLeft: "4px solid #33cc99",
+              borderRadius: "4px",
+              padding: "1rem 1.25rem",
+              marginBottom: "1.25rem",
+            }}>
+              <p style={{ margin: "0 0 0.4rem", color: "#33cc99", fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", letterSpacing: "3px", textTransform: "uppercase" }}>
+                Promenade
+              </p>
+              <p style={{ margin: 0, color: "#888", fontSize: "0.78rem", lineHeight: 1.8 }}>
+                A central hub of activity aboard Starbase Machida.<br />
+                Off-duty personnel, travelers, and visitors cross paths here.<br />
+                Conversations are relaxed but remain in-universe.
+              </p>
+            </div>
+          )}
+
           {/* Bridge Protocol Banner */}
           {selectedCategory === "bridge" && (
             <div style={{
