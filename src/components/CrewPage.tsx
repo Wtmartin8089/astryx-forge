@@ -138,7 +138,9 @@ const CrewPage = () => {
   const [userAlreadyHasCharacter, setUserAlreadyHasCharacter] = useState(false);
   useEffect(() => {
     if (!currentUid) { setUserAlreadyHasCharacter(false); return; }
-    getUserCharacterName(currentUid).then((name) => setUserAlreadyHasCharacter(!!name));
+    getUserCharacterName(currentUid)
+      .then((name) => setUserAlreadyHasCharacter(!!name))
+      .catch(() => setUserAlreadyHasCharacter(false));
   }, [currentUid]);
 
   const canClaim =
