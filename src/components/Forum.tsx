@@ -212,7 +212,6 @@ const Forum: React.FC = () => {
     ? STARBASE_BOARD.name
     : ships[selectedBoard || ""]?.name || selectedBoard || "";
 
-  const selectedCategoryDef = FORUM_CATEGORIES.find((c) => c.id === selectedCategory);
   const isLogCategory = false;
   const userIsCommand = COMMAND_ROLES.some((cr) => (userCrewRole || "").toLowerCase().includes(cr));
 
