@@ -538,6 +538,33 @@ const ShipPage = () => {
                 }}
               />
             </div>
+
+            {/* Flagship fields */}
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.75rem 1.5rem", alignItems: "center", marginTop: "0.5rem", padding: "0.75rem", backgroundColor: "#0a0a0a", border: "1px solid #ffffff10", borderRadius: "4px" }}>
+              <label style={{ color: "#666", fontSize: "0.65rem", letterSpacing: "2px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                Flagship
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={shipData.isFlagship ?? false}
+                  onChange={(e) => updateField("isFlagship", e.target.checked)}
+                  style={{ width: "16px", height: "16px", accentColor: colors.accent }}
+                />
+                <span style={{ color: "#aaa", fontSize: "0.72rem" }}>Mark as flagship (hides NCC publicly)</span>
+              </label>
+
+              <label style={{ color: "#666", fontSize: "0.65rem", letterSpacing: "2px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                Designation
+              </label>
+              <input
+                type="text"
+                value={shipData.specialDesignation ?? ""}
+                onChange={(e) => updateField("specialDesignation", e.target.value)}
+                placeholder="e.g. NX-0001"
+                style={inputStyle(colors.accent)}
+              />
+            </div>
           </div>
         ) : (
           <>
