@@ -9,6 +9,7 @@ interface DocumentCard {
   path: string;
   badge?: string;
   comingSoon?: boolean;
+  quickRef: string[];
 }
 
 const documents: DocumentCard[] = [
@@ -18,6 +19,16 @@ const documents: DocumentCard[] = [
     color: "#6699cc",
     path: "/reference/articles-of-federation",
     badge: "DECLASSIFIED",
+    quickRef: [
+      "Peaceful democratic union — each member world retains full sovereignty",
+      "All citizens: equal rights, liberty, freedom of expression and assembly",
+      "Federation Council: one vote per world; 2/3 majority for major decisions",
+      "President: elected, 4-year term; civilian Commander-in-Chief of Starfleet",
+      "Supreme Court holds final jurisdiction over all Federation law",
+      "Starfleet mandate: exploration and defense — not to be used against member worlds",
+      "Membership requires unified government, peaceful intent, and free consent",
+      "Amendments require 2/3 Council + 3/4 member worlds; Fundamental Rights cannot be removed",
+    ],
   },
   {
     title: "Starfleet General Orders",
@@ -25,6 +36,13 @@ const documents: DocumentCard[] = [
     color: "#33cc99",
     path: "/reference/general-orders",
     comingSoon: true,
+    quickRef: [
+      "Prime Directive: no interference in the natural development of pre-warp civilizations",
+      "Officers must uphold the safety of crew and vessel above all tactical objectives",
+      "Lethal force is authorized only in direct defense of life or ship",
+      "Classified orders override standard protocol only with Command authorization",
+      "All first contact situations require immediate notification to Starfleet Command",
+    ],
   },
   {
     title: "Federation Law Compendium",
@@ -32,11 +50,19 @@ const documents: DocumentCard[] = [
     color: "#9933cc",
     path: "/reference/federation-law",
     comingSoon: true,
+    quickRef: [
+      "All sentient beings within Federation space are entitled to due process",
+      "Interstellar commerce is governed by the Fair Trade Accords of Stardate 2246",
+      "Weapons of mass destruction are prohibited under the Khitomer Accords",
+      "Temporal violations are adjudicated by the Department of Temporal Investigations",
+      "Extradition treaties apply to member worlds and recognized treaty partners",
+    ],
   },
 ];
 
 const ReferencePage = () => {
   const [visible, setVisible] = useState(false);
+  const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 50);
@@ -259,7 +285,7 @@ const ReferencePage = () => {
                 style={{
                   color: "#666",
                   fontSize: "0.72rem",
-                  margin: 0,
+                  margin: "0 0 1rem",
                   letterSpacing: "0.5px",
                   lineHeight: "1.6",
                   textTransform: "uppercase",
@@ -268,6 +294,69 @@ const ReferencePage = () => {
                 {doc.description}
               </p>
 
+              {/* Quick Reference bullets — always visible */}
+              <div
+                style={{
+                  borderTop: `1px solid ${doc.color}20`,
+                  paddingTop: "0.75rem",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                <p
+                  style={{
+                    color: `${doc.color}80`,
+                    fontSize: "0.55rem",
+                    letterSpacing: "2px",
+                    textTransform: "uppercase",
+                    margin: "0 0 0.5rem",
+                  }}
+                >
+                  Quick Reference
+                </p>
+                <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                  {(expandedDoc === doc.title ? doc.quickRef : doc.quickRef.slice(0, 3)).map(
+                    (bullet, i) => (
+                      <li
+                        key={i}
+                        style={{
+                          color: doc.comingSoon ? "#444" : "#888",
+                          fontSize: "0.68rem",
+                          lineHeight: "1.7",
+                          display: "flex",
+                          gap: "0.4rem",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <span style={{ color: `${doc.color}60`, flexShrink: 0 }}>›</span>
+                        {bullet}
+                      </li>
+                    ),
+                  )}
+                </ul>
+                {doc.quickRef.length > 3 && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setExpandedDoc((prev) => (prev === doc.title ? null : doc.title));
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: `${doc.color}70`,
+                      cursor: "pointer",
+                      fontFamily: "'Orbitron', sans-serif",
+                      fontSize: "0.55rem",
+                      letterSpacing: "1.5px",
+                      marginTop: "0.4rem",
+                      padding: 0,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {expandedDoc === doc.title ? "▲ Collapse" : `▼ +${doc.quickRef.length - 3} more`}
+                  </button>
+                )}
+              </div>
+
               {!doc.comingSoon && (
                 <p
                   style={{
@@ -275,11 +364,11 @@ const ReferencePage = () => {
                     fontSize: "0.6rem",
                     letterSpacing: "2px",
                     textTransform: "uppercase",
-                    marginTop: "1.25rem",
+                    marginTop: "0.75rem",
                     marginBottom: 0,
                   }}
                 >
-                  Access Document &rsaquo;
+                  Access Full Document &rsaquo;
                 </p>
               )}
             </div>

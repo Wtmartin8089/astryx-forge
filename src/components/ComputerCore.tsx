@@ -1,14 +1,164 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebase/firebaseConfig";
 import styles from "../../styles/lcars.module.css";
 import { getUserCrewRole } from "../utils/crewFirestore";
-import { canIssueDirective, getAuthorizationLabel } from "../utils/permissions";
+import { getAuthorizationLabel } from "../utils/permissions";
+
+type QueryLink = { label: string; to: string };
 
 type ConsoleEntry = {
   role: "user" | "computer";
   text: string;
   at: string;
+  links?: QueryLink[];
 };
+
+// ── Intent detection ────────────────────────────────────────────────────────
+
+function detectIntent(input: string): string {
+  const s = input.toLowerCase();
+  if (/\b(help|command|query|available|protocol)\b/.test(s)) return "help";
+  if (/\b(status|online|system|core|diagnostic)\b/.test(s)) return "status";
+  if (/\b(reference|regulation|law|order|article|charter|directive)\b/.test(s)) return "reference";
+  if (/\b(crew|personnel|officer|roster|manifest|staff|captain|commander)\b/.test(s)) return "crew";
+  if (/\b(mission|briefing|objective|assignment|operation|log)\b/.test(s)) return "mission";
+  if (/\b(ship|vessel|registry|class|fleet)\b/.test(s)) return "ships";
+  return "unknown";
+}
+
+// ── Firestore query handlers ─────────────────────────────────────────────────
+
+async function queryCrewByShip(
+  shipId: string,
+): Promise<{ text: string; links: QueryLink[] }> {
+  const snap = await getDocs(
+    query(
+      collection(db, "crew"),
+      where("shipId", "==", shipId),
+      where("status", "==", "active"),
+    ),
+  );
+  if (snap.empty) {
+    return {
+      text: `COMPUTER — No active crew records found for vessel ${shipId.toUpperCase()}.\nConfirm ship designation and retry.`,
+      links: [{ label: "Crew Roster", to: "/crew" }],
+    };
+  }
+  const crew = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+  crew.sort((a, b) => (a.rank ?? "").localeCompare(b.rank ?? ""));
+  const lines = crew
+    .map((c) => `  ${(c.rank || "—").padEnd(20)} ${c.name || "Unknown"} — ${c.position || "—"}`)
+    .join("\n");
+  return {
+    text: `COMPUTER — CREW MANIFEST: ${shipId.toUpperCase()} (${crew.length} active)\n${lines}`,
+    links: crew.slice(0, 6).map((c) => ({ label: c.name, to: `/crew/${c.id}` })),
+  };
+}
+
+async function queryMissionsByShip(
+  shipId: string,
+): Promise<{ text: string; links: QueryLink[] }> {
+  const snap = await getDocs(
+    query(collection(db, "missions"), where("shipId", "==", shipId)),
+  );
+  if (snap.empty) {
+    return {
+      text: `COMPUTER — No mission assignments found for vessel ${shipId.toUpperCase()}.`,
+      links: [{ label: "Mission Board", to: "/missions" }],
+    };
+  }
+  const missions = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+  const active = missions.filter((m) => m.status === "active");
+  const other = missions.filter((m) => m.status !== "active");
+  const fmtLine = (m: any) =>
+    `  [${(m.status ?? "UNKNOWN").toUpperCase()}] ${m.title} — ${m.system ?? "Unknown System"}`;
+  const lines = [...active, ...other].map(fmtLine).join("\n");
+  return {
+    text:
+      `COMPUTER — MISSION DATA: ${shipId.toUpperCase()}\n` +
+      `  Active Assignments: ${active.length} / Total: ${missions.length}\n` +
+      lines,
+    links: [{ label: "Mission Board", to: "/missions" }],
+  };
+}
+
+async function queryFleet(): Promise<{ text: string; links: QueryLink[] }> {
+  const snap = await getDocs(collection(db, "ships"));
+  if (snap.empty) {
+    return {
+      text: "COMPUTER — Fleet registry unavailable. Database may require resync.",
+      links: [{ label: "Fleet Registry", to: "/fleet" }],
+    };
+  }
+  const ships = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+  const lines = ships
+    .map((s) => `  ${(s.registry ?? "—").padEnd(12)} ${s.name ?? "Unknown"} — ${s.class ?? "—"} class`)
+    .join("\n");
+  return {
+    text: `COMPUTER — FLEET REGISTRY (${ships.length} vessels)\n${lines}`,
+    links: [{ label: "Fleet Registry", to: "/fleet" }],
+  };
+}
+
+async function processQuery(
+  input: string,
+  shipId: string,
+): Promise<{ text: string; links?: QueryLink[] }> {
+  const intent = detectIntent(input);
+
+  if (intent === "help") {
+    return {
+      text: [
+        "COMPUTER — AVAILABLE QUERY PROTOCOLS:",
+        "  CREW / PERSONNEL  — crew manifest for current vessel",
+        "  MISSION / BRIEFING — mission assignments for current vessel",
+        "  SHIP / FLEET      — Federation fleet registry",
+        "  REFERENCE / LAW   — Starfleet reference documents",
+        "  STATUS            — computer core system status",
+        "",
+        "Set vessel context using the SHIP field above.",
+      ].join("\n"),
+    };
+  }
+
+  if (intent === "status") {
+    return {
+      text: [
+        "COMPUTER — SYSTEM STATUS",
+        `  Core Systems    : ONLINE`,
+        `  Database        : VERIFIED`,
+        `  Authorization   : ACTIVE`,
+        `  Vessel Context  : ${shipId.toUpperCase() || "NOT SET"}`,
+      ].join("\n"),
+    };
+  }
+
+  if (intent === "reference") {
+    return {
+      text: [
+        "COMPUTER — REFERENCE LIBRARY ACCESS",
+        "  [DECLASSIFIED] Articles of the Federation — UFP Founding Charter",
+        "  [RESTRICTED]   Starfleet General Orders — Pending Release",
+        "  [RESTRICTED]   Federation Law Compendium — Pending Release",
+      ].join("\n"),
+      links: [
+        { label: "Reference Library", to: "/reference" },
+        { label: "Articles of the Federation", to: "/reference/articles-of-federation" },
+      ],
+    };
+  }
+
+  if (intent === "crew") return queryCrewByShip(shipId || "starbase");
+  if (intent === "mission") return queryMissionsByShip(shipId || "starbase");
+  if (intent === "ships") return queryFleet();
+
+  return {
+    text: "COMPUTER — Query pattern unrecognized.\nIssue HELP to display available query protocols.",
+  };
+}
 
 function nowTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -40,8 +190,6 @@ export default function ComputerCore() {
     });
   }, []);
 
-  const authorized = canIssueDirective(userRole);
-
   const defaultShip = useMemo(() => {
     return localStorage.getItem("currentShip") || "starbase";
   }, []);
@@ -52,42 +200,19 @@ export default function ComputerCore() {
     const cmd = input.trim();
     if (!cmd || busy) return;
 
-    if (!authorized) {
-      setEntries((prev) => [
-        ...prev,
-        { role: "user", text: cmd, at: nowTime() },
-        { role: "computer", text: "ACCESS DENIED: Insufficient authorization to transmit directives.", at: nowTime() },
-      ]);
-      setInput("");
-      return;
-    }
-
     setEntries((prev) => [...prev, { role: "user", text: cmd, at: nowTime() }]);
     setInput("");
     setBusy(true);
 
     try {
-      const res = await fetch("/api/computerCommand", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          command: cmd,
-          shipId: shipId.trim() || "starbase",
-        }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Computer command failed.");
-      }
-
+      const result = await processQuery(cmd, shipId.trim() || "starbase");
       setEntries((prev) => [
         ...prev,
         {
           role: "computer",
-          text: data?.response || "No response returned.",
+          text: result.text,
           at: nowTime(),
+          links: result.links,
         },
       ]);
     } catch (err) {
@@ -146,7 +271,7 @@ export default function ComputerCore() {
             }}
           >
             <span>Starfleet Computer Terminal</span>
-            <span style={{ fontSize: 10, color: authorized ? "#111" : "#7a3300", backgroundColor: authorized ? "transparent" : "rgba(255,100,0,0.18)", padding: authorized ? 0 : "2px 6px", borderRadius: 4 }}>
+            <span style={{ fontSize: 10, color: "#8aaad0" }}>
               {getAuthorizationLabel(userRole)}
             </span>
           </div>
@@ -202,7 +327,6 @@ export default function ComputerCore() {
                   color: "#d8e4f5",
                   borderRadius: 6,
                   padding: "8px 10px",
-                  whiteSpace: "pre-wrap",
                   fontSize: 13,
                   lineHeight: 1.35,
                 }}
@@ -221,7 +345,31 @@ export default function ComputerCore() {
                   <span>{entry.role === "user" ? "Officer" : "Computer"}</span>
                   <span>{entry.at}</span>
                 </div>
-                {entry.text}
+                <div style={{ whiteSpace: "pre-wrap" }}>{entry.text}</div>
+                {entry.links && entry.links.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8, borderTop: "1px solid #1e3a5f", paddingTop: 8 }}>
+                    {entry.links.map((lnk) => (
+                      <Link
+                        key={lnk.to}
+                        to={lnk.to}
+                        style={{
+                          backgroundColor: "#0b2240",
+                          border: "1px solid #335d88",
+                          borderRadius: 4,
+                          color: "#6699cc",
+                          fontSize: 10,
+                          fontFamily: "'Orbitron', sans-serif",
+                          letterSpacing: 1,
+                          padding: "3px 8px",
+                          textDecoration: "none",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {lnk.label} ›
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -230,7 +378,7 @@ export default function ComputerCore() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder='Try: "scan anomaly", then "analyze it"'
+              placeholder='Query: crew, mission, ship, reference, status, help'
               style={{
                 flex: 1,
                 background: "#07152b",
@@ -243,24 +391,21 @@ export default function ComputerCore() {
             />
             <button
               type="submit"
-              disabled={busy || !authorized}
-              title={!authorized ? "Insufficient authorization" : undefined}
+              disabled={busy}
               style={{
-                background: authorized
-                  ? "linear-gradient(135deg,#f5b942,#ff6a2b)"
-                  : "#2a1a1a",
-                color: authorized ? "#111" : "#cc6644",
-                border: authorized ? "none" : "1px solid #cc664440",
+                background: "linear-gradient(135deg,#f5b942,#ff6a2b)",
+                color: "#111",
+                border: "none",
                 borderRadius: 6,
                 padding: "8px 12px",
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: 1,
-                cursor: busy ? "wait" : authorized ? "pointer" : "not-allowed",
+                cursor: busy ? "wait" : "pointer",
                 opacity: busy ? 0.7 : 1,
               }}
             >
-              {busy ? "Running" : authorized ? "Send" : "Locked"}
+              {busy ? "Processing" : "Query"}
             </button>
           </form>
         </div>

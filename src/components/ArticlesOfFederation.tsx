@@ -123,11 +123,24 @@ const FLAVOR_LINES = [
   "> COMPUTER: Displaying document. All articles loaded.",
 ];
 
+const QUICK_REF = [
+  "Peaceful democratic union — each member world retains full sovereignty in internal matters",
+  "All citizens: equal rights, liberty, security of person; no arbitrary arrest or exile",
+  "Freedom of thought, expression, and peaceful assembly guaranteed to all citizens",
+  "Federation Council: one vote per member world; 2/3 majority for amendments, emergency powers, and new admissions",
+  "President: popularly elected, 4-year term (max 2 consecutive); civilian Commander-in-Chief of Starfleet",
+  "Supreme Court: 7+ justices, lifetime appointment; final jurisdiction over all Federation law",
+  "Starfleet mandate: exploration, defense, humanitarian aid — not to be used against member worlds or their citizens",
+  "Membership: requires unified government, peaceful intent, and free consent of the governed; 2/3 Council vote to admit",
+  "Amendments require 2/3 Council + ratification by 3/4 of member worlds; Fundamental Rights (Chapter II) cannot be amended away",
+];
+
 const ArticlesOfFederation = () => {
   const [visible, setVisible] = useState(false);
   const [activeSection, setActiveSection] = useState("preamble");
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [flavorIndex, setFlavorIndex] = useState(0);
+  const [docExpanded, setDocExpanded] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const stardate = getCampaignStardate();
 
@@ -420,6 +433,89 @@ const ArticlesOfFederation = () => {
         ))}
       </div>
 
+      {/* Quick Reference Panel */}
+      <div
+        style={{
+          backgroundColor: "#0d1520",
+          border: "1px solid #6699cc30",
+          borderLeft: "4px solid #6699cc",
+          borderRadius: "0 8px 8px 0",
+          padding: "1.25rem 1.5rem",
+          marginBottom: "1.25rem",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "0.75rem",
+          }}
+        >
+          <p
+            style={{
+              color: "#6699cc",
+              fontSize: "0.6rem",
+              letterSpacing: "2.5px",
+              textTransform: "uppercase",
+              margin: 0,
+            }}
+          >
+            Quick Reference — Articles of the Federation
+          </p>
+          <button
+            onClick={() => setDocExpanded((v) => !v)}
+            style={{
+              backgroundColor: docExpanded ? "transparent" : "#6699cc",
+              border: "1px solid #6699cc",
+              borderRadius: "4px",
+              color: docExpanded ? "#6699cc" : "#000",
+              cursor: "pointer",
+              flexShrink: 0,
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.6rem",
+              fontWeight: "bold",
+              letterSpacing: "1.5px",
+              marginLeft: "1rem",
+              padding: "0.3rem 0.75rem",
+              textTransform: "uppercase",
+              transition: "background 0.2s, color 0.2s",
+            }}
+          >
+            {docExpanded ? "Collapse Full Text" : "Expand Full Text"}
+          </button>
+        </div>
+        <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+          {QUICK_REF.map((line, i) => (
+            <li
+              key={i}
+              style={{
+                color: "#aaa",
+                fontSize: "0.82rem",
+                lineHeight: "1.8",
+                display: "flex",
+                gap: "0.5rem",
+                alignItems: "flex-start",
+              }}
+            >
+              <span style={{ color: "#6699cc80", flexShrink: 0, marginTop: "0.1rem" }}>›</span>
+              {line}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Full Document — collapsible */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateRows: docExpanded ? "1fr" : "0fr",
+          transition: "grid-template-rows 0.35s ease-in-out",
+          overflow: "hidden",
+        }}
+      >
+      <div style={{ minHeight: 0 }}>
+
       {/* PREAMBLE */}
       <div id="preamble">
         <div
@@ -700,8 +796,11 @@ const ArticlesOfFederation = () => {
         </p>
       </div>
 
+      </div>{/* end collapsible inner */}
+      </div>{/* end collapsible grid wrapper */}
+
       {/* Bottom bar */}
-      <div style={{ display: "flex", alignItems: "stretch", height: "45px" }}>
+      <div style={{ display: "flex", alignItems: "stretch", height: "45px", marginTop: "2rem" }}>
         <div
           style={{
             width: "80px",
@@ -749,7 +848,7 @@ const ArticlesOfFederation = () => {
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 0 }}>
-        {!isMobile && sidebar}
+        {!isMobile && docExpanded && sidebar}
         {content}
       </div>
     </div>
