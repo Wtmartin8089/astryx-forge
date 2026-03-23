@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { getAuth, deleteUser, signOut, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { isAdmin } from "../utils/adminAuth";
-import { unclaimAllByUser } from "../utils/crewFirestore";
+import { unclaimAllByUser, unclaimCharacter } from "../utils/crewFirestore";
+import { useActiveCharacter } from "../context/ActiveCharacterContext";
 import "../assets/lcars.css";
 
 const AccountSettings = () => {
@@ -10,6 +11,8 @@ const AccountSettings = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { userCharacters, activeCharId, setActiveCharId } = useActiveCharacter();
+  const [unclaimConfirmId, setUnclaimConfirmId] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -148,6 +151,153 @@ const AccountSettings = () => {
           <strong>User ID:</strong> {user?.uid || "Not available"}
         </div>
 
+        {/* Manage Characters panel — shown to all users who have characters */}
+        {userCharacters.length > 0 && (
+          <div style={{
+            backgroundColor: "rgba(102, 153, 204, 0.08)",
+            border: "2px solid #6699cc",
+            borderRadius: "8px",
+            padding: "1.25rem",
+            marginBottom: "1.5rem",
+          }}>
+            <p style={{ color: "#6699cc", margin: "0 0 1rem 0", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", fontSize: "0.85rem" }}>
+              Manage Characters
+            </p>
+            {userCharacters.map((char) => {
+              const isActive = char.id === activeCharId;
+              const isUnclaimTarget = unclaimConfirmId === char.id;
+              return (
+                <div
+                  key={char.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                    padding: "0.6rem 0.75rem",
+                    marginBottom: "0.5rem",
+                    backgroundColor: isActive ? "rgba(255, 153, 0, 0.1)" : "rgba(255,255,255,0.03)",
+                    border: isActive ? "1px solid #ff990060" : "1px solid #ffffff15",
+                    borderRadius: "6px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {/* Character info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ color: isActive ? "#ff9900" : "#ccc", fontWeight: "bold", fontSize: "0.9rem" }}>
+                      {char.name}
+                    </span>
+                    {char.rank && (
+                      <span style={{ color: "#888", fontSize: "0.75rem", marginLeft: "0.5rem" }}>
+                        {char.rank}
+                      </span>
+                    )}
+                    {char.role && (
+                      <span style={{ color: "#666", fontSize: "0.72rem", marginLeft: "0.4rem" }}>
+                        · {char.role}
+                      </span>
+                    )}
+                    {isActive && (
+                      <span style={{ color: "#ff9900", fontSize: "0.65rem", marginLeft: "0.6rem", letterSpacing: "1px", textTransform: "uppercase" }}>
+                        ★ Active
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
+                    {!isActive && (
+                      <button
+                        onClick={() => setActiveCharId(char.id)}
+                        style={{
+                          backgroundColor: "#ff990020",
+                          border: "1px solid #ff9900",
+                          borderRadius: "12px",
+                          color: "#ff9900",
+                          cursor: "pointer",
+                          fontFamily: "'Orbitron', sans-serif",
+                          fontSize: "0.6rem",
+                          fontWeight: "bold",
+                          letterSpacing: "1px",
+                          padding: "0.25rem 0.7rem",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Set Active
+                      </button>
+                    )}
+                    {!isUnclaimTarget ? (
+                      <button
+                        onClick={() => setUnclaimConfirmId(char.id)}
+                        style={{
+                          backgroundColor: "transparent",
+                          border: "1px solid #cc666660",
+                          borderRadius: "12px",
+                          color: "#cc6666",
+                          cursor: "pointer",
+                          fontFamily: "'Orbitron', sans-serif",
+                          fontSize: "0.6rem",
+                          letterSpacing: "1px",
+                          padding: "0.25rem 0.7rem",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Unclaim
+                      </button>
+                    ) : (
+                      <>
+                        <span style={{ color: "#cc6666", fontSize: "0.65rem", alignSelf: "center" }}>Confirm?</span>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await unclaimCharacter(char.id);
+                            } catch (err: any) {
+                              alert("Failed: " + err.message);
+                            }
+                            setUnclaimConfirmId(null);
+                          }}
+                          style={{
+                            backgroundColor: "#cc6666",
+                            border: "none",
+                            borderRadius: "12px",
+                            color: "#fff",
+                            cursor: "pointer",
+                            fontFamily: "'Orbitron', sans-serif",
+                            fontSize: "0.6rem",
+                            fontWeight: "bold",
+                            letterSpacing: "1px",
+                            padding: "0.25rem 0.7rem",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => setUnclaimConfirmId(null)}
+                          style={{
+                            backgroundColor: "transparent",
+                            border: "1px solid #555",
+                            borderRadius: "12px",
+                            color: "#888",
+                            cursor: "pointer",
+                            fontFamily: "'Orbitron', sans-serif",
+                            fontSize: "0.6rem",
+                            letterSpacing: "1px",
+                            padding: "0.25rem 0.7rem",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          No
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Admin controls */}
         {user && isAdmin(user.uid) && (
           <div style={{
             backgroundColor: "rgba(51, 204, 153, 0.1)",

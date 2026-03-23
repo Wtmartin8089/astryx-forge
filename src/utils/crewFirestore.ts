@@ -105,6 +105,11 @@ export async function rejectCharacter(crewId: string): Promise<void> {
   await deleteDoc(doc(db, CREW_COL, crewId));
 }
 
+/** Clear ownership from a single crew member. */
+export async function unclaimCharacter(crewId: string): Promise<void> {
+  await updateDoc(doc(db, CREW_COL, crewId), { ownerId: null, ownerEmail: null });
+}
+
 /** Admin: clear ownership from all crew owned by a specific user. */
 export async function unclaimAllByUser(userId: string): Promise<number> {
   const q = query(collection(db, CREW_COL), where("ownerId", "==", userId));
