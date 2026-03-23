@@ -29,6 +29,8 @@ import type { Mission, MissionLog, MissionStatus } from "../types/mission";
 import "../assets/lcars.css";
 
 const STATUS_COLOR: Record<MissionStatus, string> = {
+  available: "#ff9900",
+  assigned:  "#9933cc",
   active:    "#33cc99",
   pending:   "#F5B942",
   completed: "#6699cc",
@@ -557,9 +559,10 @@ const MissionBoard = () => {
     return () => { unsubShips(); unsub(); clearTimeout(timer); };
   }, []);
 
-  const displayed = filter === "all"
-    ? missions
-    : missions.filter((m) => m.status === filter);
+  // Non-admins see only available missions; admins see all (filterable)
+  const displayed = userIsAdmin
+    ? (filter === "all" ? missions : missions.filter((m) => m.status === filter))
+    : missions.filter((m) => m.status === "available");
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -590,6 +593,14 @@ const MissionBoard = () => {
     const sys = m.system || "the operational area";
     const firstObj = m.objectives?.[0] || "primary directive";
     const entries: Record<MissionStatus, { heading: string; body: string }> = {
+      available: {
+        heading: "Mission Posted — Awaiting Assignment",
+        body: `The ${firstObj} in ${sys} has been registered as available. Starfleet Command is evaluating vessel assignments.`,
+      },
+      assigned: {
+        heading: "Mission Assigned — Vessel Designated",
+        body: `A vessel has been formally assigned to operations in ${sys}. All mission parameters have been transmitted. Crew briefing is underway.`,
+      },
       active: {
         heading: "Orders Received — All Hands Briefed",
         body: `Clearance has been transmitted from Starfleet Command. All departments confirm readiness and the crew has been fully briefed on the situation in ${sys}. The ${firstObj} has been confirmed as the leading directive. Operations are authorized to commence.`,
@@ -647,7 +658,9 @@ const MissionBoard = () => {
           </h1>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.15rem" }}>
             <span style={{ color: "#00000070", fontSize: "0.7rem", letterSpacing: "1px" }}>
-              {missions.length} MISSION{missions.length !== 1 ? "S" : ""} ON RECORD
+              {userIsAdmin
+                ? `${missions.length} MISSION${missions.length !== 1 ? "S" : ""} ON RECORD`
+                : `${missions.filter(m => m.status === "available").length} AVAILABLE`}
             </span>
             <span style={{ color: canCreateMission(userRole) ? "#00000080" : "#7a3300", fontSize: "0.6rem", letterSpacing: "1px" }}>
               {getAuthorizationLabel(userRole)}
@@ -659,28 +672,30 @@ const MissionBoard = () => {
 
       {/* Filter + Admin bar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          {(["all", "active", "pending", "completed", "failed"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              style={{
-                backgroundColor: filter === s ? "#6699cc" : "transparent",
-                border: `1px solid ${filter === s ? "#6699cc" : "#333"}`,
-                borderRadius: "20px",
-                color: filter === s ? "#000" : "#666",
-                fontFamily: "'Orbitron', sans-serif",
-                fontSize: "0.65rem",
-                letterSpacing: "1.5px",
-                textTransform: "uppercase",
-                padding: "0.3rem 0.9rem",
-                cursor: "pointer",
-              }}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        {userIsAdmin && (
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {(["all", "available", "assigned", "active", "pending", "completed", "failed"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilter(s)}
+                style={{
+                  backgroundColor: filter === s ? "#6699cc" : "transparent",
+                  border: `1px solid ${filter === s ? "#6699cc" : "#333"}`,
+                  borderRadius: "20px",
+                  color: filter === s ? "#000" : "#666",
+                  fontFamily: "'Orbitron', sans-serif",
+                  fontSize: "0.65rem",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  padding: "0.3rem 0.9rem",
+                  cursor: "pointer",
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
 
         {canGenerate && (
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
@@ -740,7 +755,9 @@ const MissionBoard = () => {
         <div style={{ textAlign: "center", padding: "3rem", color: "#444", fontSize: "0.85rem" }}>
           {missions.length === 0
             ? "No missions on record. Seed starter missions or generate one."
-            : "No missions match the selected filter."}
+            : userIsAdmin
+              ? "No missions match the selected filter."
+              : "No missions currently available for assignment. Check back after receiving orders from Command."}
         </div>
       )}
 
@@ -840,7 +857,7 @@ const MissionBoard = () => {
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </select>
-                    {(["active", "pending", "completed", "failed"] as MissionStatus[]).map((s) => (
+                    {(["available", "assigned", "active", "pending", "completed", "failed"] as MissionStatus[]).map((s) => (
                       <button
                         key={s}
                         onClick={() => handleStatusChange(m, s)}

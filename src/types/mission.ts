@@ -1,4 +1,4 @@
-export type MissionStatus = "active" | "completed" | "failed" | "pending";
+export type MissionStatus = "available" | "assigned" | "active" | "completed" | "failed" | "pending";
 
 export type Mission = {
   id?: string;

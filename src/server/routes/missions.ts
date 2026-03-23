@@ -104,6 +104,7 @@ export async function assignMissionToShip(
 ): Promise<void> {
   await updateDoc(doc(db, COLLECTION, id), {
     shipId: shipId || null,
+    status: shipId ? "assigned" : "available",
   });
 }
 
