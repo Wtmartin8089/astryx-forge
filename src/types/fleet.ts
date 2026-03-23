@@ -47,6 +47,8 @@ export type ShipData = {
   shields: { standard: number; maximum: number } | null;
   description: string;
   crewIds: string[];
+  isFlagship?: boolean;
+  specialDesignation?: string;
 };
 
 export type AssignmentType = "ship" | "starbase" | "unassigned";

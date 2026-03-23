@@ -41,13 +41,19 @@ const FleetRegistry = () => {
     return () => { unsub(); clearTimeout(timer); };
   }, []);
 
+  // Registry role-code system: NCC-RR### where RR = role code
+  // 10=Light/Patrol  20=Tactical/Escort  30=Cruiser  40=Heavy Cruiser/Capital
+  // 50=Exploration  60=Science/Medical  70=Support/Logistics  90=Experimental
+  // Default new ships to Cruiser (30xxx). Admin sets the final registry on the ship page.
+
   const handleAddShip = async () => {
     const slug = `ship-${Date.now()}`;
+    // Default registry placeholder — admin sets final NCC on ship page
     const newShip: ShipData = {
       name: "NEW VESSEL",
-      registry: "NCC-00000",
+      registry: "NCC-30001",
       class: "",
-      type: "Unknown",
+      type: "Cruiser",
       status: "Active",
       description: "",
       structuralPoints: null,
@@ -63,6 +69,10 @@ const FleetRegistry = () => {
     await saveShip(slug, newShip);
     navigate(`/ship/${slug}?edit=true`);
   };
+
+  // Display registry: flagships show specialDesignation, others show NCC
+  const displayRegistry = (ship: ShipData) =>
+    ship.isFlagship && ship.specialDesignation ? ship.specialDesignation : ship.registry;
 
   return (
     <div style={{
@@ -139,6 +149,7 @@ const FleetRegistry = () => {
       }}>
         {Object.entries(ships).map(([slug, ship]) => {
           const colors = shipColors[slug] || { primary: "#333", accent: "#ff9900" };
+          const flagship = ship.isFlagship === true;
           return (
             <Link
               key={slug}
@@ -146,7 +157,7 @@ const FleetRegistry = () => {
               style={{ textDecoration: "none" }}
             >
               <div style={{
-                backgroundColor: "#111",
+                backgroundColor: flagship ? "#1a0a00" : "#111",
                 border: `2px solid ${colors.accent}`,
                 borderRadius: "0 30px 0 0",
                 padding: "1.5rem",
@@ -154,42 +165,63 @@ const FleetRegistry = () => {
                 transition: "all 0.3s ease",
                 display: "flex",
                 gap: "1rem",
+                boxShadow: flagship ? `0 0 24px ${colors.accent}30` : "none",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 20px ${colors.accent}40`;
+                (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 20px ${colors.accent}60`;
                 (e.currentTarget as HTMLDivElement).style.borderColor = colors.accent;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+                (e.currentTarget as HTMLDivElement).style.boxShadow = flagship ? `0 0 24px ${colors.accent}30` : "none";
               }}
               >
                 {/* Left accent bar */}
                 <div style={{
-                  width: "8px",
+                  width: flagship ? "12px" : "8px",
                   backgroundColor: colors.accent,
                   borderRadius: "4px",
                   flexShrink: 0,
                 }} />
 
                 <div style={{ flex: 1 }}>
+                  {/* Flagship badge */}
+                  {flagship && (
+                    <div style={{ marginBottom: "0.4rem" }}>
+                      <span style={{
+                        backgroundColor: `${colors.accent}20`,
+                        border: `1px solid ${colors.accent}80`,
+                        borderRadius: "4px",
+                        color: colors.accent,
+                        fontSize: "0.55rem",
+                        fontWeight: "bold",
+                        letterSpacing: "2px",
+                        padding: "0.15rem 0.5rem",
+                        textTransform: "uppercase",
+                      }}>
+                        ★ FLAGSHIP
+                      </span>
+                    </div>
+                  )}
+
                   {/* Ship Name */}
                   <h2 style={{
                     color: colors.accent,
-                    fontSize: "1.2rem",
+                    fontSize: flagship ? "1.4rem" : "1.2rem",
                     margin: "0 0 0.25rem 0",
                     letterSpacing: "2px",
                   }}>
                     {ship.name}
                   </h2>
 
-                  {/* Registry */}
+                  {/* Registry — flagship shows specialDesignation only */}
                   <p style={{
-                    color: "#888",
+                    color: flagship ? colors.accent : "#888",
                     fontSize: "0.85rem",
                     margin: "0 0 0.75rem 0",
                     letterSpacing: "1px",
+                    fontWeight: flagship ? "bold" : "normal",
                   }}>
-                    {ship.registry}
+                    {displayRegistry(ship)}
                   </p>
 
                   {/* Class & Type */}

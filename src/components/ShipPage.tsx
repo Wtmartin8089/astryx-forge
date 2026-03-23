@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, where } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { updateCharacter } from "../utils/crewFirestore";
-import { subscribeToShips, saveShip } from "../utils/shipsFirestore";
+import { subscribeToShips, saveShip, deleteShip } from "../utils/shipsFirestore";
 import { isAdmin } from "../utils/adminAuth";
 import type { ShipData, ShipWeapon, CrewMember } from "../types/fleet";
 import { STARSHIP_CLASSES } from "../data/starshipClasses";
@@ -49,6 +49,7 @@ const numberInputStyle = (accentColor: string): React.CSSProperties => ({
 
 const ShipPage = () => {
   const { shipSlug } = useParams();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const [shipsData, setShipsData] = useState<Record<string, ShipData>>({});
@@ -1504,6 +1505,53 @@ const ShipPage = () => {
             }}
           >
             RESET TO DEFAULTS
+          </button>
+        </div>
+      )}
+
+      {/* Ship management — admin + edit mode */}
+      {userIsAdmin && editMode && (
+        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+          {/* Decommission */}
+          <button
+            onClick={() => {
+              if (!confirm(`Decommission ${shipData?.name ?? "this vessel"}? This will set her status to Decommissioned.`)) return;
+              updateField("status", "Decommissioned");
+            }}
+            style={{
+              backgroundColor: "transparent",
+              border: "1px solid #99660060",
+              borderRadius: "20px",
+              color: "#996600",
+              cursor: "pointer",
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.65rem",
+              letterSpacing: "1.5px",
+              padding: "0.35rem 1rem",
+            }}
+          >
+            ⚓ DECOMMISSION
+          </button>
+          {/* Delete */}
+          <button
+            onClick={async () => {
+              if (!confirm(`Permanently DELETE ${shipData?.name ?? "this vessel"} from the registry? This cannot be undone.`)) return;
+              await deleteShip(shipSlug!);
+              navigate("/fleet");
+            }}
+            style={{
+              backgroundColor: "transparent",
+              border: "1px solid #cc333360",
+              borderRadius: "20px",
+              color: "#cc3333",
+              cursor: "pointer",
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.65rem",
+              letterSpacing: "1.5px",
+              padding: "0.35rem 1rem",
+            }}
+          >
+            ✕ DELETE VESSEL
           </button>
         </div>
       )}
