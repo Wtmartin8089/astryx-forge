@@ -58,6 +58,22 @@ const documents: DocumentCard[] = [
       "Extradition treaties apply to member worlds and recognized treaty partners",
     ],
   },
+  {
+    title: "Advanced Holographic Systems — USS King",
+    description: "Experimental holoemitter grid technical specifications and operational protocols",
+    color: "#00ccff",
+    path: "/reference/holographic-systems",
+    badge: "RESTRICTED",
+    quickRef: [
+      "Flagship-exclusive experimental holoemitter grid — not standard across Starfleet",
+      "Primary control: Engineering; Computer Core provides assistance only",
+      "Command retains override authority during critical situations",
+      "Default: Standard Mode — visual-only projections, no physical interaction",
+      "Limited Interaction Mode requires Engineering authorization; non-combat only",
+      "Emergency Override (full interaction) requires Command + Engineering approval",
+      "High energy consumption when interaction is enabled; auto-fallback on power loss",
+    ],
+  },
 ];
 
 const ReferencePage = () => {

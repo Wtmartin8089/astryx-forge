@@ -35,6 +35,7 @@ import SystemCreatures from "./components/SystemCreatures";
 import CrewPage from "./components/CrewPage";
 import ReferencePage from "./components/ReferencePage";
 import ArticlesOfFederation from "./components/ArticlesOfFederation";
+import HolographicSystems from "./components/HolographicSystems";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
@@ -111,6 +112,7 @@ function App() {
         <Route path="/systems/:systemId/creatures" element={<SystemCreatures />} />
         <Route path="/reference" element={<ReferencePage />} />
         <Route path="/reference/articles-of-federation" element={<ArticlesOfFederation />} />
+        <Route path="/reference/holographic-systems" element={<HolographicSystems />} />
         <Route path="/auth" element={<AuthPanel />} />
       </Routes>
     </ActiveCharacterProvider>

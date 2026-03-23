@@ -1221,6 +1221,108 @@ const ShipPage = () => {
           </div>
         </form>
 
+        {/* Advanced Holographic Emitter Grid — USS King only */}
+        {shipSlug === "king" && (() => {
+          const holoColor = "#00ccff";
+          return (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                <span style={{
+                  backgroundColor: `${holoColor}20`,
+                  border: `1px solid ${holoColor}`,
+                  borderRadius: "20px",
+                  color: holoColor,
+                  fontSize: "0.65rem",
+                  fontFamily: "'Orbitron', sans-serif",
+                  letterSpacing: "2px",
+                  padding: "0.2rem 0.75rem",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                }}>
+                  Ship Systems
+                </span>
+                <div style={{ flex: 1, height: "1px", backgroundColor: `${holoColor}30` }} />
+              </div>
+              <div style={{
+                backgroundColor: "#050d14",
+                border: `1px solid ${holoColor}30`,
+                borderLeft: `4px solid ${holoColor}`,
+                borderRadius: "0 8px 8px 0",
+                padding: "1.25rem 1.5rem",
+              }}>
+                {/* System header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                  <div>
+                    <p style={{ margin: "0 0 0.2rem", color: `${holoColor}70`, fontSize: "0.55rem", letterSpacing: "3px", textTransform: "uppercase" }}>
+                      Experimental System
+                    </p>
+                    <h3 style={{ margin: 0, color: holoColor, fontSize: "0.9rem", letterSpacing: "1.5px", fontWeight: "bold" }}>
+                      Advanced Holographic Emitter Grid
+                    </h3>
+                  </div>
+                  <span style={{
+                    backgroundColor: `${holoColor}15`,
+                    border: `1px solid ${holoColor}40`,
+                    borderRadius: "4px",
+                    color: `${holoColor}90`,
+                    fontSize: "0.55rem",
+                    letterSpacing: "2px",
+                    padding: "0.2rem 0.6rem",
+                    textTransform: "uppercase",
+                  }}>
+                    RESTRICTED
+                  </span>
+                </div>
+
+                {/* Control hierarchy */}
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+                  {[
+                    { rank: "Primary", label: "Engineering", color: "#F5B942" },
+                    { rank: "Secondary", label: "Computer Core", color: "#6699cc" },
+                    { rank: "Override", label: "Command", color: "#cc3333" },
+                  ].map(({ rank, label, color }) => (
+                    <div key={rank} style={{ backgroundColor: "#0d0d0d", border: `1px solid ${color}30`, borderRadius: "4px", padding: "0.4rem 0.75rem" }}>
+                      <span style={{ color: `${color}60`, fontSize: "0.52rem", letterSpacing: "1.5px", textTransform: "uppercase", display: "block" }}>{rank}</span>
+                      <span style={{ color, fontSize: "0.7rem", fontWeight: "bold" }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Operational modes */}
+                <p style={{ color: "#555", fontSize: "0.55rem", letterSpacing: "2px", textTransform: "uppercase", margin: "0 0 0.5rem" }}>
+                  Operational Modes
+                </p>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+                  {[
+                    { mode: "Standard", detail: "Visual only — default", color: "#33cc99" },
+                    { mode: "Limited Interaction", detail: "Eng. authorization", color: "#F5B942" },
+                    { mode: "Emergency Override", detail: "Cmd + Eng. required", color: "#cc3333" },
+                  ].map(({ mode, detail, color }) => (
+                    <div key={mode} style={{ backgroundColor: `${color}10`, border: `1px solid ${color}40`, borderRadius: "4px", padding: "0.4rem 0.75rem", flex: "1 0 160px" }}>
+                      <span style={{ color, fontSize: "0.68rem", fontWeight: "bold", display: "block", letterSpacing: "0.5px" }}>{mode}</span>
+                      <span style={{ color: "#666", fontSize: "0.62rem" }}>{detail}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer note + link */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+                  <p style={{ margin: 0, color: "#444", fontSize: "0.62rem", lineHeight: 1.6, fontStyle: "italic", flex: 1 }}>
+                    High power consumption under interaction modes. Auto-fallback to Standard if power or integrity thresholds are breached.
+                  </p>
+                  <a
+                    href="/reference/holographic-systems"
+                    style={{ color: holoColor, fontSize: "0.6rem", letterSpacing: "1.5px", textDecoration: "none", textTransform: "uppercase", whiteSpace: "nowrap" }}
+                  >
+                    Full Specs &rsaquo;
+                  </a>
+                </div>
+              </div>
+              <div style={{ height: "1px", backgroundColor: `${holoColor}20`, marginTop: "1.25rem" }} />
+            </div>
+          );
+        })()}
+
         {/* Assigned Missions — from missions collection */}
         {shipMissions.length > 0 && (() => {
           const STATUS_COLOR: Record<string, string> = {
