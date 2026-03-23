@@ -15,7 +15,7 @@ import {
 import { db } from "../../firebase/firebaseConfig";
 import type { Mission } from "../../types/mission";
 
-export type ForumCategory = "bridge" | "mission" | "engineering" | "sickbay" | "tenForward" | "holodeck";
+export type ForumCategory = "bridge" | "mission" | "engineering" | "sickbay" | "tenForward" | "holodeck" | "proposals";
 
 export interface ShipForumThread {
   id?: string;

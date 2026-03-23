@@ -1,6 +1,9 @@
 export const FORUM_CATEGORIES = [
   // ── Mission Area ──
-  { id: "mission",      label: "Mission Briefings", color: "#ff9900", threadType: "mission" },
+  { id: "mission",      label: "Mission Briefings",          color: "#ff9900", threadType: "mission" },
+
+  // ── Command Review ──
+  { id: "proposals",    label: "Command Review — Proposals", color: "#cc9900", threadType: "proposal" },
 
   // ── Shipboard Roleplay Locations ──
   { id: "bridge",       label: "Bridge",            color: "#6699cc", threadType: "location" },
