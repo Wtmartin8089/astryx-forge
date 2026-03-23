@@ -65,6 +65,7 @@ const Starbase = () => {
   const [propRisks, setPropRisks] = useState("");
   const [propPower, setPropPower] = useState("");
   const [propRecommendation, setPropRecommendation] = useState("");
+  const [propRecognition, setPropRecognition] = useState("");
   const [propSending, setPropSending] = useState(false);
 
   // Existing proposals subscription
@@ -185,6 +186,9 @@ const Starbase = () => {
         ``,
         `CAPTAIN'S RECOMMENDATION`,
         propRecommendation.trim() || "—",
+        ``,
+        `RECOGNITION PREFERENCE`,
+        propRecognition || "Not specified.",
       ].join("\n");
 
       const title = `PROPOSAL — ${propObjective.trim().slice(0, 60)}${propObjective.trim().length > 60 ? "…" : ""}`;
@@ -202,7 +206,7 @@ const Starbase = () => {
 
       setPropStardate(""); setPropShip(""); setPropReqName(""); setPropReqRank("");
       setPropReqDept(""); setPropObjective(""); setPropMethod(""); setPropRisks("");
-      setPropPower(""); setPropRecommendation("");
+      setPropPower(""); setPropRecommendation(""); setPropRecognition("");
       setShowProposal(false);
     } catch (err) {
       console.error("Failed to submit proposal:", err);
@@ -636,9 +640,26 @@ const Starbase = () => {
               </div>
 
               {/* Captain's Recommendation */}
-              <div style={{ marginBottom: "1.25rem" }}>
+              <div style={{ marginBottom: "0.75rem" }}>
                 <label style={labelStyle}>Captain's Recommendation</label>
                 <textarea value={propRecommendation} onChange={(e) => setPropRecommendation(e.target.value)} placeholder="Your assessment and recommendation to Command..." rows={3} style={{ ...modalInputStyle, resize: "vertical" }} />
+              </div>
+
+              {/* Recognition Preference */}
+              <div style={{ marginBottom: "1.25rem" }}>
+                <label style={labelStyle}>Recognition Preference</label>
+                <select
+                  value={propRecognition}
+                  onChange={(e) => setPropRecognition(e.target.value)}
+                  style={{ ...modalInputStyle, cursor: "pointer" }}
+                >
+                  <option value="">— Not specified —</option>
+                  <option value="Public recognition authorized">Public recognition authorized</option>
+                  <option value="Keep recognition private">Keep recognition private</option>
+                </select>
+                <p style={{ margin: "0.35rem 0 0", color: "#444", fontSize: "0.58rem", lineHeight: 1.6 }}>
+                  If authorized, Command may include a formal commendation in the public response.
+                </p>
               </div>
 
               {/* Issuing as */}
