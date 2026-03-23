@@ -134,33 +134,43 @@
 /* Computer Core Button */
 .computerCoreButton {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 24px;
+  right: 24px;
   z-index: 1000;
+  opacity: 0.2;
+  transition: opacity 0.4s ease, transform 0.3s ease;
+  transform: scale(1);
+}
+
+.computerCoreButton.active {
+  opacity: 1;
+  transform: scale(1.05);
 }
 
 .computerCoreButton button {
   background: linear-gradient(135deg, var(--lcars-blue), var(--lcars-purple));
   color: white;
-  border: 3px solid var(--lcars-orange);
-  border-radius: 10px;
-  padding: 15px 25px;
-  font-size: 16px;
+  border: 2px solid var(--lcars-orange);
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 10px;
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(255, 153, 0, 0.5);
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 153, 0, 0.25);
+  transition: box-shadow 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
+.computerCoreButton.active button {
+  box-shadow: 0 4px 14px rgba(153, 51, 204, 0.5);
+}
+
 .computerCoreButton button:hover {
   background: linear-gradient(135deg, var(--lcars-purple), var(--lcars-blue));
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(153, 51, 204, 0.7);
 }
 
 .computerCoreButton button:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 

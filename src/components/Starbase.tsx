@@ -155,7 +155,7 @@ const Starbase = () => {
               cursor: "pointer",
             }}
           >
-            ⚡ COMPUTER CORE — FLEET COMMAND
+            ⚡ FLEET COMMAND CONSOLE
           </button>
         </div>
       )}
@@ -256,10 +256,10 @@ const Starbase = () => {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
               <div>
                 <p style={{ color: "#ff9900", fontSize: "0.6rem", letterSpacing: "3px", margin: "0 0 0.25rem", textTransform: "uppercase" }}>
-                  Starbase Machida — Computer Core
+                  Starbase Machida — Command Authority
                 </p>
                 <h2 style={{ color: "#fff", fontSize: "0.95rem", margin: 0, letterSpacing: "2px" }}>
-                  FLEET COMMAND
+                  FLEET COMMAND CONSOLE
                 </h2>
               </div>
               <button

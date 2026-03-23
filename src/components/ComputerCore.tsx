@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -177,6 +177,8 @@ export default function ComputerCore() {
   ]);
 
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [buttonActive, setButtonActive] = useState(false);
+  const inactivityRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const auth = getAuth();
@@ -189,6 +191,27 @@ export default function ComputerCore() {
       }
     });
   }, []);
+
+  // Auto-hide: show on any user activity, fade after 2.5s of inactivity
+  useEffect(() => {
+    const wakeUp = () => {
+      setButtonActive(true);
+      if (inactivityRef.current) clearTimeout(inactivityRef.current);
+      inactivityRef.current = setTimeout(() => {
+        // Stay active if panel is open
+        setButtonActive((prev) => (open ? prev : false));
+      }, 2500);
+    };
+    window.addEventListener("mousemove", wakeUp, { passive: true });
+    window.addEventListener("touchstart", wakeUp, { passive: true });
+    window.addEventListener("scroll", wakeUp, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", wakeUp);
+      window.removeEventListener("touchstart", wakeUp);
+      window.removeEventListener("scroll", wakeUp);
+      if (inactivityRef.current) clearTimeout(inactivityRef.current);
+    };
+  }, [open]);
 
   const defaultShip = useMemo(() => {
     return localStorage.getItem("currentShip") || "starbase";
@@ -232,8 +255,17 @@ export default function ComputerCore() {
 
   return (
     <>
-      <div className={styles.computerCoreButton}>
-        <button onClick={() => setOpen((v) => !v)}>
+      <div
+        className={`${styles.computerCoreButton}${buttonActive || open ? ` ${styles.active}` : ""}`}
+        onMouseEnter={() => setButtonActive(true)}
+        onMouseLeave={() => {
+          if (!open) {
+            if (inactivityRef.current) clearTimeout(inactivityRef.current);
+            inactivityRef.current = setTimeout(() => setButtonActive(false), 2500);
+          }
+        }}
+      >
+        <button onClick={() => { setOpen((v) => !v); setButtonActive(true); }}>
           {open ? "Close Computer" : "Computer Core"}
         </button>
       </div>
