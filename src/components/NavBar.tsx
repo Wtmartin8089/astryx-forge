@@ -1,8 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
+import { useActiveCharacter } from "../context/ActiveCharacterContext";
 import "../assets/lcars.css";
 
 const NavBar = () => {
   const location = useLocation();
+  const { userCharacters, activeChar, activeCharId, setActiveCharId } = useActiveCharacter();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -76,6 +78,68 @@ const NavBar = () => {
       >
         + Campaign
       </Link>
+
+      {/* Active Character selector */}
+      {userCharacters.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            backgroundColor: "#00000018",
+            border: "1px solid #00000030",
+            borderRadius: "20px",
+            padding: "0.25rem 0.6rem 0.25rem 0.75rem",
+          }}
+        >
+          <span
+            style={{
+              color: "#00000070",
+              fontSize: "0.55rem",
+              letterSpacing: "1.5px",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Playing as
+          </span>
+          {userCharacters.length === 1 ? (
+            <span
+              style={{
+                color: "#000",
+                fontSize: "0.7rem",
+                fontWeight: "bold",
+                letterSpacing: "0.5px",
+              }}
+            >
+              {activeChar?.name ?? "—"}
+            </span>
+          ) : (
+            <select
+              value={activeCharId ?? ""}
+              onChange={(e) => setActiveCharId(e.target.value)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#000",
+                cursor: "pointer",
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: "0.7rem",
+                fontWeight: "bold",
+                letterSpacing: "0.5px",
+                outline: "none",
+                padding: 0,
+              }}
+            >
+              {userCharacters.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}{c.rank ? ` (${c.rank})` : ""}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
     </nav>
   );
 };

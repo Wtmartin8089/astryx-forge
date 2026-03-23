@@ -38,6 +38,7 @@ import ArticlesOfFederation from "./components/ArticlesOfFederation";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
+import { ActiveCharacterProvider } from "./context/ActiveCharacterContext";
 
 const auth = getAuth();
 
@@ -72,7 +73,7 @@ function App() {
   }
 
   return (
-    <>
+    <ActiveCharacterProvider>
       {currentUser && <NavBar />}
       {currentUser && <ComputerCore />}
       <Routes>
@@ -112,7 +113,7 @@ function App() {
         <Route path="/reference/articles-of-federation" element={<ArticlesOfFederation />} />
         <Route path="/auth" element={<AuthPanel />} />
       </Routes>
-    </>
+    </ActiveCharacterProvider>
   );
 }
 

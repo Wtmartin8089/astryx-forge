@@ -1,8 +1,7 @@
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, onSnapshot, query } from "firebase/firestore";
-import { storage, db } from "../firebase/firebaseConfig";
+import { storage } from "../firebase/firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { FORUM_CATEGORIES, type ForumCategoryId } from "../data/forumCategories";
 import { subscribeToShips } from "../utils/shipsFirestore";
@@ -20,6 +19,7 @@ import {
 } from "../utils/forumFirestore";
 import { isAdmin } from "../utils/adminAuth";
 import { getCampaignStardate } from "../utils/campaignStardate";
+import { useActiveCharacter } from "../context/ActiveCharacterContext";
 
 /* ── Log template helpers ── */
 function resolveLogTitle(role: string | null | undefined, category: ForumCategoryId | null): string {
@@ -110,20 +110,10 @@ const Forum: React.FC = () => {
     return auth.onAuthStateChanged((u) => setUser(u));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Resolve user's crew character name + role ── */
-  const [allCrew, setAllCrew] = useState<Record<string, { name: string; ownerId?: string | null; role?: string; rank?: string }>>({});
-  useEffect(() => {
-    const q = query(collection(db, "crew"));
-    return onSnapshot(q, (snap) => {
-      const result: Record<string, { name: string; ownerId?: string | null; role?: string; rank?: string }> = {};
-      snap.docs.forEach((d) => { result[d.id] = d.data() as any; });
-      setAllCrew(result);
-    });
-  }, []);
-
-  const userCrewEntry = user ? Object.values(allCrew).find((m) => m.ownerId === user.uid) : null;
-  const userCharacterName = userCrewEntry?.name ?? null;
-  const userCrewRole = userCrewEntry?.role || userCrewEntry?.rank || null;
+  /* ── Active character from context (multi-character support) ── */
+  const { activeChar } = useActiveCharacter();
+  const userCharacterName = activeChar?.name ?? null;
+  const userCrewRole = activeChar?.role || activeChar?.rank || null;
 
   const userWithName = user
     ? { uid: user.uid, email: user.email, displayName: userCharacterName }
@@ -531,6 +521,31 @@ const Forum: React.FC = () => {
                 </p>
               </div>
 
+              {/* Posting identity */}
+              <div style={{
+                backgroundColor: "#0a0f1a",
+                border: "1px solid #6699cc20",
+                borderLeft: "3px solid #6699cc",
+                borderRadius: "0 4px 4px 0",
+                padding: "0.4rem 0.75rem",
+                marginTop: "0.75rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}>
+                <span style={{ color: "#6699cc60", fontSize: "0.55rem", letterSpacing: "2px", textTransform: "uppercase" }}>
+                  Posting as
+                </span>
+                <span style={{ color: "#6699cc", fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "0.5px" }}>
+                  {userCharacterName ?? "(no active character)"}
+                </span>
+                {userCrewRole && (
+                  <span style={{ color: "#6699cc50", fontSize: "0.6rem" }}>
+                    · {userCrewRole}
+                  </span>
+                )}
+              </div>
+
               <input
                 type="text"
                 placeholder="Entry subject..."
@@ -865,6 +880,30 @@ const Forum: React.FC = () => {
 
           {/* Reply form */}
           <form onSubmit={handleAddReply} style={{ ...styles.formCard, marginTop: "1rem" }}>
+            {/* Posting identity */}
+            <div style={{
+              backgroundColor: "#0a0f1a",
+              border: "1px solid #6699cc20",
+              borderLeft: "3px solid #6699cc",
+              borderRadius: "0 4px 4px 0",
+              padding: "0.4rem 0.75rem",
+              marginBottom: "0.6rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}>
+              <span style={{ color: "#6699cc60", fontSize: "0.55rem", letterSpacing: "2px", textTransform: "uppercase" }}>
+                Posting as
+              </span>
+              <span style={{ color: "#6699cc", fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "0.5px" }}>
+                {userCharacterName ?? "(no active character)"}
+              </span>
+              {userCrewRole && (
+                <span style={{ color: "#6699cc50", fontSize: "0.6rem" }}>
+                  · {userCrewRole}
+                </span>
+              )}
+            </div>
             <textarea
               placeholder="Append to the record..."
               value={replyText}
