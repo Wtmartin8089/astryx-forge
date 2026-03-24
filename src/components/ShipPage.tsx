@@ -1422,6 +1422,64 @@ const ShipPage = () => {
           );
         })()}
 
+        {/* Fleet Command Directives — from forum collection, type: "command" */}
+        {(() => {
+          const directiveThreads = forumThreads.filter((t) => (t as any).type === "command");
+          if (directiveThreads.length === 0) return null;
+          return (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                <span style={{
+                  backgroundColor: "#cc990020",
+                  border: "1px solid #cc9900",
+                  borderRadius: "20px",
+                  color: "#cc9900",
+                  fontSize: "0.65rem",
+                  fontFamily: "'Orbitron', sans-serif",
+                  letterSpacing: "2px",
+                  padding: "0.2rem 0.75rem",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                }}>
+                  Fleet Directives
+                </span>
+                <div style={{ flex: 1, height: "1px", backgroundColor: "#cc990030" }} />
+              </div>
+              {directiveThreads.map((t) => {
+                const tx = t as any;
+                return (
+                  <div key={t.id} style={{
+                    backgroundColor: "#1a1500",
+                    border: "1px solid #cc990040",
+                    borderLeft: "4px solid #cc9900",
+                    borderRadius: "4px",
+                    padding: "1rem 1.25rem",
+                    marginBottom: "0.75rem",
+                    fontFamily: "'Orbitron', sans-serif",
+                  }}>
+                    {/* Header */}
+                    <div style={{ color: "#cc9900", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.25rem", fontWeight: "bold" }}>
+                      Fleet Directive — {shipData?.name || "Starfleet"}
+                    </div>
+                    <div style={{ color: "#888", fontSize: "0.65rem", letterSpacing: "1px", marginBottom: "0.6rem" }}>
+                      Issued by {t.author}{tx.rank ? ` — ${tx.rank}` : ""}
+                    </div>
+                    {/* Subject */}
+                    <div style={{ color: "#F5B942", fontSize: "0.82rem", fontWeight: "bold", letterSpacing: "1px", marginBottom: "0.6rem" }}>
+                      SUBJECT: {t.title}
+                    </div>
+                    {/* Body */}
+                    <p style={{ color: "#C8D8F0", margin: 0, fontSize: "0.78rem", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                      {t.content}
+                    </p>
+                  </div>
+                );
+              })}
+              <div style={{ height: "1px", backgroundColor: "#cc990020", marginBottom: "1.25rem" }} />
+            </div>
+          );
+        })()}
+
         {/* Mission Briefings — from forum collection, category: "mission" */}
         {(() => {
           const missionThreads = forumThreads.filter((t) => t.category === "mission");
