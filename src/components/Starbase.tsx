@@ -148,6 +148,9 @@ const Starbase = () => {
         rank: userRank,
         source: "starbase",
         type: "command",
+        isDirective: true,
+        level: "fleet",
+        pinned: true,
       } as any);
       setCmdTitle("");
       setCmdMessage("");

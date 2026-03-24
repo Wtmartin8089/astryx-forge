@@ -10,7 +10,9 @@ import {
   subscribeToThreads,
   subscribeToReplies,
   subscribeToThreadCounts,
+  subscribeToChildDirectives,
   createThread,
+  createShipDirective,
   addReply,
   editReply,
   deleteReply,
@@ -147,6 +149,13 @@ const Forum: React.FC = () => {
   const [editingText, setEditingText] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  /* ── Child directive state (fleet directive thread view) ── */
+  const [childDirectives, setChildDirectives] = useState<ForumThread[]>([]);
+  const [childReplies, setChildReplies] = useState<Record<string, ForumReply[]>>({});
+  const [showShipDirectiveForm, setShowShipDirectiveForm] = useState(false);
+  const [shipDirTitle, setShipDirTitle] = useState("");
+  const [shipDirContent, setShipDirContent] = useState("");
+
   const handleEditReply = async (reply: ForumReply) => {
     if (!selectedThread || !editingText.trim()) return;
     await editReply(selectedThread.id, reply.id, editingText.trim());
@@ -183,12 +192,40 @@ const Forum: React.FC = () => {
     return subscribeToReplies(selectedThread.id, setReplies);
   }, [selectedThread]);
 
+  /* ── Subscribe to child ship directives when viewing a fleet directive ── */
+  useEffect(() => {
+    if (!selectedThread?.isDirective || selectedThread.level !== "fleet") {
+      setChildDirectives([]);
+      return;
+    }
+    return subscribeToChildDirectives(selectedThread.id, setChildDirectives);
+  }, [selectedThread]);
+
+  /* ── Subscribe to each child directive's replies ── */
+  useEffect(() => {
+    if (!childDirectives.length) {
+      setChildReplies({});
+      return;
+    }
+    const unsubs = childDirectives.map((cd) =>
+      subscribeToReplies(cd.id, (r) =>
+        setChildReplies((prev) => ({ ...prev, [cd.id]: r }))
+      )
+    );
+    return () => unsubs.forEach((u) => u());
+  }, [childDirectives]);
+
 
   /* ── Navigation helpers ── */
   const goBack = useCallback(() => {
     if (selectedThread) {
       setSelectedThread(null);
       setReplies([]);
+      setChildDirectives([]);
+      setChildReplies({});
+      setShowShipDirectiveForm(false);
+      setShipDirTitle("");
+      setShipDirContent("");
     } else if (selectedCategory) {
       setSelectedCategory(null);
       setThreads([]);
@@ -205,6 +242,9 @@ const Forum: React.FC = () => {
 
   const isLogCategory = false;
   const userIsCommand = COMMAND_ROLES.some((cr) => (userCrewRole || "").toLowerCase().includes(cr));
+  const CAPTAIN_ROLES = ["captain", "commanding officer", "acting captain", "co"];
+  const userIsCaptain = CAPTAIN_ROLES.some((cr) => (userCrewRole || "").toLowerCase().includes(cr)) || isAdmin(user?.uid ?? "");
+  const userShipId = (activeChar as any)?.shipId ?? null;
 
   /* ── Create thread ── */
   const handleCreateThread = async (e: React.FormEvent) => {
@@ -229,6 +269,29 @@ const Forum: React.FC = () => {
     setLoading(false);
   };
 
+  /* ── Issue ship directive (captain response to fleet directive) ── */
+  const handleIssueShipDirective = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shipDirTitle.trim() || !shipDirContent.trim() || !userWithName || !selectedThread || !userShipId) return;
+    setLoading(true);
+    try {
+      await createShipDirective(
+        userShipId,
+        selectedThread.id,
+        shipDirTitle.trim(),
+        shipDirContent.trim(),
+        userWithName,
+        userCrewRole ?? undefined,
+      );
+      setShipDirTitle("");
+      setShipDirContent("");
+      setShowShipDirectiveForm(false);
+    } catch (err) {
+      console.error("Failed to issue ship directive:", err);
+    }
+    setLoading(false);
+  };
+
   /* ── Add reply (with Computer Core interception) ── */
   const handleAddReply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,7 +306,7 @@ const Forum: React.FC = () => {
       }
 
       // Post the player's message first
-      await addReply(selectedThread.id, replyText.trim(), attachmentUrl, userWithName);
+      await addReply(selectedThread.id, replyText.trim(), attachmentUrl, userWithName, { rank: userCrewRole ?? undefined });
 
       // Check for Computer Core command
       if (replyText.trim().toLowerCase().startsWith("computer,")) {
@@ -743,45 +806,175 @@ const Forum: React.FC = () => {
         }
         return (
         <div>
-          {/* Directive banner */}
+          {/* Directive banner — fleet or ship level */}
           {selectedThread.type === "command" && (() => {
-            const isFleet = selectedThread.source === "starbase";
+            const isFleet = selectedThread.level === "fleet" || selectedThread.source === "starbase";
             const bannerColor = isFleet ? "#ff9900" : "#9933cc";
             const bannerBg = isFleet ? "#1a1000" : "#1a0d26";
-            const bannerLabel = isFleet ? "Fleet Directive — Starbase Machida" : "Bridge Directive";
+            const bannerLabel = isFleet ? "Fleet Directive — Starbase Machida" : "Ship Directive";
             const textColor = isFleet ? "#ffcc88" : "#cc99ff";
             return (
               <div style={{
                 backgroundColor: bannerBg,
                 border: `1px solid ${bannerColor}60`,
-                borderLeft: `3px solid ${bannerColor}`,
+                borderLeft: `4px solid ${bannerColor}`,
                 borderRadius: "4px",
-                padding: "0.75rem 1rem",
-                marginBottom: "1rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.75rem",
+                padding: "1rem 1.25rem",
+                marginBottom: "1.25rem",
               }}>
-                <span style={{ color: bannerColor, fontSize: "1rem" }}>⚡</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, color: bannerColor, fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", fontWeight: "bold" }}>
-                    {bannerLabel}
-                  </p>
-                  <p style={{ margin: "0.15rem 0 0.6rem", color: textColor, fontSize: "0.75rem" }}>
-                    Issued by {selectedThread.author}{selectedThread.rank ? ` — ${selectedThread.rank}` : ""}
-                  </p>
-                  <p style={{ margin: "0 0 0.4rem", color: bannerColor, fontSize: "0.78rem", fontWeight: "bold", letterSpacing: "1px" }}>
-                    SUBJECT: {selectedThread.title}
-                  </p>
-                  {selectedThread.content && (
-                    <p style={{ margin: 0, color: "#C8D8F0", fontSize: "0.75rem", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-                      {selectedThread.content}
-                    </p>
-                  )}
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
+                  <span style={{ color: bannerColor, fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", fontWeight: "bold" }}>
+                    ⚡ {bannerLabel}
+                  </span>
                 </div>
+                <p style={{ margin: "0 0 0.5rem", color: textColor, fontSize: "0.72rem" }}>
+                  Issued by {selectedThread.author}{selectedThread.rank ? ` — ${selectedThread.rank}` : ""}
+                </p>
+                <p style={{ margin: "0 0 0.5rem", color: bannerColor, fontSize: "0.82rem", fontWeight: "bold", letterSpacing: "1px" }}>
+                  SUBJECT: {selectedThread.title}
+                </p>
+                {selectedThread.content && (
+                  <p style={{ margin: 0, color: "#C8D8F0", fontSize: "0.78rem", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                    {selectedThread.content}
+                  </p>
+                )}
               </div>
             );
           })()}
+
+          {/* Fleet directive hierarchy — child ship directives + their crew replies */}
+          {selectedThread.isDirective && selectedThread.level === "fleet" && (
+            <div style={{ marginBottom: "1rem" }}>
+              {/* Divider */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                <span style={{ color: "#9933cc", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                  Ship Orders
+                </span>
+                <div style={{ flex: 1, height: "1px", backgroundColor: "#9933cc30" }} />
+              </div>
+
+              {childDirectives.length === 0 && (
+                <p style={{ color: "#444", fontSize: "0.72rem", fontStyle: "italic", marginBottom: "0.75rem" }}>
+                  Awaiting ship acknowledgements...
+                </p>
+              )}
+
+              {childDirectives.map((cd) => {
+                const cdReplies = childReplies[cd.id] ?? [];
+                return (
+                  <div key={cd.id} style={{
+                    backgroundColor: "#110d1a",
+                    border: "1px solid #9933cc40",
+                    borderLeft: "3px solid #9933cc",
+                    borderRadius: "4px",
+                    padding: "0.85rem 1rem",
+                    marginBottom: "0.75rem",
+                  }}>
+                    {/* Ship directive header */}
+                    <div style={{ marginBottom: "0.35rem" }}>
+                      <span style={{ color: "#9933cc", fontSize: "0.58rem", letterSpacing: "2px", textTransform: "uppercase", fontWeight: "bold" }}>
+                        ⚡ Ship Directive
+                      </span>
+                    </div>
+                    <p style={{ margin: "0 0 0.35rem", color: "#cc99ff", fontSize: "0.68rem" }}>
+                      {cd.author}{cd.rank ? ` — ${cd.rank}` : ""}
+                    </p>
+                    <p style={{ margin: "0 0 0.4rem", color: "#dda0ff", fontSize: "0.78rem", fontWeight: "bold" }}>
+                      SUBJECT: {cd.title}
+                    </p>
+                    {cd.content && (
+                      <p style={{ margin: "0 0 0.6rem", color: "#C8D8F0", fontSize: "0.75rem", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                        {cd.content}
+                      </p>
+                    )}
+                    {/* Crew replies under this ship directive */}
+                    {cdReplies.length > 0 && (
+                      <div style={{ borderTop: "1px solid #9933cc20", paddingTop: "0.6rem", marginTop: "0.5rem" }}>
+                        {cdReplies.map((r) => (
+                          <div key={r.id} style={{
+                            backgroundColor: "#0d0d14",
+                            border: "1px solid #33336640",
+                            borderRadius: "3px",
+                            padding: "0.5rem 0.75rem",
+                            marginBottom: "0.4rem",
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
+                              <span style={{ color: "#6699cc", fontSize: "0.72rem", fontWeight: "bold" }}>
+                                {r.author}{r.rank ? <span style={{ color: "#555", fontWeight: "normal" }}> · {r.rank}</span> : ""}
+                              </span>
+                              <span style={{ color: "#444", fontSize: "0.65rem" }}>{formatTime(r.createdAt)}</span>
+                            </div>
+                            <p style={{ margin: 0, color: "#bbb", fontSize: "0.75rem", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                              {r.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Issue Ship Directive button (captains only) */}
+              {userIsCaptain && userShipId && (
+                <div style={{ marginBottom: "1rem" }}>
+                  {!showShipDirectiveForm ? (
+                    <button
+                      onClick={() => setShowShipDirectiveForm(true)}
+                      style={{
+                        backgroundColor: "#9933cc20",
+                        border: "1px solid #9933cc",
+                        borderRadius: "20px",
+                        color: "#9933cc",
+                        fontFamily: "'Orbitron', sans-serif",
+                        fontSize: "0.65rem",
+                        letterSpacing: "1.5px",
+                        padding: "0.4rem 1rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ⚡ ISSUE SHIP DIRECTIVE
+                    </button>
+                  ) : (
+                    <form onSubmit={handleIssueShipDirective} style={{ ...styles.formCard, borderColor: "#9933cc40" }}>
+                      <div style={{ color: "#9933cc", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                        Issue Ship Directive
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Directive subject..."
+                        value={shipDirTitle}
+                        onChange={(e) => setShipDirTitle(e.target.value)}
+                        style={{ ...styles.input, marginBottom: "0.5rem" }}
+                      />
+                      <textarea
+                        placeholder="Orders to your crew..."
+                        value={shipDirContent}
+                        onChange={(e) => setShipDirContent(e.target.value)}
+                        style={{ ...styles.input, minHeight: "80px", resize: "vertical" }}
+                      />
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <button type="submit" disabled={loading} style={{ ...styles.actionBtn, backgroundColor: "#9933cc" }}>
+                          {loading ? "TRANSMITTING..." : "TRANSMIT"}
+                        </button>
+                        <button type="button" onClick={() => setShowShipDirectiveForm(false)} style={{ ...styles.actionBtn, background: "#333", color: "#ccc" }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                <span style={{ color: "#ff990060", fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                  Fleet Responses
+                </span>
+                <div style={{ flex: 1, height: "1px", backgroundColor: "#ff990020" }} />
+              </div>
+            </div>
+          )}
+
           {replies.map((reply) => {
             const isComputerReply = reply.author === "STARFLEET COMPUTER";
             return isComputerReply ? (
@@ -797,7 +990,12 @@ const Forum: React.FC = () => {
             ) : (
               <div key={reply.id} style={styles.replyCard}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", fontSize: "0.8rem" }}>
-                  <span style={{ color: "#6699cc" }}>{reply.author}</span>
+                  <div>
+                    <span style={{ color: "#6699cc" }}>{reply.author}</span>
+                    {reply.rank && (
+                      <span style={{ color: "#555", fontSize: "0.7rem", marginLeft: "0.4rem" }}>· {reply.rank}</span>
+                    )}
+                  </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                     <span style={{ color: "#555" }}>{formatTime(reply.createdAt)}</span>
                     {(user && (reply.authorUid === user.uid || isAdmin(user.uid))) && editingReplyId !== reply.id && (

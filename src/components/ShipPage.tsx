@@ -203,6 +203,9 @@ const ShipPage = () => {
         rank: userRank,
         source: "bridge",
         type: "command",
+        isDirective: true,
+        level: "ship",
+        pinned: true,
       } as any);
       setCmdTitle("");
       setCmdMessage("");

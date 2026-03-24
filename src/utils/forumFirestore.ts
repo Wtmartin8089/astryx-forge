@@ -43,6 +43,10 @@ export interface ForumThread {
   source?: string;
   classification?: "open" | "restricted" | "classified";
   relatedLocation?: string;
+  // Directive hierarchy
+  isDirective?: boolean;
+  level?: "fleet" | "ship";
+  parentDirectiveId?: string;
 }
 
 export interface ForumReply {
@@ -50,6 +54,7 @@ export interface ForumReply {
   content: string;
   author: string;
   authorUid: string;
+  rank?: string;
   attachmentUrl: string;
   createdAt: Timestamp | null;
 }
@@ -160,6 +165,7 @@ export async function addReply(
   content: string,
   attachmentUrl: string,
   user: { email: string | null; uid: string; displayName?: string | null },
+  options?: { rank?: string },
 ): Promise<void> {
   const authorName = user.displayName || user.email || "Anonymous";
 
@@ -169,6 +175,7 @@ export async function addReply(
     authorUid: user.uid,
     attachmentUrl,
     createdAt: serverTimestamp(),
+    ...(options?.rank ? { rank: options.rank } : {}),
   });
 
   await updateDoc(doc(db, COLLECTION, threadId), {
@@ -197,6 +204,61 @@ export async function deleteReply(
   await updateDoc(doc(db, COLLECTION, threadId), {
     replyCount: increment(-1),
   });
+}
+
+// ── Directive hierarchy ───────────────────────────────────────────────────────
+
+/** Subscribe to all ship-level directives that are children of a fleet directive. */
+export function subscribeToChildDirectives(
+  parentDirectiveId: string,
+  callback: (threads: ForumThread[]) => void,
+): () => void {
+  const q = query(
+    collection(db, COLLECTION),
+    where("parentDirectiveId", "==", parentDirectiveId),
+  );
+  return onSnapshot(q, (snapshot) => {
+    const threads = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as ForumThread);
+    threads.sort((a, b) => {
+      const aTime = a.createdAt?.toDate?.()?.getTime() ?? 0;
+      const bTime = b.createdAt?.toDate?.()?.getTime() ?? 0;
+      return aTime - bTime;
+    });
+    callback(threads);
+  });
+}
+
+/** Create a ship-level directive as a child of a fleet directive. */
+export async function createShipDirective(
+  boardId: string,
+  parentDirectiveId: string,
+  title: string,
+  content: string,
+  user: { email: string | null; uid: string; displayName?: string | null },
+  rank?: string,
+): Promise<string> {
+  const now = serverTimestamp();
+  const authorName = user.displayName || user.email || "Anonymous";
+  const threadRef = await addDoc(collection(db, COLLECTION), {
+    title,
+    shipId: boardId,
+    category: "bridge" as ForumCategoryId,
+    author: authorName,
+    authorUid: user.uid,
+    content,
+    createdAt: now,
+    lastReplyAt: now,
+    lastActivity: now,
+    replyCount: 0,
+    pinned: true,
+    type: "command",
+    source: "bridge",
+    isDirective: true,
+    level: "ship",
+    parentDirectiveId,
+    ...(rank ? { rank } : {}),
+  });
+  return threadRef.id;
 }
 
 // ── Commendation announcement ─────────────────────────────────────────────────
