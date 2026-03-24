@@ -763,13 +763,21 @@ const Forum: React.FC = () => {
                 gap: "0.75rem",
               }}>
                 <span style={{ color: bannerColor, fontSize: "1rem" }}>⚡</span>
-                <div>
+                <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, color: bannerColor, fontSize: "0.6rem", letterSpacing: "2px", textTransform: "uppercase", fontWeight: "bold" }}>
                     {bannerLabel}
                   </p>
-                  <p style={{ margin: "0.15rem 0 0", color: textColor, fontSize: "0.8rem" }}>
-                    Issued by {selectedThread.author}{selectedThread.rank ? ` · ${selectedThread.rank}` : ""}
+                  <p style={{ margin: "0.15rem 0 0.6rem", color: textColor, fontSize: "0.75rem" }}>
+                    Issued by {selectedThread.author}{selectedThread.rank ? ` — ${selectedThread.rank}` : ""}
                   </p>
+                  <p style={{ margin: "0 0 0.4rem", color: bannerColor, fontSize: "0.78rem", fontWeight: "bold", letterSpacing: "1px" }}>
+                    SUBJECT: {selectedThread.title}
+                  </p>
+                  {selectedThread.content && (
+                    <p style={{ margin: 0, color: "#C8D8F0", fontSize: "0.75rem", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                      {selectedThread.content}
+                    </p>
+                  )}
                 </div>
               </div>
             );
