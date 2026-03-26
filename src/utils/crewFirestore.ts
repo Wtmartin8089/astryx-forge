@@ -110,6 +110,19 @@ export async function unclaimCharacter(crewId: string): Promise<void> {
   await updateDoc(doc(db, CREW_COL, crewId), { ownerId: null, ownerEmail: null });
 }
 
+/**
+ * Record the current time as lastPost on the crew member owned by this user.
+ * Called whenever the user posts a forum reply, to track activity for inactivity recall.
+ */
+export async function updateLastPost(ownerUid: string): Promise<void> {
+  const q = query(collection(db, CREW_COL), where("ownerId", "==", ownerUid));
+  const snapshot = await getDocs(q);
+  const updates = snapshot.docs.map((d) =>
+    updateDoc(d.ref, { lastPost: serverTimestamp() }),
+  );
+  await Promise.all(updates);
+}
+
 /** Admin: clear ownership from all crew owned by a specific user. */
 export async function unclaimAllByUser(userId: string): Promise<number> {
   const q = query(collection(db, CREW_COL), where("ownerId", "==", userId));

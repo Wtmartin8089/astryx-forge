@@ -21,6 +21,7 @@ import {
 } from "../utils/forumFirestore";
 import { isAdmin } from "../utils/adminAuth";
 import { getCampaignStardate } from "../utils/campaignStardate";
+import { updateLastPost } from "../utils/crewFirestore";
 import { useActiveCharacter } from "../context/ActiveCharacterContext";
 
 /* ── Log template helpers ── */
@@ -307,6 +308,9 @@ const Forum: React.FC = () => {
 
       // Post the player's message first
       await addReply(selectedThread.id, replyText.trim(), attachmentUrl, userWithName, { rank: userCrewRole ?? undefined });
+
+      // Track activity for inactivity recall system
+      if (user) updateLastPost(user.uid).catch(() => {});
 
       // Check for Computer Core command
       if (replyText.trim().toLowerCase().startsWith("computer,")) {

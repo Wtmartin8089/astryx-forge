@@ -7,6 +7,7 @@ import { getAuth } from "firebase/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { createForumThread } from "../server/forum/forumService";
+import { notifyDirectiveCrew } from "../../lib/directiveEmails";
 import type { ShipData, CrewMember } from "../types/fleet";
 import "../assets/lcars.css";
 
@@ -152,6 +153,18 @@ const Starbase = () => {
         level: "fleet",
         pinned: true,
       } as any);
+
+      // Notify crew on the target ship — fire and forget
+      const shipName = ships[cmdShip]?.name ?? cmdShip;
+      notifyDirectiveCrew({
+        shipId: cmdShip,
+        shipName,
+        directiveTitle: cmdTitle.trim(),
+        directiveContent: cmdMessage.trim(),
+        authorName: userCrewMember?.name || currentUser?.email || "Starbase Command",
+        authorRank: userRank,
+      }).catch((err) => console.error("[directive-notify] Email failed:", err));
+
       setCmdTitle("");
       setCmdMessage("");
       setShowConsole(false);
