@@ -14,14 +14,14 @@ const worlds: { title: string; desc: string; status: Status; slug: string; btnTe
   {
     title: "Midnight Dominion",
     desc: "Ancient vampire houses wage secret wars for control of the night while humanity sleeps.",
-    status: "in-development",
+    status: "planned",
     slug: "midnight-dominion",
     btnText: "Enter the Dominion",
   },
   {
     title: "Iron Constellations",
     desc: "Rival star empires clash in massive space battles as fleets struggle for control of the galaxy.",
-    status: "planned",
+    status: "in-development",
     slug: "iron-constellations",
     btnText: "Enter the Warzone",
   },

@@ -13,13 +13,13 @@ const worlds: { title: string; hook: string; status: WorldStatus; slug: string }
   {
     title: "Iron Constellations",
     hook: "Wage war across a fractured galaxy.",
-    status: "planned",
+    status: "in-development",
     slug: "iron-constellations",
   },
   {
     title: "Midnight Dominion",
     hook: "Power is taken in the shadows.",
-    status: "in-development",
+    status: "planned",
     slug: "midnight-dominion",
   },
   {
