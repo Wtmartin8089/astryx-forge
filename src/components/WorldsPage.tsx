@@ -79,7 +79,7 @@ export default function WorldsPage() {
             <h2 style={styles.cardTitle}>{w.title}</h2>
             <p style={styles.cardDesc}>{w.desc}</p>
             {w.status === "flagship" ? (
-              <Link to="/" style={styles.cardLink}>
+              <Link to="/worlds/delta-frontier-command" style={styles.cardLink}>
                 {w.btnText} →
               </Link>
             ) : (

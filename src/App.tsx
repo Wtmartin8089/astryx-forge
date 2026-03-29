@@ -36,6 +36,7 @@ import CrewPage from "./components/CrewPage";
 import ReferencePage from "./components/ReferencePage";
 import ArticlesOfFederation from "./components/ArticlesOfFederation";
 import HolographicSystems from "./components/HolographicSystems";
+import DeltaFrontierLanding from "./components/DeltaFrontierLanding";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
@@ -61,7 +62,7 @@ function App() {
   }
 
   // Public paths that don't require authentication
-  const publicPaths = ["/", "/worlds", "/auth"];
+  const publicPaths = ["/", "/worlds", "/worlds/delta-frontier-command", "/auth"];
 
   // Only allow unauthenticated users on public paths
   if (!currentUser && !publicPaths.includes(location.pathname)) {
@@ -80,6 +81,7 @@ function App() {
       <Routes>
         <Route path="/" element={currentUser ? <StarMap /> : <LandingPage />} />
         <Route path="/worlds" element={<WorldsPage />} />
+        <Route path="/worlds/delta-frontier-command" element={<DeltaFrontierLanding />} />
         <Route path="/starbase" element={<StarbasePage />} />
         <Route path="/forum" element={<Forum />} />
         <Route path="/stardate" element={<StardateCalculator />} />

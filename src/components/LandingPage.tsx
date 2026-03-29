@@ -140,7 +140,7 @@ export default function LandingPage() {
             return (
               <Link
                 key={w.slug}
-                to="/worlds"
+                to={isFlagship ? "/worlds/delta-frontier-command" : "/worlds"}
                 className={`world-card${isFlagship ? " flagship" : ""}`}
                 style={{
                   ...styles.card,
