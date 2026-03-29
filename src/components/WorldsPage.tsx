@@ -57,39 +57,36 @@ export default function WorldsPage() {
       </section>
 
       <section style={styles.grid}>
-        {worlds.map((w) => (
-          <div
-            key={w.slug}
-            style={{
-              ...styles.card,
-              ...(w.status === "flagship" ? styles.cardFlagship : {}),
-            }}
-          >
-            <div style={styles.cardTop}>
-              <span
-                style={{
-                  ...styles.badge,
-                  color: statusColor[w.status],
-                  borderColor: statusColor[w.status],
-                }}
-              >
-                {statusLabel[w.status]}
-              </span>
-            </div>
-            <h2 style={styles.cardTitle}>{w.title}</h2>
-            <p style={styles.cardDesc}>{w.desc}</p>
-            {w.slug === "delta-frontier-command" || w.slug === "iron-constellations" ? (
-              <Link
-                to={`/worlds/${w.slug}`}
-                style={w.status === "flagship" ? styles.cardLink : styles.cardLinkAlt}
-              >
+        {worlds.map((w) => {
+          const hasLanding = w.slug === "delta-frontier-command" || w.slug === "iron-constellations";
+          const cardStyle = {
+            ...styles.card,
+            ...(w.status === "flagship" ? styles.cardFlagship : {}),
+            ...(hasLanding ? styles.cardClickable : {}),
+          };
+          const inner = (
+            <>
+              <div style={styles.cardTop}>
+                <span style={{ ...styles.badge, color: statusColor[w.status], borderColor: statusColor[w.status] }}>
+                  {statusLabel[w.status]}
+                </span>
+              </div>
+              <h2 style={styles.cardTitle}>{w.title}</h2>
+              <p style={styles.cardDesc}>{w.desc}</p>
+              <span style={hasLanding
+                ? (w.status === "flagship" ? styles.cardLink : styles.cardLinkAlt)
+                : styles.cardLinkDisabled
+              }>
                 {w.btnText} →
-              </Link>
-            ) : (
-              <span style={styles.cardLinkDisabled}>{w.btnText} →</span>
-            )}
-          </div>
-        ))}
+              </span>
+            </>
+          );
+          return hasLanding ? (
+            <Link key={w.slug} to={`/worlds/${w.slug}`} style={cardStyle}>{inner}</Link>
+          ) : (
+            <div key={w.slug} style={cardStyle}>{inner}</div>
+          );
+        })}
       </section>
 
       <footer style={styles.footer}>
@@ -142,6 +139,11 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: "0.75rem",
+  },
+  cardClickable: {
+    textDecoration: "none",
+    cursor: "pointer",
+    transition: "border-color 0.2s, box-shadow 0.2s, transform 0.2s",
   },
   cardFlagship: {
     border: "1px solid #F5B942",
