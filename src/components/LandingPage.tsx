@@ -12,7 +12,7 @@ const worlds: { title: string; hook: string; status: WorldStatus; slug: string }
   },
   {
     title: "Iron Constellations",
-    hook: "Wage war across a fractured galaxy.",
+    hook: "The Sith rule a fractured galaxy. The Jedi are a myth.",
     status: "in-development",
     slug: "iron-constellations",
   },
@@ -140,7 +140,11 @@ export default function LandingPage() {
             return (
               <Link
                 key={w.slug}
-                to={isFlagship ? "/worlds/delta-frontier-command" : "/worlds"}
+                to={
+                  w.slug === "delta-frontier-command" ? "/worlds/delta-frontier-command" :
+                  w.slug === "iron-constellations"    ? "/worlds/iron-constellations" :
+                  "/worlds"
+                }
                 className={`world-card${isFlagship ? " flagship" : ""}`}
                 style={{
                   ...styles.card,

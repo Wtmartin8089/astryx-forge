@@ -20,7 +20,7 @@ const worlds: { title: string; desc: string; status: Status; slug: string; btnTe
   },
   {
     title: "Iron Constellations",
-    desc: "Rival star empires clash in massive space battles as fleets struggle for control of the galaxy.",
+    desc: "The Sith have consolidated power across a fractured galaxy. The Jedi are believed extinct — a legend used to frighten children. Choose your allegiance and survive.",
     status: "in-development",
     slug: "iron-constellations",
     btnText: "Enter the Warzone",
@@ -78,8 +78,11 @@ export default function WorldsPage() {
             </div>
             <h2 style={styles.cardTitle}>{w.title}</h2>
             <p style={styles.cardDesc}>{w.desc}</p>
-            {w.status === "flagship" ? (
-              <Link to="/worlds/delta-frontier-command" style={styles.cardLink}>
+            {w.slug === "delta-frontier-command" || w.slug === "iron-constellations" ? (
+              <Link
+                to={`/worlds/${w.slug}`}
+                style={w.status === "flagship" ? styles.cardLink : styles.cardLinkAlt}
+              >
                 {w.btnText} →
               </Link>
             ) : (
@@ -179,6 +182,16 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: "1.5px",
     textTransform: "uppercase",
     marginTop: "0.5rem",
+  },
+  cardLinkAlt: {
+    color: "#FF6A2B",
+    textDecoration: "none",
+    fontFamily: "Orbitron, sans-serif",
+    fontSize: "0.78rem",
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
+    marginTop: "0.5rem",
+    opacity: 0.7,
   },
   cardLinkDisabled: {
     color: "#3A5A80",
