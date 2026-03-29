@@ -24,11 +24,23 @@ const FEATURES = [
 function isLeapYear(y: number) {
   return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
 }
+// Project real-world timestamp into the RPG year (2376), keeping month/day/time identical
+const RPG_YEAR = 2376;
+
 function tngStardate(ts: number): string {
-  const d = new Date(ts);
+  const now = new Date(ts);
+  // Keep same month, day, hours, minutes, seconds — but in RPG_YEAR
+  const d = new Date(Date.UTC(
+    RPG_YEAR,
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    now.getUTCHours(),
+    now.getUTCMinutes(),
+    now.getUTCSeconds(),
+  ));
   const Y = d.getUTCFullYear();
   const startOfYear = Date.UTC(Y, 0, 1);
-  const doy = Math.floor((ts - startOfYear) / 86400000);
+  const doy = Math.floor((d.getTime() - startOfYear) / 86400000);
   const days = isLeapYear(Y) ? 366 : 365;
   const sec = d.getUTCHours() * 3600 + d.getUTCMinutes() * 60 + d.getUTCSeconds();
   const sd = 1000 * (Y - 2323) + 1000 * ((doy + sec / 86400) / days);
