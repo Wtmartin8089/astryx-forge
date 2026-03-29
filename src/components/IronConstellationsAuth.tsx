@@ -227,6 +227,14 @@ export default function IronConstellationsAuth() {
           style={{ background: `linear-gradient(90deg, transparent, ${cfg?.glowColor ?? "#1A3456"}40 50%, transparent)` }}
         />
 
+        {/* Dominion evaluation notice */}
+        {faction === "dominion" && (
+          <p className="font-lcars text-[0.56rem] tracking-[2px] uppercase text-center mb-3"
+             style={{ color: "#CC222255" }}>
+            Candidate record incomplete. Submit for evaluation.
+          </p>
+        )}
+
         {/* Form title */}
         <h1 className="font-lcars text-[1.05rem] font-bold tracking-[3px] uppercase text-center text-[#C8D8F0] mb-5">
           {isSignup ? "Establish Identity" : "Access System"}
@@ -236,7 +244,7 @@ export default function IronConstellationsAuth() {
           {/* Email */}
           <div className="mb-4">
             <label className="block font-lcars text-[0.6rem] tracking-[2px] uppercase text-[#3A5A80] mb-[0.45rem]">
-              Email
+              {faction === "dominion" ? "Designation" : "Email"}
             </label>
             <input
               className="ic-auth-input"
@@ -252,7 +260,7 @@ export default function IronConstellationsAuth() {
           {/* Password */}
           <div className="mb-4">
             <label className="block font-lcars text-[0.6rem] tracking-[2px] uppercase text-[#3A5A80] mb-[0.45rem]">
-              Password
+              {faction === "dominion" ? "Operational Role" : "Password"}
             </label>
             <div className="relative">
               <input
@@ -310,7 +318,9 @@ export default function IronConstellationsAuth() {
           )}
 
           <button type="submit" className="ic-submit-btn">
-            {isSignup ? "Establish Identity" : "Access System"}
+            {isSignup && faction === "dominion" ? "Submit for Evaluation"
+             : isSignup ? "Establish Identity"
+             : "Access System"}
           </button>
         </form>
 
