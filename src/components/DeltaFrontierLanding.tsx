@@ -20,6 +20,23 @@ const FEATURES = [
   "Exploration, diplomacy, and tactical command in the Delta Quadrant",
 ];
 
+// TNG/Okuda stardate — matches the RPG's StardateCalculator (TNG model, base year 2323)
+function isLeapYear(y: number) {
+  return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+}
+function tngStardate(ts: number): string {
+  const d = new Date(ts);
+  const Y = d.getUTCFullYear();
+  const startOfYear = Date.UTC(Y, 0, 1);
+  const doy = Math.floor((ts - startOfYear) / 86400000);
+  const days = isLeapYear(Y) ? 366 : 365;
+  const sec = d.getUTCHours() * 3600 + d.getUTCMinutes() * 60 + d.getUTCSeconds();
+  const sd = 1000 * (Y - 2323) + 1000 * ((doy + sec / 86400) / days);
+  const rounded = Math.round(sd * 10) / 10;
+  const [intPart, decPart] = rounded.toFixed(1).split(".");
+  return `${intPart.padStart(5, "0")}.${decPart}`;
+}
+
 export default function DeltaFrontierLanding() {
   const [mounted, setMounted] = useState(false);
   const [stardateTs, setStardateTs] = useState(Date.now());
@@ -29,13 +46,13 @@ export default function DeltaFrontierLanding() {
     return () => clearTimeout(t);
   }, []);
 
-  // Drives the live stardate clock
+  // Live stardate — ticks every second
   useEffect(() => {
     const id = setInterval(() => setStardateTs(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const stardate = (47000 + Math.floor(stardateTs / 86400)).toFixed(1);
+  const stardate = tngStardate(stardateTs);
 
   return (
     <div style={styles.page}>
