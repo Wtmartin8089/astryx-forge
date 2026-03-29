@@ -71,12 +71,12 @@ export default function IronConstellationsLanding() {
           <p className="font-lcars text-[0.6rem] tracking-[4px] text-[#3A3020] uppercase mb-6">
             World · Iron Constellations
           </p>
-          <h1 className="font-lcars font-bold text-white/90 leading-tight tracking-wide max-w-2xl mx-auto"
+          <h1 className="font-lcars font-bold leading-tight tracking-wide max-w-2xl mx-auto"
             style={{ fontSize: "clamp(1.4rem, 3.5vw, 2.3rem)" }}
           >
-            The galaxy is breaking apart.
+            <span className="text-white">The galaxy is breaking apart.</span>
             <br />
-            <span className="text-white/60">
+            <span className="text-white/35">
               Where you stand will decide what remains.
             </span>
           </h1>
@@ -91,7 +91,7 @@ export default function IronConstellationsLanding() {
 
             {/* ── Imperium Dominion ── */}
             <Link
-              to="/auth"
+              to="/worlds/iron-constellations/authorize?faction=dominion"
               className="group relative flex flex-col bg-[#090608] border border-[#3A1212]
                          rounded-lg p-8 cursor-pointer no-underline
                          transition-all duration-300 ease-out
@@ -137,7 +137,7 @@ export default function IronConstellationsLanding() {
 
             {/* ── Outer Rim Coalition ── */}
             <Link
-              to="/auth"
+              to="/worlds/iron-constellations/authorize?faction=coalition"
               className="group relative flex flex-col bg-[#090806] border border-[#3A2810]
                          rounded-lg p-8 cursor-pointer no-underline
                          transition-all duration-300 ease-out
@@ -184,8 +184,9 @@ export default function IronConstellationsLanding() {
           </div>
 
           {/* tension line between panels */}
-          <p className="font-lcars text-[0.58rem] tracking-[3px] text-white/10 uppercase text-center mt-8">
-            One choice. No return.
+          <p className="font-lcars text-[0.58rem] tracking-[3px] text-white/10 text-center mt-8"
+             style={{ fontStyle: "normal", letterSpacing: "0.15em" }}>
+            Your choice will define you.
           </p>
         </section>
 
