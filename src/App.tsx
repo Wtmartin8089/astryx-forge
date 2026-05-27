@@ -77,10 +77,12 @@ function App() {
     return <Navigate to="/" replace />;
   }
 
+  const isWorldPath = location.pathname === "/" || location.pathname.startsWith("/worlds") || location.pathname === "/auth";
+
   return (
     <ActiveCharacterProvider>
-      {currentUser && <NavBar />}
-      {currentUser && <ComputerCore />}
+      {currentUser && !isWorldPath && <NavBar />}
+      {currentUser && !isWorldPath && <ComputerCore />}
       <Routes>
         <Route path="/" element={currentUser ? <WorldsPage /> : <LandingPage />} />
         <Route path="/starmap" element={<StarMap />} />

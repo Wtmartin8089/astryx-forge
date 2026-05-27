@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getAuth, signOut } from "firebase/auth";
 
 const Logo = () => (
   <svg width="180" height="68" viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" aria-label="Astryx Forge">
@@ -27,6 +28,9 @@ const Logo = () => (
 );
 
 export default function Header() {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
   return (
     <header style={styles.header}>
       <Link to="/" style={styles.logoLink}>
@@ -35,8 +39,17 @@ export default function Header() {
       <nav style={styles.nav}>
         <Link to="/" style={styles.link}>Home</Link>
         <Link to="/worlds" style={styles.link}>Worlds</Link>
-        <Link to="/auth" style={styles.link}>Login</Link>
-        <Link to="/auth" style={styles.registerBtn}>Register</Link>
+        {user ? (
+          <>
+            <Link to="/starmap" style={styles.link}>Star Trek RPG</Link>
+            <button onClick={() => signOut(auth)} style={styles.logoutBtn}>Logout</button>
+          </>
+        ) : (
+          <>
+            <Link to="/auth" style={styles.link}>Login</Link>
+            <Link to="/auth" style={styles.registerBtn}>Register</Link>
+          </>
+        )}
       </nav>
     </header>
   );
@@ -84,5 +97,17 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "0.45rem 1.1rem",
     borderRadius: "4px",
     fontWeight: "bold",
+  },
+  logoutBtn: {
+    color: "#C8D8F0",
+    backgroundColor: "transparent",
+    border: "1px solid #3A5A80",
+    fontFamily: "Orbitron, sans-serif",
+    fontSize: "0.8rem",
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
+    padding: "0.45rem 1.1rem",
+    borderRadius: "4px",
+    cursor: "pointer",
   },
 };
