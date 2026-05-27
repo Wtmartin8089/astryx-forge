@@ -82,7 +82,8 @@ function App() {
       {currentUser && <NavBar />}
       {currentUser && <ComputerCore />}
       <Routes>
-        <Route path="/" element={currentUser ? <StarMap /> : <LandingPage />} />
+        <Route path="/" element={currentUser ? <WorldsPage /> : <LandingPage />} />
+        <Route path="/starmap" element={<StarMap />} />
         <Route path="/worlds" element={<WorldsPage />} />
         <Route path="/worlds/delta-frontier-command" element={<DeltaFrontierLanding />} />
         <Route path="/worlds/iron-constellations" element={<IronConstellationsLanding />} />

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getAuth } from "firebase/auth";
 import Header from "./Header";
 
 const STATUS_ITEMS = [
@@ -52,6 +53,7 @@ function tngStardate(ts: number): string {
 export default function DeltaFrontierLanding() {
   const [mounted, setMounted] = useState(false);
   const [stardateTs, setStardateTs] = useState(Date.now());
+  const commandTarget = getAuth().currentUser ? "/starmap" : "/auth";
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 30);
@@ -166,7 +168,7 @@ export default function DeltaFrontierLanding() {
           Orders are being issued.
         </h1>
 
-        <Link to="/auth" className="accept-btn" style={{ marginTop: "2.25rem" }}>
+        <Link to={commandTarget} className="accept-btn" style={{ marginTop: "2.25rem" }}>
           Accept Command
         </Link>
       </section>
@@ -226,7 +228,7 @@ export default function DeltaFrontierLanding() {
       <section style={styles.ctaSection}>
         <div style={styles.ctaDivider} />
         <p style={styles.ctaSuper}>AWAITING AUTHORIZATION</p>
-        <Link to="/auth" className="accept-btn">
+        <Link to={commandTarget} className="accept-btn">
           Accept Command
         </Link>
         <p style={styles.ctaSub}>Your assignment begins immediately.</p>
