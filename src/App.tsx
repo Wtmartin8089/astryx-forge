@@ -40,6 +40,7 @@ import DeltaFrontierLanding from "./components/DeltaFrontierLanding";
 import IronConstellationsLanding from "./components/IronConstellationsLanding";
 import IronConstellationsAuth from "./components/IronConstellationsAuth";
 import IronConstellationsCommand from "./components/IronConstellationsCommand";
+import ContactPage from "./components/ContactPage";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
@@ -65,7 +66,7 @@ function App() {
   }
 
   // Public paths that don't require authentication
-  const publicPaths = ["/", "/worlds", "/worlds/delta-frontier-command", "/worlds/iron-constellations", "/worlds/iron-constellations/authorize", "/worlds/iron-constellations/command", "/auth"];
+  const publicPaths = ["/", "/worlds", "/worlds/delta-frontier-command", "/worlds/iron-constellations", "/worlds/iron-constellations/authorize", "/worlds/iron-constellations/command", "/auth", "/contact"];
 
   // Only allow unauthenticated users on public paths
   if (!currentUser && !publicPaths.includes(location.pathname)) {
@@ -77,7 +78,7 @@ function App() {
     return <Navigate to="/" replace />;
   }
 
-  const isWorldPath = location.pathname === "/" || location.pathname.startsWith("/worlds") || location.pathname === "/auth";
+  const isWorldPath = location.pathname === "/" || location.pathname.startsWith("/worlds") || location.pathname === "/auth" || location.pathname === "/contact";
 
   return (
     <ActiveCharacterProvider>
@@ -124,6 +125,7 @@ function App() {
         <Route path="/reference" element={<ReferencePage />} />
         <Route path="/reference/articles-of-federation" element={<ArticlesOfFederation />} />
         <Route path="/reference/holographic-systems" element={<HolographicSystems />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/auth" element={<AuthPanel />} />
       </Routes>
     </ActiveCharacterProvider>

@@ -39,6 +39,7 @@ export default function Header() {
       <nav style={styles.nav}>
         <Link to="/" style={styles.link}>Home</Link>
         <Link to="/worlds" style={styles.link}>Worlds</Link>
+        <Link to="/contact" style={styles.link}>Contact</Link>
         {user ? (
           <>
             <Link to="/starmap" style={styles.link}>Star Trek RPG</Link>
