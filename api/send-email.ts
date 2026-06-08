@@ -1,7 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { sendEmail } from "../../lib/email";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -15,16 +13,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await resend.emails.send({
-      from: "Fleet Command <command@astryxforge.com>",
-      to,
-      subject,
-      html,
-    });
+    await sendEmail({ to, subject, html });
     return res.status(200).json({ success: true });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
     console.error("[send-email] Failed to send:", err);
-    return res.status(500).json({ success: false, error: message });
+    return res.status(500).json({ success: false, error: "Failed to send email" });
   }
 }

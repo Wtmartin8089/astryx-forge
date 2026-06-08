@@ -3,7 +3,7 @@
  * Delegates to src/server/archive/createEntry.js
  */
 
-import { handleCreateEntry } from "../../../src/server/archive/createEntry.js";
+import { handleCreateEntry } from "../../src/server/archive/createEntry.js";
 
 export default function handler(req, res) {
   return handleCreateEntry(req, res);

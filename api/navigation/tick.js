@@ -34,7 +34,7 @@
  * }
  */
 
-import { updateShipMovement } from "../../../src/server/navigation/warpEngine.js";
+import { updateShipMovement } from "../../src/server/navigation/warpEngine.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST" && req.method !== "GET") {

@@ -11,10 +11,10 @@
  * }
  */
 
-import { routeCommand } from "../../src/server/computerCore/commandRouter.js";
-import { executeCommand } from "../../src/server/computerCore/commandExecutor.js";
-import { formatComputerResponse } from "../../src/server/computerCore/formatComputerResponse.js";
-import { getMemory } from "../../src/server/computerCore/computerMemory.js";
+import { routeCommand } from "../src/server/computerCore/commandRouter.js";
+import { executeCommand } from "../src/server/computerCore/commandExecutor.js";
+import { formatComputerResponse } from "../src/server/computerCore/formatComputerResponse.js";
+import { getMemory } from "../src/server/computerCore/computerMemory.js";
 
 function normalizeCommand(text) {
   const raw = String(text || "").trim();

@@ -9,9 +9,9 @@
  */
 
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { getServerDb } from "../../src/server/firebase/serverDb.js";
-import { expandFrontier } from "../../src/server/systems/expandFrontier.js";
-import { generateSystemDetails, OllamaUnavailableError } from "../../src/server/ai/generateSystemDetails.js";
+import { getServerDb } from "../src/server/firebase/serverDb.js";
+import { expandFrontier } from "../src/server/systems/expandFrontier.js";
+import { generateSystemDetails, OllamaUnavailableError } from "../src/server/ai/generateSystemDetails.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {

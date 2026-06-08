@@ -5,7 +5,7 @@
  * Vercel injects req.query.id from the [id] filename.
  */
 
-import { handleGetSector } from "../../../src/server/routes/getSector.js";
+import { handleGetSector } from "../../src/server/routes/getSector.js";
 
 export default function handler(req, res) {
   return handleGetSector(req, res);

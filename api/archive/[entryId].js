@@ -5,7 +5,7 @@
  * Vercel injects req.query.entryId from the [entryId] filename.
  */
 
-import { handleGetEntry } from "../../../src/server/archive/searchArchive.js";
+import { handleGetEntry } from "../../src/server/archive/searchArchive.js";
 
 export default function handler(req, res) {
   return handleGetEntry(req, res);

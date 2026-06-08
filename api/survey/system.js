@@ -3,7 +3,7 @@
  * Delegates to the route handler in src/server/routes/surveySystem.js
  */
 
-import { handleSurveySystem } from "../../../src/server/routes/surveySystem.js";
+import { handleSurveySystem } from "../../src/server/routes/surveySystem.js";
 
 export default function handler(req, res) {
   return handleSurveySystem(req, res);
