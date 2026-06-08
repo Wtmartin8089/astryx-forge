@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { getAuth, deleteUser, signOut, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { isAdmin } from "../utils/adminAuth";
 import { unclaimAllByUser, unclaimCharacter } from "../utils/crewFirestore";
@@ -326,6 +327,19 @@ const AccountSettings = () => {
             >
               Unclaim All My Crew
             </button>
+          </div>
+        )}
+
+        {isAdmin(user?.uid ?? "") && (
+          <div style={{ marginTop: "2rem", borderTop: "1px solid #ff990030", paddingTop: "1.5rem" }}>
+            <p style={{ color: "#ff9900", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", fontSize: "0.85rem", marginBottom: "1rem" }}>
+              Admin Tools
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <Link to="/admin/awards" style={{ color: "#6699cc", fontSize: "0.85rem", textDecoration: "none", padding: "0.4rem 0.9rem", border: "1px solid #6699cc33", borderRadius: "6px" }}>Awards Console</Link>
+              <Link to="/admin/transmissions" style={{ color: "#6699cc", fontSize: "0.85rem", textDecoration: "none", padding: "0.4rem 0.9rem", border: "1px solid #6699cc33", borderRadius: "6px" }}>Transmissions</Link>
+              <Link to="/admin/echo" style={{ color: "#F5B942", fontSize: "0.85rem", textDecoration: "none", padding: "0.4rem 0.9rem", border: "1px solid #F5B94233", borderRadius: "6px" }}>Echo Console</Link>
+            </div>
           </div>
         )}
 

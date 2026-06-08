@@ -20,6 +20,7 @@ import PersonnelDatabase from "./components/PersonnelDatabase";
 import PersonnelProfile from "./components/PersonnelProfile";
 import AwardsConsole from "./components/admin/AwardsConsole";
 import TransmissionsConsole from "./components/admin/TransmissionsConsole";
+import EchoConsole from "./components/admin/EchoConsole";
 import MissionBoard from "./components/MissionBoard";
 import CreatureNew from "./components/CreatureNew";
 import CreatureDetail from "./components/CreatureDetail";
@@ -107,6 +108,7 @@ function App() {
         <Route path="/personnel/:id" element={<PersonnelProfile />} />
         <Route path="/admin/awards" element={<AwardsConsole />} />
         <Route path="/admin/transmissions" element={<TransmissionsConsole />} />
+        <Route path="/admin/echo" element={<EchoConsole />} />
         <Route path="/missions" element={<MissionBoard />} />
         <Route path="/create-campaign" element={<CreateCampaign />} />
         <Route path="/map/:campaignId" element={<CampaignMap />} />
