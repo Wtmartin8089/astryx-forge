@@ -138,7 +138,7 @@ function NpcTab() {
         throw new Error(`Server error (HTTP ${res.status}) — check Vercel function logs.`);
       }
       if (!res.ok) throw new Error(String(data.error ?? `Request failed (HTTP ${res.status}).`));
-      setNpc(data as NpcData);
+      setNpc(data as unknown as NpcData);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -258,7 +258,7 @@ function QuestTab() {
         throw new Error(`Server error (HTTP ${res.status}) — check Vercel function logs.`);
       }
       if (!res.ok) throw new Error(String(data.error ?? `Request failed (HTTP ${res.status}).`));
-      setQuest(data as QuestData);
+      setQuest(data as unknown as QuestData);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -376,7 +376,7 @@ function LoreTab() {
         throw new Error(`Server error (HTTP ${res.status}) — check Vercel function logs.`);
       }
       if (!res.ok) throw new Error(String(data.error ?? `Request failed (HTTP ${res.status}).`));
-      setLore(data as LoreData);
+      setLore(data as unknown as LoreData);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -490,7 +490,7 @@ function ImageTab() {
         throw new Error(`Server error (HTTP ${res.status}) — check Vercel function logs.`);
       }
       if (!res.ok) throw new Error(String(data.error ?? `Request failed (HTTP ${res.status}).`));
-      setImage(data as ImageData);
+      setImage(data as unknown as ImageData);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
