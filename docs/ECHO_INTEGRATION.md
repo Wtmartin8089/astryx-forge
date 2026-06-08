@@ -61,44 +61,70 @@ npx vercel dev
 
 ---
 
-## Production Setup (Vercel + Cloudflare Tunnel)
+## Production Setup (Vercel + Tailscale Funnel)
 
-### Step 1 — Install cloudflared on the Echo host
+Tailscale Funnel exposes a local service to the public internet via a stable
+`https://<machine>.<tailnet>.ts.net` URL — no DNS or domain required.
 
-```bash
-# Arch Linux (AUR)
-yay -S cloudflared
+> **Tailscale Funnel vs VPN**: Regular Tailscale only connects devices on your
+> tailnet. Funnel makes a port publicly reachable so Vercel's cloud functions
+> can reach Echo. Both are needed: Funnel for the public URL, Tailscale ACLs
+> to limit who can actually connect.
 
-# Or download directly
-curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
-  -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
-```
+### Step 1 — Enable Funnel on your Tailscale account
 
-### Step 2 — Create a named tunnel (recommended over quick tunnels)
+In the [Tailscale admin console](https://login.tailscale.com/admin):
+- **DNS** tab → enable **HTTPS Certificates**
+- **Access Controls** tab → add `"funnel"` to the node's capabilities, or enable
+  it via the Tailscale GUI on the Echo host
 
-```bash
-cloudflared tunnel login                          # opens browser auth
-cloudflared tunnel create echo-ai                 # creates tunnel credentials
-cloudflared tunnel route dns echo-ai echo.yourdomain.com
-```
+### Step 2 — Start Funnel on the Echo host
 
-Create `/etc/cloudflared/config.yml`:
-```yaml
-tunnel: <TUNNEL_ID>
-credentials-file: /home/<user>/.cloudflared/<TUNNEL_ID>.json
-
-ingress:
-  - hostname: echo.yourdomain.com
-    service: http://localhost:7860
-  - service: http_status:404
-```
-
-### Step 3 — Run the tunnel as a service
+Echo runs on port 7860. Run on the machine where Echo is installed:
 
 ```bash
-sudo cloudflared service install
-sudo systemctl enable --now cloudflared
+# Expose Echo to the internet on the default HTTPS port
+tailscale funnel 7860
 ```
+
+Tailscale will print the public URL:
+```
+Available on the internet:
+https://<your-machine>.<your-tailnet>.ts.net
+```
+
+To keep Funnel running persistently across reboots:
+
+```bash
+tailscale funnel --bg 7860        # background/persistent mode
+```
+
+Or add a systemd user service:
+```ini
+# ~/.config/systemd/user/tailscale-funnel-echo.service
+[Unit]
+Description=Tailscale Funnel for Echo AI
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/tailscale funnel 7860
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+```bash
+systemctl --user enable --now tailscale-funnel-echo
+```
+
+### Step 3 — Find your Funnel URL
+
+```bash
+tailscale funnel status
+```
+
+The URL will be `https://<machine-name>.<tailnet>.ts.net` — copy this for the
+next step.
 
 ### Step 4 — Set Vercel environment variables
 
@@ -106,7 +132,7 @@ In the Vercel dashboard: **Project → Settings → Environment Variables**
 
 | Key | Value | Environment |
 |-----|-------|-------------|
-| `ECHO_URL` | `https://echo.yourdomain.com` | Production, Preview |
+| `ECHO_URL` | `https://<machine>.<tailnet>.ts.net` | Production, Preview |
 | `ECHO_API_KEY` | `<your-secret-key>` | Production, Preview |
 | `ECHO_MODEL` | `qwen3:14b` | Production, Preview (optional) |
 
