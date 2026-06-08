@@ -133,8 +133,11 @@ function NpcTab() {
           forceRegenerate,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "NPC generation failed.");
+      let data: Record<string, unknown> = {};
+      try { data = await res.json(); } catch {
+        throw new Error(`Server error (HTTP ${res.status}) — check Vercel function logs.`);
+      }
+      if (!res.ok) throw new Error(String(data.error ?? `Request failed (HTTP ${res.status}).`));
       setNpc(data as NpcData);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -250,8 +253,11 @@ function QuestTab() {
           forceRegenerate,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Quest generation failed.");
+      let data: Record<string, unknown> = {};
+      try { data = await res.json(); } catch {
+        throw new Error(`Server error (HTTP ${res.status}) — check Vercel function logs.`);
+      }
+      if (!res.ok) throw new Error(String(data.error ?? `Request failed (HTTP ${res.status}).`));
       setQuest(data as QuestData);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -365,8 +371,11 @@ function LoreTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic, type, forceRegenerate }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Lore generation failed.");
+      let data: Record<string, unknown> = {};
+      try { data = await res.json(); } catch {
+        throw new Error(`Server error (HTTP ${res.status}) — check Vercel function logs.`);
+      }
+      if (!res.ok) throw new Error(String(data.error ?? `Request failed (HTTP ${res.status}).`));
       setLore(data as LoreData);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -476,8 +485,11 @@ function ImageTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageType, subject, forceRegenerate }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Image generation failed.");
+      let data: Record<string, unknown> = {};
+      try { data = await res.json(); } catch {
+        throw new Error(`Server error (HTTP ${res.status}) — check Vercel function logs.`);
+      }
+      if (!res.ok) throw new Error(String(data.error ?? `Request failed (HTTP ${res.status}).`));
       setImage(data as ImageData);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
