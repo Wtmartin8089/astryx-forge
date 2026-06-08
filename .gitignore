@@ -1,3 +1,8 @@
+# Environment variables — never commit real keys
+.env
+.env.production
+# .env.example is intentionally NOT listed here (safe to commit)
+
 # Logs
 logs
 *.log
