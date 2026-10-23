@@ -4,6 +4,7 @@ import { getAuth, deleteUser, signOut, reauthenticateWithCredential, EmailAuthPr
 import { isAdmin } from "../utils/adminAuth";
 import { unclaimAllByUser, unclaimCharacter } from "../utils/crewFirestore";
 import { useActiveCharacter } from "../context/ActiveCharacterContext";
+import { signOutOfAetherbase } from "../utils/adminApi";
 import "../assets/lcars.css";
 
 const AccountSettings = () => {
@@ -17,6 +18,7 @@ const AccountSettings = () => {
 
   const handleLogout = async () => {
     try {
+      await signOutOfAetherbase().catch(() => undefined);
       await signOut(auth);
       alert("Logged out successfully!");
     } catch (err: any) {

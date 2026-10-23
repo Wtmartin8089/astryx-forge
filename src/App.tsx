@@ -21,6 +21,7 @@ import PersonnelProfile from "./components/PersonnelProfile";
 import AwardsConsole from "./components/admin/AwardsConsole";
 import TransmissionsConsole from "./components/admin/TransmissionsConsole";
 import EchoConsole from "./components/admin/EchoConsole";
+import PlayersConsole from "./components/admin/PlayersConsole";
 import MissionBoard from "./components/MissionBoard";
 import CreatureNew from "./components/CreatureNew";
 import CreatureDetail from "./components/CreatureDetail";
@@ -44,8 +45,9 @@ import IronConstellationsCommand from "./components/IronConstellationsCommand";
 import ContactPage from "./components/ContactPage";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActiveCharacterProvider } from "./context/ActiveCharacterContext";
+import { signOutOfAetherbase } from "./utils/adminApi";
 
 const auth = getAuth();
 
@@ -53,9 +55,17 @@ function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
+  const previousUid = useRef<string | null>(null);
+  const authInitialized = useRef(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const nextUid = user?.uid ?? null;
+      if (authInitialized.current && previousUid.current !== nextUid) {
+        void signOutOfAetherbase().catch(() => undefined);
+      }
+      previousUid.current = nextUid;
+      authInitialized.current = true;
       setCurrentUser(user);
       setLoading(false);
     });
@@ -109,6 +119,7 @@ function App() {
         <Route path="/admin/awards" element={<AwardsConsole />} />
         <Route path="/admin/transmissions" element={<TransmissionsConsole />} />
         <Route path="/admin/echo" element={<EchoConsole />} />
+        <Route path="/admin/players" element={<PlayersConsole />} />
         <Route path="/missions" element={<MissionBoard />} />
         <Route path="/create-campaign" element={<CreateCampaign />} />
         <Route path="/map/:campaignId" element={<CampaignMap />} />

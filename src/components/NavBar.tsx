@@ -1,10 +1,30 @@
 import { Link, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useActiveCharacter } from "../context/ActiveCharacterContext";
 import "../assets/lcars.css";
 
 const NavBar = () => {
   const location = useLocation();
   const { userCharacters, activeChar, activeCharId, setActiveCharId } = useActiveCharacter();
+  const [canManagePlayers, setCanManagePlayers] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const updateAdminLink = () => fetch("/api/admin/session?navigation=1", { credentials: "same-origin", cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((envelope) => {
+        if (mounted) setCanManagePlayers(envelope?.data?.authenticated === true);
+      })
+      .catch(() => {
+        if (mounted) setCanManagePlayers(false);
+      });
+    window.addEventListener("astryx-admin-session-changed", updateAdminLink);
+    void updateAdminLink();
+    return () => {
+      mounted = false;
+      window.removeEventListener("astryx-admin-session-changed", updateAdminLink);
+    };
+  }, [location.pathname]);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -25,6 +45,8 @@ const NavBar = () => {
         background: "linear-gradient(90deg, #ff9933 0%, #ffcc33 100%)",
         padding: "1rem 2rem",
         display: "flex",
+        flexWrap: "wrap",
+        gap: "0.4rem",
         justifyContent: "space-around",
         alignItems: "center",
         borderBottom: "4px solid #663399",
@@ -65,6 +87,11 @@ const NavBar = () => {
       <Link to="/settings" style={linkStyle("/settings")}>
         Settings
       </Link>
+      {canManagePlayers && (
+        <Link to="/admin/players" style={linkStyle("/admin/players")} aria-label="Open player administration">
+          Players Console
+        </Link>
+      )}
       <Link
         to="/create-campaign"
         style={{
