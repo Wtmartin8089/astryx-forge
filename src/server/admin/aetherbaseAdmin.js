@@ -122,13 +122,14 @@ function getBaseUrl() {
     throw new AdminProxyError(503, "Player administration is unavailable.", "not_configured");
   }
   const localHttpHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+  const integrationApi = process.env.NODE_ENV === "integration" && url.hostname === "aetherbase";
   if (
     !new Set(["http:", "https:"]).has(url.protocol) ||
     url.username ||
     url.password ||
     url.search ||
     url.hash ||
-    (url.protocol === "http:" && !localHttpHosts.has(url.hostname))
+    (url.protocol === "http:" && !localHttpHosts.has(url.hostname) && !integrationApi)
   ) {
     throw new AdminProxyError(503, "Player administration is unavailable.", "not_configured");
   }

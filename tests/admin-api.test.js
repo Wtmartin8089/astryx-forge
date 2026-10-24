@@ -272,6 +272,46 @@ test("remote Aetherbase credentials are never sent over plain HTTP", async () =>
   }
 });
 
+test("the integration-only Aetherbase service can use HTTP on its private network", async () => {
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousUrl = process.env.AETHERBASE_API_URL;
+  process.env.NODE_ENV = "integration";
+  process.env.AETHERBASE_API_URL = "http://aetherbase:8000";
+  let calledUrl = "";
+  globalThis.fetch = async (url) => {
+    calledUrl = String(url);
+    return upstream(200, admin);
+  };
+  try {
+    const { res } = await invoke("GET", "/api/admin/users", { cookie: authCookies, csrf });
+    assert.equal(res.statusCode, 200);
+    assert.match(calledUrl, /^http:\/\/aetherbase:8000\//);
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+    if (previousUrl === undefined) delete process.env.AETHERBASE_API_URL;
+    else process.env.AETHERBASE_API_URL = previousUrl;
+  }
+});
+
+test("internal HTTP is still rejected outside the integration runtime", async () => {
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousUrl = process.env.AETHERBASE_API_URL;
+  process.env.NODE_ENV = "production";
+  process.env.AETHERBASE_API_URL = "http://aetherbase:8000";
+  globalThis.fetch = async () => { throw new Error("must not send credentials over HTTP"); };
+  try {
+    const { res, body } = await invoke("GET", "/api/admin/users", { cookie: authCookies, csrf });
+    assert.equal(res.statusCode, 503);
+    assert.equal(body.error.code, "not_configured");
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+    if (previousUrl === undefined) delete process.env.AETHERBASE_API_URL;
+    else process.env.AETHERBASE_API_URL = previousUrl;
+  }
+});
+
 test("suspend sends the exact reason and timezone-aware expiry contract", async () => {
   const calls = [];
   globalThis.fetch = async (url, init) => {
