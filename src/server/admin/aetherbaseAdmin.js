@@ -171,7 +171,11 @@ export async function callAetherbase(path, { method = "GET", body, cookie } = {}
 }
 
 export function isAdminUser(user) {
-  return Boolean(user && user.is_active !== false && user.is_admin === true);
+  const platformAdminId = process.env.ASTRYX_PLATFORM_ADMIN_USER_ID?.trim();
+  return Boolean(
+    platformAdminId && user && user.id === platformAdminId &&
+    user.is_active !== false && user.is_admin === true
+  );
 }
 
 export function safeUser(user) {

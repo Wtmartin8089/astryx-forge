@@ -1,6 +1,6 @@
 # Player administration
 
-The Players Console is available at `/admin/players`. It uses a separate Aetherbase administrator session; the site's existing Firebase session remains unchanged. Configure the server-side `AETHERBASE_API_URL` environment variable with the Aetherbase origin for this installation.
+The Players Console is available at `/admin/players`. It uses a separate Aetherbase administrator session; the site's existing Firebase session remains unchanged. Configure the server-side `AETHERBASE_API_URL` environment variable with the Aetherbase origin for this installation. Configure server-side `ASTRYX_PLATFORM_ADMIN_USER_ID` with the UUID of the one owner-authorized Astryx platform administrator; the proxy denies platform moderation when it is unset or the authenticated Aetherbase user ID differs.
 
 The browser calls only same-origin `/api/admin/*` functions. Those functions use the existing Aetherbase login, refresh, logout, `/auth/me`, and moderation endpoints. They forward the Aetherbase access and refresh cookies as `HttpOnly` cookies and remove token fields from login and refresh responses before returning data to React. Expired sessions are refreshed through a CSRF-protected POST; failed refreshes clear both auth cookies. Admin roles are checked from Aetherbase `/auth/me` and enforced again by each Aetherbase moderation endpoint. No Firebase UID list grants access to this dashboard.
 

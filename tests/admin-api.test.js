@@ -4,6 +4,7 @@ import test from "node:test";
 import handler from "../api/admin/[...path].js";
 
 process.env.AETHERBASE_API_URL = "https://aetherbase.test";
+process.env.ASTRYX_PLATFORM_ADMIN_USER_ID = "123e4567-e89b-42d3-a456-426614174000";
 
 function responseRecorder() {
   const headers = new Map();
@@ -75,6 +76,20 @@ test("unauthenticated player-list requests are rejected without contacting Aethe
   assert.equal(body.error.code, "unauthorized");
   assert.equal(called, false);
   assert.equal(res.getHeader("cache-control"), "no-store");
+});
+
+test("another Aetherbase administrator cannot perform Astryx-wide moderation", async () => {
+  const otherAdmin = { ...admin, id: "323e4567-e89b-42d3-a456-426614174000" };
+  let adminEndpointCalled = false;
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/auth/me")) return upstream(200, otherAdmin);
+    adminEndpointCalled = true;
+    return upstream(200, []);
+  };
+  const { res, body } = await invoke("GET", "/api/admin/users", { cookie: authCookies, csrf });
+  assert.equal(res.statusCode, 403);
+  assert.equal(body.error.code, "forbidden");
+  assert.equal(adminEndpointCalled, false);
 });
 
 test("session endpoint provisions a CSRF token without exposing auth tokens", async () => {
